@@ -2,7 +2,7 @@
 
 ## Current Status
 
-As of 2026-03-09, the MVP core loop is largely implemented.
+As of 2026-03-10, the MVP core loop is functionally implemented in-repo.
 
 Completed:
 
@@ -14,13 +14,17 @@ Completed:
 - OpenClaw session transcript import for silent trajectory collection
 - automated OpenClaw session collection with a local cursor/state file
 - curated MVP evaluation fixture suite for regression checks
+- unsupported OpenClaw record type reporting during import and evaluation
+- additional OpenClaw transcript mapping for `checkpoint` session records
+- follow-up user clarification extraction on multi-turn OpenClaw transcripts
+- anonymized real-session evaluation fixtures through the existing evaluation flow
+- precedent ranking improvements validated against anonymized real-session cases
 
 Still open:
 
 - connect the collector to a real scheduled/background job in the target environment
-- improve transcript mapping coverage for more OpenClaw record types
-- strengthen precedent quality on larger real-case histories
-- expand evaluation beyond curated fixtures into real collected trajectories
+- validate replay, extraction, and precedent quality against a growing set of real collected sessions
+- continue transcript mapping and ranking improvements only where real collected history reveals concrete gaps
 
 ## Objective
 
@@ -164,12 +168,12 @@ Completed work:
 
 - rule-based decision extractor
 - explanation contract with goal, evidence, constraints, reason, and result
-- support for `plan`, `select_tool`, `apply_change`, `retry_or_recover`, and `finalize`
+- support for `plan`, `clarify`, `select_tool`, `apply_change`, `retry_or_recover`, and `finalize`
 
 Remaining gaps:
 
-- broader decision coverage on real OpenClaw transcripts
-- stronger extraction quality evaluation on non-curated trajectories
+- broader decision coverage may still be needed as real collected transcripts reveal new patterns
+- stronger extraction quality evaluation on a growing set of real collected trajectories
 
 ## Phase 5: Precedent Retrieval
 
@@ -197,10 +201,12 @@ Completed work:
 - fingerprint-based precedent retrieval
 - precedent response with similarities, differences, score, and reusable takeaway
 - curated fixture-based precedent evaluation
+- anonymized real-session precedent evaluation coverage
+- improved ranking for read-heavy real-session search cases
 
 Remaining gaps:
 
-- stronger retrieval quality on larger real history
+- stronger retrieval quality validation on larger continuously collected real history
 - richer semantic retrieval beyond current lightweight matching
 
 ## Phase 6: Local Runtime Validation
@@ -230,15 +236,20 @@ Completed work:
 - session discovery and `--latest` import flow
 - automated collector command with local state cursor for silent collection
 - curated evaluation suite for summary and recovery trajectories
+- anonymized real-session evaluation suite through `eval fixtures`
 - operational collector assets for `systemd` / `cron`
 - path-aware installer script for collector scheduling assets
 - collected-session evaluation/report command for real imported sessions
+- unsupported OpenClaw record type reporting in import and collected-session evaluation output
+- `checkpoint` session record mapping into replayable raw events
+- follow-up user clarification extraction on multi-turn session transcripts
+- precedent ranking tuned and regression-tested against anonymized real-session cases
 
 Remaining gaps:
 
 - run the collector on a real schedule in the target machine environment
 - validate replay/extraction/precedent quality on a growing set of real collected sessions
-- keep improving precedent ranking as real history grows
+- extend transcript mapping or ranking only where real collected history exposes concrete shortcomings
 
 ## Next Tasks
 
@@ -246,5 +257,5 @@ The next MVP work should focus on operationalizing and validating what already e
 
 1. run `openprecedent runtime collect-openclaw-sessions --limit 1` on a schedule in the real environment
 2. collect a small set of real OpenClaw sessions and inspect replay / decision / precedent quality
-3. extend transcript mapping for additional OpenClaw record types where the current importer loses useful trajectory detail
-4. expand the evaluation suite with real anonymized trajectories once collection volume is sufficient
+3. document the operational baseline for collector rollout, cursor behavior, failure recovery, and report review
+4. only extend transcript mapping or ranking when the newly collected session history exposes specific gaps
