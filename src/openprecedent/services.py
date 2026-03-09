@@ -1218,6 +1218,25 @@ def _normalize_openclaw_tool_call_events(
             for path_index, path in enumerate(paths, start=1)
         ]
 
+    if tool_name == "view_image":
+        path = _string_or_none(arguments.get("path"))
+        if path is None:
+            return []
+        return [
+            AppendEventInput(
+                event_id=f"evt_file_read_{record_id}_{index}_image",
+                event_type=EventType.FILE_READ,
+                actor=EventActor.AGENT,
+                timestamp=timestamp,
+                parent_event_id=parent_id,
+                payload={
+                    "path": path,
+                    "tool_call_id": tool_call_id,
+                    "source": "openclaw.session",
+                },
+            )
+        ]
+
     return []
 
 
