@@ -13,6 +13,7 @@ from openprecedent.schemas import (
     Case,
     CaseStatus,
     Decision,
+    DecisionExplanation,
     DecisionType,
     Event,
     EventActor,
@@ -92,6 +93,8 @@ class SQLiteStore:
                     constraint_summary TEXT,
                     requires_human_confirmation INTEGER NOT NULL,
                     outcome TEXT,
+                    confidence REAL NOT NULL,
+                    explanation_json TEXT NOT NULL,
                     sequence_no INTEGER NOT NULL,
                     FOREIGN KEY(case_id) REFERENCES cases(case_id)
                 );
@@ -109,6 +112,8 @@ class SQLiteStore:
                 );
                 """
             )
+            self._ensure_column(connection, "decisions", "confidence", "REAL NOT NULL DEFAULT 0.5")
+            self._ensure_column(connection, "decisions", "explanation_json", "TEXT NOT NULL DEFAULT '{}'")
 
     def create_case(self, case: Case) -> Case:
         with self.connect() as connection:
@@ -228,8 +233,8 @@ class SQLiteStore:
                     INSERT INTO decisions (
                         decision_id, case_id, decision_type, title, question, chosen_action,
                         alternatives_json, evidence_event_ids_json, constraint_summary,
-                        requires_human_confirmation, outcome, sequence_no
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        requires_human_confirmation, outcome, confidence, explanation_json, sequence_no
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         decision.decision_id,
@@ -243,6 +248,8 @@ class SQLiteStore:
                         decision.constraint_summary,
                         int(decision.requires_human_confirmation),
                         decision.outcome,
+                        decision.confidence,
+                        _serialize_json(decision.explanation.model_dump(mode="json")),
                         decision.sequence_no,
                     ),
                 )
@@ -330,6 +337,8 @@ class SQLiteStore:
             constraint_summary=row["constraint_summary"],
             requires_human_confirmation=bool(row["requires_human_confirmation"]),
             outcome=row["outcome"],
+            confidence=row["confidence"],
+            explanation=DecisionExplanation.model_validate(json.loads(row["explanation_json"])),
             sequence_no=row["sequence_no"],
         )
 
@@ -341,6 +350,13 @@ class SQLiteStore:
             uri_or_path=row["uri_or_path"],
             summary=row["summary"],
         )
+
+    def _ensure_column(self, connection: sqlite3.Connection, table: str, column: str, ddl: str) -> None:
+        rows = connection.execute(f"PRAGMA table_info({table})").fetchall()
+        existing = {row["name"] for row in rows}
+        if column in existing:
+            return
+        connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
 
 
 def _payload_summary(payload: dict[str, object]) -> str | None:

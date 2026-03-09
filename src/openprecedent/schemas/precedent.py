@@ -6,6 +6,9 @@ class Precedent(BaseModel):
 
     case_id: str
     title: str
-    similarity_reason: str
+    summary: str
+    similarity_score: int
+    similarities: list[str]
     differences: list[str]
+    reusable_takeaway: str | None = None
     historical_outcome: str | None = None

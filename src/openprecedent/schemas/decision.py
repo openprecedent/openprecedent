@@ -12,6 +12,16 @@ class DecisionType(StrEnum):
     FINALIZE = "finalize"
 
 
+class DecisionExplanation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    goal: str
+    evidence: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+    selection_reason: str
+    result: str | None = None
+
+
 class Decision(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -26,4 +36,6 @@ class Decision(BaseModel):
     constraint_summary: str | None = None
     requires_human_confirmation: bool = False
     outcome: str | None = None
+    confidence: float = 0.5
+    explanation: DecisionExplanation
     sequence_no: int
