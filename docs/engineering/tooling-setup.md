@@ -6,6 +6,7 @@ The repository already includes:
 
 - `markdownlint` GitHub Actions workflow for Markdown review
 - `python-ci` GitHub Actions workflow for dependency install and tests
+- `feishu-pr-notify` GitHub Actions workflow for pull request review notifications
 - a local Git pre-push hook that requires a Codex review note
 
 To enable the local hook:
@@ -41,6 +42,7 @@ Recommended rollout:
 
 1. enable repository-local Markdown checks
 2. enable Python CI checks on pull requests
-3. enable Codex pre-push review hook
-4. install CodeFactor
-5. install CodeAnt AI
+3. configure `FEISHU_WEBHOOK_URL` for review notifications
+4. enable Codex pre-push review hook
+5. install CodeFactor
+6. install CodeAnt AI
