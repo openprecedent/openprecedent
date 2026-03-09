@@ -56,3 +56,4 @@ Possible later extensions:
 - notify only for PRs targeting `main`
 - include CI status summary
 - support richer Feishu card messages
+- include a repository-specific review handbook link in the message
