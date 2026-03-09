@@ -350,7 +350,37 @@ def test_cli_reports_unsupported_openclaw_session_record_types(capsys, db_path) 
     imported = json.loads(capsys.readouterr().out)
     assert imported["case"]["case_id"] == "case_session_unsupported_record_cli"
     assert imported["imported_event_count"] == 4
-    assert imported["unsupported_record_type_counts"] == {"checkpoint": 1}
+    assert imported["unsupported_record_type_counts"] == {"audit_marker": 1}
+
+
+def test_cli_imports_openclaw_checkpoint_record_as_event(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "checkpoint-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_checkpoint_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_checkpoint_cli"
+    assert imported["imported_event_count"] == 5
+    assert imported["unsupported_record_type_counts"] == {}
+
+    result = main(["replay", "case", "case_session_checkpoint_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    checkpoint_events = [event for event in replay["events"] if event["event_type"] == "checkpoint.saved"]
+    assert len(checkpoint_events) == 1
+    assert checkpoint_events[0]["payload"]["checkpoint_id"] == "checkpoint-record-1"
+    assert checkpoint_events[0]["payload"]["status"] == "saved"
 
 
 def test_cli_imports_openclaw_view_image_as_file_read(capsys, db_path) -> None:
@@ -550,7 +580,7 @@ def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Pa
     assert report["total_sessions"] == 3
     assert report["evaluated_cases"] == 3
     assert "retry_or_recover" in report["decision_type_counts"]
-    assert report["unsupported_record_type_counts"] == {"checkpoint": 1}
+    assert report["unsupported_record_type_counts"] == {"audit_marker": 1}
     assert report_path.exists()
 
 
@@ -594,5 +624,5 @@ def test_cli_renders_unsupported_record_type_summary_for_collected_sessions(caps
     )
     assert result == 0
     rendered = capsys.readouterr().out
-    assert "Unsupported record types: checkpoint=1" in rendered
-    assert "unsupported record types: checkpoint=1" in rendered
+    assert "Unsupported record types: audit_marker=1" in rendered
+    assert "unsupported record types: audit_marker=1" in rendered

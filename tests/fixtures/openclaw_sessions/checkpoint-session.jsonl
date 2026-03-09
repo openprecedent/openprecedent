@@ -1,0 +1,5 @@
+{"type":"session","version":3,"id":"checkpoint-session","timestamp":"2026-03-09T06:10:00.000Z","cwd":"/root/.openclaw/workspace"}
+{"type":"model_change","id":"checkpoint-model-1","parentId":null,"timestamp":"2026-03-09T06:10:00.001Z","provider":"openai-codex","modelId":"gpt-5.3-codex"}
+{"type":"checkpoint","id":"checkpoint-record-1","parentId":"checkpoint-model-1","timestamp":"2026-03-09T06:10:00.002Z","status":"saved"}
+{"type":"message","id":"checkpoint-msg-user","parentId":"checkpoint-model-1","timestamp":"2026-03-09T06:10:01.000Z","message":{"role":"user","content":[{"type":"text","text":"Summarize the roadmap."}]}}
+{"type":"message","id":"checkpoint-msg-assistant","parentId":"checkpoint-msg-user","timestamp":"2026-03-09T06:10:02.000Z","message":{"role":"assistant","content":[{"type":"text","text":"I will summarize the roadmap."}]}}

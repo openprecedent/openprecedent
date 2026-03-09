@@ -1144,6 +1144,22 @@ class OpenPrecedentService:
                 )
             ], None)
 
+        if record_type == "checkpoint":
+            return ([
+                AppendEventInput(
+                    event_id=f"evt_checkpoint_{record_id}",
+                    event_type=EventType.CHECKPOINT_SAVED,
+                    actor=EventActor.SYSTEM,
+                    timestamp=timestamp,
+                    parent_event_id=parent_id,
+                    payload={
+                        "checkpoint_id": _string_or_default(raw_item.get("id"), record_id),
+                        "status": _string_or_none(raw_item.get("status")),
+                        "source": "openclaw.session",
+                    },
+                )
+            ], None)
+
         if record_type == "model_change":
             return ([
                 AppendEventInput(

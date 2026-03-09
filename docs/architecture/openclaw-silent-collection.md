@@ -30,6 +30,7 @@ OpenPrecedent imports two artifacts from the OpenClaw session directory:
 The current importer maps transcript records into OpenPrecedent events as follows:
 
 - `type=session` -> `case.started`
+- `type=checkpoint` -> `checkpoint.saved`
 - `type=model_change` -> `model.completed`
 - `message.role=user` -> `message.user`
 - `message.role=assistant` text/summary -> `message.agent`

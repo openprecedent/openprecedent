@@ -33,6 +33,7 @@ A retrieval result linking current work to historically similar cases.
 ## MVP Event Types
 
 - `case.started`
+- `checkpoint.saved`
 - `message.user`
 - `message.agent`
 - `model.invoked`
