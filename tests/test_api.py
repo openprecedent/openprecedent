@@ -212,6 +212,32 @@ def test_service_imports_failing_openclaw_command_without_output(db_path) -> Non
     assert any(item.decision_type.value == "retry_or_recover" for item in decisions)
 
 
+def test_service_imports_openclaw_file_operations(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = Path(__file__).parent / "fixtures" / "openclaw_sessions" / "file-ops-session.jsonl"
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_file_ops",
+        title="Imported OpenClaw file ops session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_file_ops"
+    assert len(result.imported_events) == 12
+
+    events = service.list_events("case_session_file_ops")
+    file_reads = [event for event in events if event.event_type.value == "file.read"]
+    file_writes = [event for event in events if event.event_type.value == "file.write"]
+    assert len(file_reads) == 1
+    assert file_reads[0].payload["path"] == "docs/product/mvp-roadmap.md"
+    assert len(file_writes) == 1
+    assert file_writes[0].payload["path"] == "docs/architecture/openclaw-silent-collection.md"
+
+    decisions = service.extract_decisions("case_session_file_ops")
+    assert any(item.decision_type.value == "apply_change" for item in decisions)
+
+
 def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"

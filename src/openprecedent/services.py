@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import shlex
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -1158,27 +1159,66 @@ def _normalize_openclaw_tool_call_events(
     tool_call_id: str | None,
     arguments: dict[str, object],
 ) -> list[AppendEventInput]:
-    if tool_name != "exec_command":
-        return []
+    if tool_name == "exec_command":
+        command = _string_or_none(arguments.get("cmd"))
+        if command is None:
+            return []
 
-    command = _string_or_none(arguments.get("cmd"))
-    if command is None:
-        return []
+        events = [
+            AppendEventInput(
+                event_id=f"evt_command_started_{record_id}_{index}",
+                event_type=EventType.COMMAND_STARTED,
+                actor=EventActor.AGENT,
+                timestamp=timestamp,
+                parent_event_id=parent_id,
+                payload={
+                    "command": command,
+                    "tool_call_id": tool_call_id,
+                    "source": "openclaw.session",
+                },
+            )
+        ]
+        for read_index, path in enumerate(_extract_file_reads_from_command(command), start=1):
+            events.append(
+                AppendEventInput(
+                    event_id=f"evt_file_read_{record_id}_{index}_{read_index}",
+                    event_type=EventType.FILE_READ,
+                    actor=EventActor.AGENT,
+                    timestamp=timestamp,
+                    parent_event_id=parent_id,
+                    payload={
+                        "path": path,
+                        "command": command,
+                        "tool_call_id": tool_call_id,
+                        "source": "openclaw.session",
+                    },
+                )
+            )
+        return events
 
-    return [
-        AppendEventInput(
-            event_id=f"evt_command_started_{record_id}_{index}",
-            event_type=EventType.COMMAND_STARTED,
-            actor=EventActor.AGENT,
-            timestamp=timestamp,
-            parent_event_id=parent_id,
-            payload={
-                "command": command,
-                "tool_call_id": tool_call_id,
-                "source": "openclaw.session",
-            },
-        )
-    ]
+    if tool_name == "apply_patch":
+        patch_text = _string_or_none(arguments.get("patch"))
+        if patch_text is None:
+            return []
+        paths = _extract_paths_from_apply_patch(patch_text)
+        return [
+            AppendEventInput(
+                event_id=f"evt_file_write_{record_id}_{index}_{path_index}",
+                event_type=EventType.FILE_WRITE,
+                actor=EventActor.AGENT,
+                timestamp=timestamp,
+                parent_event_id=parent_id,
+                payload={
+                    "path": path,
+                    "summary": "Modified via apply_patch",
+                    "tool_call_id": tool_call_id,
+                    "source": "openclaw.session",
+                },
+            )
+            for path_index, path in enumerate(paths, start=1)
+        ]
+
+    return []
 
 
 def _normalize_openclaw_tool_result_events(
@@ -1225,3 +1265,49 @@ def _normalize_openclaw_tool_result_events(
 def _case_id_for_openclaw_session(session_id: str) -> str:
     normalized = "".join(ch for ch in session_id.lower() if ch.isalnum())
     return f"openclaw_{normalized[:24]}"
+
+
+def _extract_file_reads_from_command(command: str) -> list[str]:
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        return []
+
+    if not tokens:
+        return []
+
+    read_commands = {"cat", "sed", "head", "tail"}
+    if tokens[0] not in read_commands:
+        return []
+
+    paths: list[str] = []
+    for token in tokens[1:]:
+        if token.startswith("-"):
+            continue
+        if "/" not in token and "." not in Path(token).name:
+            continue
+        paths.append(token)
+    return _dedupe_preserve_order(paths)
+
+
+def _extract_paths_from_apply_patch(patch_text: str) -> list[str]:
+    paths: list[str] = []
+    for raw_line in patch_text.splitlines():
+        line = raw_line.strip()
+        for prefix in ("*** Update File: ", "*** Add File: ", "*** Delete File: ", "*** Move to: "):
+            if line.startswith(prefix):
+                path = line.removeprefix(prefix).strip()
+                if path:
+                    paths.append(path)
+    return _dedupe_preserve_order(paths)
+
+
+def _dedupe_preserve_order(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        deduped.append(value)
+    return deduped

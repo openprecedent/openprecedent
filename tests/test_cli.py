@@ -291,6 +291,46 @@ def test_cli_imports_failing_openclaw_command_without_output(capsys, db_path) ->
     assert command_completed[0]["payload"]["exit_code"] == 1
 
 
+def test_cli_imports_openclaw_file_operations(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "file-ops-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_file_ops_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_file_ops_cli"
+    assert imported["imported_event_count"] == 12
+
+    result = main(["extract", "decisions", "case_session_file_ops_cli"])
+    assert result == 0
+    decisions = json.loads(capsys.readouterr().out)
+    assert any(item["decision_type"] == "apply_change" for item in decisions)
+
+    result = main(["replay", "case", "case_session_file_ops_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    assert any(
+        event["event_type"] == "file.read"
+        and event["payload"]["path"] == "docs/product/mvp-roadmap.md"
+        for event in replay["events"]
+    )
+    assert any(
+        event["event_type"] == "file.write"
+        and event["payload"]["path"] == "docs/architecture/openclaw-silent-collection.md"
+        for event in replay["events"]
+    )
+
+
 def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
