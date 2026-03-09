@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 openprecedent = "openprecedent.cli:run"
+openprecedent-pm = "openprecedent.codex_pm:run"
 
 [dependency-groups]
 dev = [

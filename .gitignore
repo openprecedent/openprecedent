@@ -27,6 +27,8 @@ coverage/
 
 # Local review notes
 .codex-review
+.codex/pm/context/
+.codex/pm/updates/
 
 # Build
 build/
