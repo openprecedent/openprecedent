@@ -93,6 +93,7 @@ This report summarizes:
 - completion/failure mix
 - average event and decision counts
 - decision-type distribution
+- unsupported OpenClaw session record types that were skipped
 - whether each case produced file writes, recovery decisions, and usable precedents
 
 Use `--json` for machine-readable output to stdout.

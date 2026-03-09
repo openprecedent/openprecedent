@@ -215,6 +215,24 @@ def test_service_imports_failing_openclaw_command_without_output(db_path) -> Non
     assert any(item.decision_type.value == "retry_or_recover" for item in decisions)
 
 
+def test_service_reports_unsupported_openclaw_session_record_types(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "unsupported-record-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_unsupported_record",
+        title="Imported OpenClaw session with unsupported record",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_unsupported_record"
+    assert len(result.imported_events) == 4
+    assert result.unsupported_record_type_counts == {"checkpoint": 1}
+
+
 def test_service_imports_openclaw_file_operations(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = Path(__file__).parent / "fixtures" / "openclaw_sessions" / "file-ops-session.jsonl"
@@ -347,7 +365,11 @@ def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) 
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
     sessions_dir.mkdir()
-    for name in ("sample-session.jsonl", "failing-command-session.jsonl"):
+    for name in (
+        "sample-session.jsonl",
+        "failing-command-session.jsonl",
+        "unsupported-record-session.jsonl",
+    ):
         (sessions_dir / name).write_text(
             (fixture_dir / name).read_text(encoding="utf-8"),
             encoding="utf-8",
@@ -367,6 +389,12 @@ def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) 
                     "updatedAt": 1741498000000,
                     "label": "User session: failing command",
                 },
+                {
+                    "sessionId": "unsupported-record-session",
+                    "sessionFile": str(sessions_dir / "unsupported-record-session.jsonl"),
+                    "updatedAt": 1741499000000,
+                    "label": "User session: unsupported record",
+                },
             ]
         ),
         encoding="utf-8",
@@ -378,6 +406,7 @@ def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) 
                 "imported_session_ids": [
                     "failing-command-session",
                     "sample-session",
+                    "unsupported-record-session",
                 ]
             }
         ),
@@ -390,17 +419,21 @@ def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) 
         user_id="u1",
     )
 
-    assert report.total_sessions == 2
-    assert report.evaluated_cases == 2
+    assert report.total_sessions == 3
+    assert report.evaluated_cases == 3
     assert report.failed_cases == 0
     assert report.cases_with_precedents >= 1
     assert "retry_or_recover" in report.decision_type_counts
+    assert report.unsupported_record_type_counts == {"checkpoint": 1}
     assert {item.session_id for item in report.results} == {
         "sample-session",
         "failing-command-session",
+        "unsupported-record-session",
     }
     failing_result = next(item for item in report.results if item.session_id == "failing-command-session")
     assert failing_result.has_recovery is True
+    unsupported_result = next(item for item in report.results if item.session_id == "unsupported-record-session")
+    assert unsupported_result.unsupported_record_type_counts == {"checkpoint": 1}
 
 
 def test_service_precedent_prefers_semantically_related_case(db_path) -> None:
