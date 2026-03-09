@@ -58,6 +58,13 @@ class ConflictError(ValueError):
     pass
 
 
+class RuntimeTraceImportResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case: Case
+    imported_events: list[Event]
+
+
 @dataclass
 class OpenPrecedentService:
     store: SQLiteStore
@@ -127,6 +134,38 @@ class OpenPrecedentService:
                 payload = AppendEventInput.model_validate(normalized_item)
                 imported.append(self.append_event(case_id, payload))
         return imported
+
+    def import_openclaw_jsonl(
+        self,
+        path: Path,
+        *,
+        case_id: str,
+        title: str,
+        user_id: str | None = None,
+        agent_id: str = "openclaw",
+    ) -> RuntimeTraceImportResult:
+        case = self.store.get_case(case_id)
+        if case is None:
+            case = self.create_case(
+                CreateCaseInput(
+                    case_id=case_id,
+                    title=title,
+                    user_id=user_id,
+                    agent_id=agent_id,
+                )
+            )
+
+        imported: list[Event] = []
+        with path.open("r", encoding="utf-8") as handle:
+            for line_no, line in enumerate(handle, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                raw_item = json.loads(stripped)
+                normalized = self._normalize_openclaw_trace_line(raw_item, line_no)
+                imported.append(self.append_event(case_id, normalized))
+
+        return RuntimeTraceImportResult(case=case, imported_events=imported)
 
     def list_events(self, case_id: str) -> list[Event]:
         case = self.store.get_case(case_id)
@@ -414,6 +453,134 @@ class OpenPrecedentService:
         if case.final_summary:
             return case.final_summary
         return None
+
+    def _normalize_openclaw_trace_line(
+        self,
+        raw_item: dict[str, object],
+        line_no: int,
+    ) -> AppendEventInput:
+        kind = raw_item.get("kind")
+        if not isinstance(kind, str) or not kind:
+            raise ValueError(f"line {line_no}: kind is required for openclaw import")
+
+        timestamp = self._parse_optional_timestamp(raw_item.get("timestamp"), line_no)
+        event_id = _string_or_none(raw_item.get("event_id"))
+        payload = dict(raw_item)
+        payload.pop("kind", None)
+        payload.pop("timestamp", None)
+        payload.pop("event_id", None)
+
+        if kind == "user_message":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.MESSAGE_USER,
+                actor=EventActor.USER,
+                timestamp=timestamp,
+                payload={
+                    "message": _string_or_default(raw_item.get("content"), ""),
+                    "source": "openclaw",
+                },
+            )
+        if kind == "agent_message":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.MESSAGE_AGENT,
+                actor=EventActor.AGENT,
+                timestamp=timestamp,
+                payload={
+                    "message": _string_or_default(raw_item.get("content"), ""),
+                    "source": "openclaw",
+                },
+            )
+        if kind == "tool_call":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.TOOL_CALLED,
+                actor=EventActor.AGENT,
+                timestamp=timestamp,
+                payload={
+                    "tool_name": _string_or_default(raw_item.get("tool_name"), "unknown_tool"),
+                    "reason": _string_or_none(raw_item.get("reason")),
+                    "arguments": raw_item.get("arguments") if isinstance(raw_item.get("arguments"), dict) else {},
+                    "source": "openclaw",
+                },
+            )
+        if kind == "tool_result":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.TOOL_COMPLETED,
+                actor=EventActor.TOOL,
+                timestamp=timestamp,
+                payload=payload,
+            )
+        if kind == "command":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.COMMAND_COMPLETED,
+                actor=EventActor.SYSTEM,
+                timestamp=timestamp,
+                payload={
+                    "command": _string_or_default(raw_item.get("command"), ""),
+                    "exit_code": int(raw_item.get("exit_code", 0)),
+                    "stdout": _string_or_none(raw_item.get("stdout")),
+                    "stderr": _string_or_none(raw_item.get("stderr")),
+                    "source": "openclaw",
+                },
+            )
+        if kind == "file_write":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.FILE_WRITE,
+                actor=EventActor.AGENT,
+                timestamp=timestamp,
+                payload={
+                    "path": _string_or_default(raw_item.get("path"), "unknown_path"),
+                    "summary": _string_or_none(raw_item.get("summary")),
+                    "source": "openclaw",
+                },
+            )
+        if kind == "confirmation":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.USER_CONFIRMED,
+                actor=EventActor.USER,
+                timestamp=timestamp,
+                payload={
+                    "message": _string_or_default(raw_item.get("content"), ""),
+                    "source": "openclaw",
+                },
+            )
+        if kind == "completed":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.CASE_COMPLETED,
+                actor=EventActor.SYSTEM,
+                timestamp=timestamp,
+                payload={
+                    "summary": _string_or_none(raw_item.get("summary")) or "OpenClaw task completed",
+                    "source": "openclaw",
+                },
+            )
+        if kind == "failed":
+            return AppendEventInput(
+                event_id=event_id,
+                event_type=EventType.CASE_FAILED,
+                actor=EventActor.SYSTEM,
+                timestamp=timestamp,
+                payload={
+                    "summary": _string_or_none(raw_item.get("summary")) or "OpenClaw task failed",
+                    "source": "openclaw",
+                },
+            )
+
+        raise ValueError(f"line {line_no}: unsupported openclaw kind '{kind}'")
+
+    def _parse_optional_timestamp(self, value: object, line_no: int) -> datetime | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError(f"line {line_no}: timestamp must be an ISO-8601 string")
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
 def _string_or_none(value: object) -> str | None:

@@ -1,7 +1,10 @@
 import httpx
 import pytest
+from pathlib import Path
 
 from openprecedent.api import app
+from openprecedent.services import OpenPrecedentService
+from openprecedent.config import get_db_path
 
 
 async def _client() -> httpx.AsyncClient:
@@ -107,3 +110,25 @@ async def test_duplicate_case_returns_conflict(db_path) -> None:
 
         duplicate = await client.post("/cases", json={"case_id": "case_dup", "title": "Duplicate"})
         assert duplicate.status_code == 409
+
+
+def test_service_imports_openclaw_runtime_trace(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_path = Path(__file__).parent / "fixtures" / "openclaw_trace.jsonl"
+
+    result = service.import_openclaw_jsonl(
+        fixture_path,
+        case_id="case_runtime",
+        title="Runtime import",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_runtime"
+    assert len(result.imported_events) == 6
+
+    decisions = service.extract_decisions("case_runtime")
+    assert len(decisions) >= 4
+
+    replay = service.replay_case("case_runtime")
+    assert replay.case.status.value == "completed"
+    assert replay.summary == "Provided the context-graph document summary."

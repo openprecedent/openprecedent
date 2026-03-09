@@ -59,6 +59,15 @@ def build_parser() -> argparse.ArgumentParser:
     precedent_find.add_argument("case_id")
     precedent_find.add_argument("--limit", type=int, default=3)
 
+    runtime_parser = subparsers.add_parser("runtime")
+    runtime_subparsers = runtime_parser.add_subparsers(dest="action", required=True)
+    runtime_import = runtime_subparsers.add_parser("import-openclaw")
+    runtime_import.add_argument("path")
+    runtime_import.add_argument("--case-id", required=True)
+    runtime_import.add_argument("--title", required=True)
+    runtime_import.add_argument("--user-id")
+    runtime_import.add_argument("--agent-id", default="openclaw")
+
     return parser
 
 
@@ -80,6 +89,8 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_decisions(args, service)
         if args.resource == "precedent":
             return _handle_precedent(args, service)
+        if args.resource == "runtime":
+            return _handle_runtime(args, service)
     except KeyError as error:
         print(f"case not found: {error.args[0]}", file=sys.stderr)
         return 1
@@ -176,6 +187,26 @@ def _handle_precedent(args: argparse.Namespace, service: OpenPrecedentService) -
     precedents = service.find_precedents(args.case_id, limit=args.limit)
     _print_json([precedent.model_dump(mode="json") for precedent in precedents])
     return 0
+
+
+def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> int:
+    if args.action == "import-openclaw":
+        result = service.import_openclaw_jsonl(
+            Path(args.path),
+            case_id=args.case_id,
+            title=args.title,
+            user_id=args.user_id,
+            agent_id=args.agent_id,
+        )
+        _print_json(
+            {
+                "case": result.case.model_dump(mode="json"),
+                "imported_event_count": len(result.imported_events),
+                "events": [event.model_dump(mode="json") for event in result.imported_events],
+            }
+        )
+        return 0
+    return 2
 
 
 def _print_json(data: object) -> None:

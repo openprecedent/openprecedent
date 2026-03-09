@@ -155,3 +155,39 @@ def test_cli_import_jsonl(capsys, db_path, tmp_path: Path) -> None:
     assert result == 0
     imported = json.loads(capsys.readouterr().out)
     assert len(imported) == 2
+
+
+def test_cli_import_openclaw_runtime_trace(capsys, db_path) -> None:
+    fixture_path = Path(__file__).parent / "fixtures" / "openclaw_trace.jsonl"
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw",
+            str(fixture_path),
+            "--case-id",
+            "case_openclaw",
+            "--title",
+            "OpenClaw imported trace",
+            "--user-id",
+            "u1",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_openclaw"
+    assert imported["imported_event_count"] == 6
+
+    result = main(["extract", "decisions", "case_openclaw"])
+    assert result == 0
+    decisions = json.loads(capsys.readouterr().out)
+    assert any(item["decision_type"] == "plan" for item in decisions)
+    assert any(item["decision_type"] == "select_tool" for item in decisions)
+    assert any(item["decision_type"] == "apply_change" for item in decisions)
+    assert any(item["decision_type"] == "finalize" for item in decisions)
+
+    result = main(["replay", "case", "case_openclaw", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    assert replay["case"]["status"] == "completed"
+    assert replay["summary"] == "Provided the context-graph document summary."
