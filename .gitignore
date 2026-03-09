@@ -25,6 +25,9 @@ coverage/
 # Logs
 *.log
 
+# Local review notes
+.codex-review
+
 # Build
 build/
 tmp/

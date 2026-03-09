@@ -1,0 +1,15 @@
+# Default owner
+* @yaoyinnan
+
+# Product and research docs
+/docs/product/ @yaoyinnan
+/docs/research/ @yaoyinnan
+
+# Architecture and engineering docs
+/docs/architecture/ @yaoyinnan
+/docs/engineering/ @yaoyinnan
+
+# Implementation
+/src/ @yaoyinnan
+/tests/ @yaoyinnan
+/scripts/ @yaoyinnan

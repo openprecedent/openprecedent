@@ -1,11 +1,8 @@
 # Docs
 
-This directory is for project-local technical and operational documentation.
+Repository documentation is organized by function:
 
-Suggested initial docs:
-
-- architecture overview
-- event schema
-- decision schema
-- replay API
-- roadmap
+- `product/`: strategy and MVP product definition
+- `architecture/`: system design and object model
+- `research/`: market and competitive analysis
+- `engineering/`: implementation and technical choices
