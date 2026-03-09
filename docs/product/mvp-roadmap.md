@@ -2,7 +2,7 @@
 
 ## Current Status
 
-As of 2026-03-10, the MVP core loop is functionally implemented in-repo.
+As of 2026-03-10, the MVP core loop is implemented and validated in a real local target environment.
 
 Completed:
 
@@ -19,12 +19,14 @@ Completed:
 - follow-up user clarification extraction on multi-turn OpenClaw transcripts
 - anonymized real-session evaluation fixtures through the existing evaluation flow
 - precedent ranking improvements validated against anonymized real-session cases
+- real-environment scheduled collector rollout validated through cron
+- first collected OpenClaw session replayed and evaluated end-to-end in the target environment
 
 Still open:
 
-- connect the collector to a real scheduled/background job in the target environment
-- validate replay, extraction, and precedent quality against a growing set of real collected sessions
-- continue transcript mapping and ranking improvements only where real collected history reveals concrete gaps
+- reduce real-session noise in imported OpenClaw messages and derived decisions
+- improve transcript mapping coverage for real-world OpenClaw record types that still carry useful signal
+- strengthen precedent quality and evaluation depth on larger real-case histories
 
 ## Objective
 
@@ -213,7 +215,7 @@ Remaining gaps:
 
 Status:
 
-- partially completed
+- completed for MVP rollout
 
 Goal:
 
@@ -244,18 +246,21 @@ Completed work:
 - `checkpoint` session record mapping into replayable raw events
 - follow-up user clarification extraction on multi-turn session transcripts
 - precedent ranking tuned and regression-tested against anonymized real-session cases
+- validated cron-based rollout in the real target environment
+- first live collected session replayed and evaluated end-to-end
+- rollout findings and caveats documented in `docs/engineering/openclaw-collector-rollout-validation.md`
 
 Remaining gaps:
 
-- run the collector on a real schedule in the target machine environment
-- validate replay/extraction/precedent quality on a growing set of real collected sessions
-- extend transcript mapping or ranking only where real collected history exposes concrete shortcomings
+- reduce import-time noise and false-positive decision extraction on real collected sessions
+- validate replay/extraction/precedent quality on a broader set of real collected sessions
+- keep improving precedent ranking and record-type coverage as real history grows
 
 ## Next Tasks
 
-The next MVP work should focus on operationalizing and validating what already exists:
+The next MVP work should focus on improving quality on top of the validated live collection path:
 
-1. run `openprecedent runtime collect-openclaw-sessions --limit 1` on a schedule in the real environment
-2. collect a small set of real OpenClaw sessions and inspect replay / decision / precedent quality
-3. document the operational baseline for collector rollout, cursor behavior, failure recovery, and report review
-4. only extend transcript mapping or ranking when the newly collected session history exposes specific gaps
+1. strip operator policy and transport metadata noise from imported OpenClaw session messages
+2. tighten `clarify` decision extraction against real multi-turn sessions
+3. extend transcript mapping for additional OpenClaw record types only where live collection exposes useful signal
+4. grow the real-session evaluation set and re-tune precedent ranking against the larger history

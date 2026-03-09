@@ -11,9 +11,14 @@ It covers:
 - the fallback `cron` setup
 - the evaluation/report command for real collected sessions
 
+For the first validated live rollout and its observed caveats, see
+[`docs/engineering/openclaw-collector-rollout-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-rollout-validation.md).
+
 ## Wrapper Script
 
 Use [`scripts/run-collector.sh`](/workspace/02-projects/incubation/openprecedent/scripts/run-collector.sh) as the single entrypoint for scheduled collection.
+
+The wrapper prefers the repository-local `.venv/bin/openprecedent` binary when it exists, then falls back to `openprecedent` on `PATH`. This keeps scheduled runs aligned with the checked-out repository environment without requiring a separate global install.
 
 Default environment variables:
 
@@ -61,6 +66,8 @@ systemctl --user status openprecedent-collector.timer
 journalctl --user -u openprecedent-collector.service -n 50 --no-pager
 ```
 
+If `systemctl --user` cannot reach the user bus in the target environment, use the documented `cron` path instead of trying to force a partially working user-service setup.
+
 ## cron
 
 If `systemd --user` is unavailable, use the template at
@@ -73,6 +80,8 @@ Render a repo-path-aware crontab file with:
 crontab runtime/openprecedent-collector.cron
 crontab -l
 ```
+
+The rendered crontab writes the absolute home-directory session path directly into `OPENCLAW_SESSIONS_ROOT` because cron variable assignments do not expand `$HOME` reliably.
 
 ## Real Session Evaluation
 

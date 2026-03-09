@@ -295,8 +295,16 @@ class OpenPrecedentService:
         references: list[OpenClawSessionReference] = []
         index_path = sessions_root / "sessions.json"
         if index_path.exists():
-            entries = json.loads(index_path.read_text(encoding="utf-8"))
+            raw_entries = json.loads(index_path.read_text(encoding="utf-8"))
+            if isinstance(raw_entries, dict):
+                entries = raw_entries.values()
+            elif isinstance(raw_entries, list):
+                entries = raw_entries
+            else:
+                entries = []
             for item in entries:
+                if not isinstance(item, dict):
+                    continue
                 session_id = _string_or_none(item.get("sessionId"))
                 transcript_path = _string_or_none(item.get("sessionFile")) or _string_or_none(
                     item.get("transcriptPath")

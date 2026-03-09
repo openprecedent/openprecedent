@@ -3,7 +3,13 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-OPENPRECEDENT_BIN="${OPENPRECEDENT_BIN:-openprecedent}"
+if [[ -n "${OPENPRECEDENT_BIN:-}" ]]; then
+  OPENPRECEDENT_BIN="$OPENPRECEDENT_BIN"
+elif [[ -x "$ROOT_DIR/.venv/bin/openprecedent" ]]; then
+  OPENPRECEDENT_BIN="$ROOT_DIR/.venv/bin/openprecedent"
+else
+  OPENPRECEDENT_BIN="openprecedent"
+fi
 OPENPRECEDENT_DB="${OPENPRECEDENT_DB:-$ROOT_DIR/runtime/openprecedent.db}"
 OPENPRECEDENT_COLLECTOR_STATE="${OPENPRECEDENT_COLLECTOR_STATE:-$ROOT_DIR/runtime/openprecedent-collector-state.json}"
 OPENCLAW_SESSIONS_ROOT="${OPENCLAW_SESSIONS_ROOT:-$HOME/.openclaw/agents/main/sessions}"
