@@ -182,6 +182,36 @@ def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> 
     assert replay.summary == "Imported OpenClaw session: 9 events, 2 decisions, status=started"
 
 
+def test_service_imports_failing_openclaw_command_without_output(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "failing-command-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_failure",
+        title="Imported failing OpenClaw session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_failure"
+    assert len(result.imported_events) == 7
+
+    events = service.list_events("case_session_failure")
+    command_completed = [
+        event for event in events if event.event_type.value == "command.completed"
+    ]
+    assert len(command_completed) == 1
+    assert command_completed[0].payload["command"] == "exec_command"
+    assert command_completed[0].payload["exit_code"] == 1
+    assert command_completed[0].payload["stdout"] is None
+    assert command_completed[0].payload["stderr"] is None
+
+    decisions = service.extract_decisions("case_session_failure")
+    assert any(item.decision_type.value == "retry_or_recover" for item in decisions)
+
+
 def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"

@@ -256,6 +256,41 @@ def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path
     assert any(event["event_type"] == "command.completed" for event in replay["events"])
 
 
+def test_cli_imports_failing_openclaw_command_without_output(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "failing-command-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_failure_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_failure_cli"
+    assert imported["imported_event_count"] == 7
+
+    result = main(["extract", "decisions", "case_session_failure_cli"])
+    assert result == 0
+    decisions = json.loads(capsys.readouterr().out)
+    assert any(item["decision_type"] == "retry_or_recover" for item in decisions)
+
+    result = main(["replay", "case", "case_session_failure_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    command_completed = [
+        event for event in replay["events"] if event["event_type"] == "command.completed"
+    ]
+    assert len(command_completed) == 1
+    assert command_completed[0]["payload"]["exit_code"] == 1
+
+
 def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
