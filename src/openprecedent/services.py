@@ -115,6 +115,7 @@ class EvaluationCaseSpec(BaseModel):
     case_id: str
     title: str
     trace_path: str
+    source_format: str = "openclaw_trace"
     expected_decision_types: list[DecisionType]
     expected_precedent_case_ids: list[str] = Field(default_factory=list)
 
@@ -440,11 +441,22 @@ class OpenPrecedentService:
         imported_case_ids: list[str] = []
         for case_spec in suite.cases:
             trace_path = (base_dir / case_spec.trace_path).resolve()
-            self.import_openclaw_jsonl(
-                trace_path,
-                case_id=case_spec.case_id,
-                title=case_spec.title,
-            )
+            if case_spec.source_format == "openclaw_trace":
+                self.import_openclaw_jsonl(
+                    trace_path,
+                    case_id=case_spec.case_id,
+                    title=case_spec.title,
+                )
+            elif case_spec.source_format == "openclaw_session":
+                self.import_openclaw_session(
+                    trace_path,
+                    case_id=case_spec.case_id,
+                    title=case_spec.title,
+                )
+            else:
+                raise ValueError(
+                    f"unsupported evaluation source_format '{case_spec.source_format}'"
+                )
             self.extract_decisions(case_spec.case_id)
             imported_case_ids.append(case_spec.case_id)
 

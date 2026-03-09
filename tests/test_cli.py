@@ -538,6 +538,17 @@ def test_cli_evaluates_fixture_suite(capsys, db_path) -> None:
     assert report["passed_cases"] == 3
 
 
+def test_cli_evaluates_real_session_fixture_suite(capsys, db_path) -> None:
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
+
+    result = main(["eval", "fixtures", str(suite_path), "--json"])
+    assert result == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["total_cases"] == 3
+    assert report["failed_cases"] == 0
+    assert report["passed_cases"] == 3
+
+
 def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
