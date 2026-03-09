@@ -3,10 +3,12 @@ from __future__ import annotations
 import json
 import sqlite3
 import shlex
+import statistics
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+import re
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -142,6 +144,44 @@ class EvaluationReport(BaseModel):
     passed_cases: int
     failed_cases: int
     results: list[EvaluationCaseResult]
+
+
+class CollectedSessionEvaluationResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str
+    case_id: str
+    title: str
+    transcript_path: str
+    status: str
+    event_count: int
+    decision_count: int
+    precedent_count: int
+    top_precedent_case_id: str | None = None
+    top_precedent_score: int | None = None
+    has_file_write: bool = False
+    has_recovery: bool = False
+    final_summary: str | None = None
+
+
+class CollectedSessionEvaluationReport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    generated_at: datetime
+    sessions_root: str
+    state_path: str
+    total_sessions: int
+    evaluated_cases: int
+    completed_cases: int
+    failed_cases: int
+    cases_with_precedents: int
+    cases_with_file_writes: int
+    cases_with_recovery: int
+    average_event_count: float
+    average_decision_count: float
+    decision_type_counts: dict[str, int]
+    missing_session_ids: list[str] = Field(default_factory=list)
+    results: list[CollectedSessionEvaluationResult]
 
 
 @dataclass
@@ -440,6 +480,90 @@ class OpenPrecedentService:
             results=results,
         )
 
+    def evaluate_collected_openclaw_sessions(
+        self,
+        sessions_root: Path,
+        *,
+        state_path: Path,
+        limit: int | None = None,
+        user_id: str | None = None,
+        agent_id: str = "openclaw",
+    ) -> CollectedSessionEvaluationReport:
+        state = self._load_openclaw_collection_state(state_path)
+        imported_session_ids = set(state.imported_session_ids)
+        references = self.list_openclaw_sessions(sessions_root, limit=max(len(imported_session_ids), 1_000))
+        selected_references = [item for item in references if item.session_id in imported_session_ids]
+        if limit is not None:
+            selected_references = selected_references[:limit]
+
+        decision_type_counts: Counter[str] = Counter()
+        results: list[CollectedSessionEvaluationResult] = []
+        missing_session_ids: list[str] = []
+
+        for reference in selected_references:
+            case_id = _case_id_for_openclaw_session(reference.session_id)
+            case = self.store.get_case(case_id)
+            if case is None:
+                import_result = self.import_openclaw_session(
+                    Path(reference.transcript_path),
+                    case_id=case_id,
+                    title=reference.label or f"OpenClaw session {reference.session_id}",
+                    user_id=user_id,
+                    agent_id=agent_id,
+                )
+                case = import_result.case
+
+            events = self.list_events(case_id)
+            decisions = self.extract_decisions(case_id)
+            precedents = self.find_precedents(case_id, limit=3)
+            decision_type_counts.update(decision.decision_type.value for decision in decisions)
+
+            results.append(
+                CollectedSessionEvaluationResult(
+                    session_id=reference.session_id,
+                    case_id=case_id,
+                    title=case.title,
+                    transcript_path=reference.transcript_path,
+                    status=case.status.value,
+                    event_count=len(events),
+                    decision_count=len(decisions),
+                    precedent_count=len(precedents),
+                    top_precedent_case_id=precedents[0].case_id if precedents else None,
+                    top_precedent_score=precedents[0].similarity_score if precedents else None,
+                    has_file_write=any(event.event_type == EventType.FILE_WRITE for event in events),
+                    has_recovery=any(
+                        decision.decision_type == DecisionType.RETRY_OR_RECOVER
+                        for decision in decisions
+                    ),
+                    final_summary=case.final_summary,
+                )
+            )
+
+        selected_session_ids = {item.session_id for item in selected_references}
+        for session_id in state.imported_session_ids:
+            if session_id not in selected_session_ids:
+                missing_session_ids.append(session_id)
+
+        event_counts = [item.event_count for item in results]
+        decision_counts = [item.decision_count for item in results]
+        return CollectedSessionEvaluationReport(
+            generated_at=datetime.now(UTC),
+            sessions_root=str(sessions_root),
+            state_path=str(state_path),
+            total_sessions=len(state.imported_session_ids) if limit is None else len(selected_references),
+            evaluated_cases=len(results),
+            completed_cases=sum(1 for item in results if item.status == CaseStatus.COMPLETED.value),
+            failed_cases=sum(1 for item in results if item.status == CaseStatus.FAILED.value),
+            cases_with_precedents=sum(1 for item in results if item.precedent_count > 0),
+            cases_with_file_writes=sum(1 for item in results if item.has_file_write),
+            cases_with_recovery=sum(1 for item in results if item.has_recovery),
+            average_event_count=statistics.fmean(event_counts) if event_counts else 0.0,
+            average_decision_count=statistics.fmean(decision_counts) if decision_counts else 0.0,
+            decision_type_counts=dict(sorted(decision_type_counts.items())),
+            missing_session_ids=missing_session_ids,
+            results=results,
+        )
+
     def list_events(self, case_id: str) -> list[Event]:
         case = self.store.get_case(case_id)
         if case is None:
@@ -677,11 +801,29 @@ class OpenPrecedentService:
     def _fingerprint(self, case: Case, events: list[Event], decisions: list[Decision]) -> dict[str, object]:
         event_types = Counter(event.event_type.value for event in events)
         decision_types = Counter(decision.decision_type.value for decision in decisions)
+        tool_names = sorted(
+            {
+                tool_name
+                for event in events
+                if (tool_name := _string_or_none(event.payload.get("tool_name"))) is not None
+            }
+        )
+        file_paths = sorted(
+            {
+                Path(path).name
+                for event in events
+                if (path := _string_or_none(event.payload.get("path"))) is not None
+            }
+        )
+        keywords = sorted(self._case_keywords(case, events, decisions))
         return {
             "status": case.status.value,
             "has_file_write": event_types[EventType.FILE_WRITE.value] > 0,
             "has_recovery": decision_types[DecisionType.RETRY_OR_RECOVER.value] > 0,
             "tool_count": event_types[EventType.TOOL_CALLED.value],
+            "tool_names": tool_names,
+            "file_paths": file_paths,
+            "keywords": keywords,
             "decision_types": dict(decision_types),
         }
 
@@ -707,7 +849,14 @@ class OpenPrecedentService:
             score += 3
             similarities.append("same decision shape")
         else:
-            differences.append("different decision shape")
+            current_decision_keys = set(current_decisions)
+            other_decision_keys = set(other_decisions)
+            shared_decisions = sorted(current_decision_keys & other_decision_keys)
+            if shared_decisions:
+                score += min(len(shared_decisions), 3)
+                similarities.append("shared decision types: " + ",".join(shared_decisions))
+            else:
+                differences.append("different decision shape")
 
         tool_delta = abs(int(current["tool_count"]) - int(other["tool_count"]))
         if tool_delta == 0:
@@ -719,7 +868,48 @@ class OpenPrecedentService:
         else:
             differences.append("different tool call count")
 
+        shared_tools = sorted(set(current["tool_names"]) & set(other["tool_names"]))
+        if shared_tools:
+            score += min(len(shared_tools), 2)
+            similarities.append("shared tools: " + ",".join(shared_tools[:3]))
+        else:
+            differences.append("different tools")
+
+        shared_paths = sorted(set(current["file_paths"]) & set(other["file_paths"]))
+        if shared_paths:
+            score += min(len(shared_paths), 2)
+            similarities.append("shared file targets: " + ",".join(shared_paths[:3]))
+
+        shared_keywords = sorted(set(current["keywords"]) & set(other["keywords"]))
+        if shared_keywords:
+            score += min(len(shared_keywords), 4)
+            similarities.append("shared keywords: " + ",".join(shared_keywords[:4]))
+        else:
+            differences.append("different task keywords")
+
         return score, similarities or ["similar case structure"], differences
+
+    def _case_keywords(self, case: Case, events: list[Event], decisions: list[Decision]) -> set[str]:
+        texts: list[str] = [case.title]
+        if case.final_summary:
+            texts.append(case.final_summary)
+
+        for event in events:
+            for key in ("message", "path", "tool_name", "command"):
+                value = _string_or_none(event.payload.get(key))
+                if value:
+                    texts.append(value)
+
+        for decision in decisions:
+            texts.append(decision.title)
+            texts.append(decision.chosen_action)
+            if decision.outcome:
+                texts.append(decision.outcome)
+
+        keywords: set[str] = set()
+        for text in texts:
+            keywords.update(_tokenize_keywords(text))
+        return keywords
 
     def _build_reusable_takeaway(self, case: Case, decisions: list[Decision]) -> str | None:
         if decisions:
@@ -1108,6 +1298,24 @@ def _parse_epoch_millis(value: object) -> datetime | None:
     return None
 
 
+def _tokenize_keywords(text: str) -> set[str]:
+    tokens = {
+        item
+        for item in re.findall(r"[a-z0-9_./-]+", text.lower())
+        if len(item) >= 3 and item not in _STOP_WORDS
+    }
+    expanded: set[str] = set()
+    for token in tokens:
+        expanded.add(token)
+        if "/" in token or "." in token or "-" in token or "_" in token:
+            expanded.update(
+                part
+                for part in re.split(r"[/._-]+", token)
+                if len(part) >= 3 and part not in _STOP_WORDS
+            )
+    return expanded
+
+
 def _extract_openclaw_text_segments(content: list[object]) -> list[str]:
     segments: list[str] = []
     for item in content:
@@ -1279,6 +1487,28 @@ def _normalize_openclaw_tool_result_events(
             },
         )
     ]
+
+
+_STOP_WORDS = {
+    "the",
+    "and",
+    "for",
+    "with",
+    "that",
+    "this",
+    "from",
+    "into",
+    "will",
+    "then",
+    "case",
+    "openclaw",
+    "session",
+    "docs",
+    "file",
+    "tool",
+    "command",
+    "agent",
+}
 
 
 def _case_id_for_openclaw_session(session_id: str) -> str:

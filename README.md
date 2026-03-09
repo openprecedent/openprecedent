@@ -53,7 +53,12 @@ openprecedent/
 
 ## Current Status
 
-The repository currently contains the first documentation set and Python project scaffold. Dependencies have not yet been installed in this environment.
+The repository now includes:
+
+- local import and collector flows for OpenClaw session transcripts
+- fixture-based evaluation
+- collected-session evaluation/reporting
+- operational `systemd` and `cron` templates plus installer script for collector scheduling
 
 ## License
 

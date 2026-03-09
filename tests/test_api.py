@@ -1,10 +1,13 @@
+import json
 import httpx
 import pytest
 from pathlib import Path
 
 from openprecedent.api import app
 from openprecedent.services import OpenPrecedentService
+from openprecedent.services import AppendEventInput, CreateCaseInput
 from openprecedent.config import get_db_path
+from openprecedent.schemas import EventActor, EventType
 
 
 async def _client() -> httpx.AsyncClient:
@@ -337,3 +340,123 @@ def test_service_evaluates_fixture_suite(db_path) -> None:
     assert report.total_cases == 3
     assert report.failed_cases == 0
     assert report.passed_cases == 3
+
+
+def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    for name in ("sample-session.jsonl", "failing-command-session.jsonl"):
+        (sessions_dir / name).write_text(
+            (fixture_dir / name).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+    (sessions_dir / "sessions.json").write_text(
+        json.dumps(
+            [
+                {
+                    "sessionId": "sample-session",
+                    "sessionFile": str(sessions_dir / "sample-session.jsonl"),
+                    "updatedAt": 1741497000000,
+                    "label": "User session: summarize context graph",
+                },
+                {
+                    "sessionId": "failing-command-session",
+                    "sessionFile": str(sessions_dir / "failing-command-session.jsonl"),
+                    "updatedAt": 1741498000000,
+                    "label": "User session: failing command",
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    state_path = tmp_path / "collector-state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "imported_session_ids": [
+                    "failing-command-session",
+                    "sample-session",
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = service.evaluate_collected_openclaw_sessions(
+        sessions_dir,
+        state_path=state_path,
+        user_id="u1",
+    )
+
+    assert report.total_sessions == 2
+    assert report.evaluated_cases == 2
+    assert report.failed_cases == 0
+    assert report.cases_with_precedents >= 1
+    assert "retry_or_recover" in report.decision_type_counts
+    assert {item.session_id for item in report.results} == {
+        "sample-session",
+        "failing-command-session",
+    }
+    failing_result = next(item for item in report.results if item.session_id == "failing-command-session")
+    assert failing_result.has_recovery is True
+
+
+def test_service_precedent_prefers_semantically_related_case(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+
+    cases = [
+        (
+            "case_semantic_current",
+            "Summarize roadmap docs",
+            [
+                ("message.user", "user", {"message": "Summarize the roadmap docs and collection guidance"}),
+                ("message.agent", "agent", {"message": "I will inspect the roadmap docs and summarize them."}),
+                ("tool.called", "agent", {"tool_name": "rg", "reason": "search roadmap docs"}),
+                ("file.write", "agent", {"path": "docs/roadmap-summary.md", "summary": "wrote roadmap summary"}),
+                ("case.completed", "system", {"summary": "roadmap summary delivered"}),
+            ],
+        ),
+        (
+            "case_semantic_related",
+            "Summarize collection docs",
+            [
+                ("message.user", "user", {"message": "Summarize the collection docs for OpenClaw"}),
+                ("message.agent", "agent", {"message": "I will inspect collection docs and summarize them."}),
+                ("tool.called", "agent", {"tool_name": "rg", "reason": "search collection docs"}),
+                ("file.write", "agent", {"path": "docs/collection-summary.md", "summary": "wrote collection summary"}),
+                ("case.completed", "system", {"summary": "collection summary delivered"}),
+            ],
+        ),
+        (
+            "case_semantic_irrelevant",
+            "Fix failing tests",
+            [
+                ("message.user", "user", {"message": "Fix the failing pytest suite"}),
+                ("message.agent", "agent", {"message": "I will inspect the failing tests and patch them."}),
+                ("tool.called", "agent", {"tool_name": "pytest", "reason": "run test suite"}),
+                ("file.write", "agent", {"path": "tests/test_cli.py", "summary": "fixed failing tests"}),
+                ("case.completed", "system", {"summary": "tests fixed"}),
+            ],
+        ),
+    ]
+
+    for case_id, title, events in cases:
+        service.create_case(CreateCaseInput(case_id=case_id, title=title))
+        for index, (event_type, actor, payload) in enumerate(events, start=1):
+            service.append_event(
+                case_id,
+                AppendEventInput(
+                    event_type=EventType(event_type),
+                    actor=EventActor(actor),
+                    payload=payload,
+                    sequence_no=index,
+                ),
+            )
+        service.extract_decisions(case_id)
+
+    precedents = service.find_precedents("case_semantic_current", limit=2)
+    assert len(precedents) == 2
+    assert precedents[0].case_id == "case_semantic_related"
+    assert precedents[0].similarity_score > precedents[1].similarity_score

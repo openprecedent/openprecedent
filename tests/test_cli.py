@@ -455,3 +455,66 @@ def test_cli_evaluates_fixture_suite(capsys, db_path) -> None:
     assert report["total_cases"] == 3
     assert report["failed_cases"] == 0
     assert report["passed_cases"] == 3
+
+
+def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    for name in ("sample-session.jsonl", "failing-command-session.jsonl"):
+        (sessions_dir / name).write_text(
+            (fixture_dir / name).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+    (sessions_dir / "sessions.json").write_text(
+        json.dumps(
+            [
+                {
+                    "sessionId": "sample-session",
+                    "sessionFile": str(sessions_dir / "sample-session.jsonl"),
+                    "updatedAt": 1741497000000,
+                    "label": "User session: summarize context graph",
+                },
+                {
+                    "sessionId": "failing-command-session",
+                    "sessionFile": str(sessions_dir / "failing-command-session.jsonl"),
+                    "updatedAt": 1741498000000,
+                    "label": "User session: failing command",
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    state_path = tmp_path / "collector-state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "imported_session_ids": [
+                    "failing-command-session",
+                    "sample-session",
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    report_path = tmp_path / "collected-report.json"
+
+    result = main(
+        [
+            "eval",
+            "collected-openclaw-sessions",
+            "--sessions-root",
+            str(sessions_dir),
+            "--state-file",
+            str(state_path),
+            "--report-file",
+            str(report_path),
+            "--json",
+        ]
+    )
+    assert result == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["total_sessions"] == 2
+    assert report["evaluated_cases"] == 2
+    assert "retry_or_recover" in report["decision_type_counts"]
+    assert report_path.exists()
