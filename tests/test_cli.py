@@ -331,6 +331,28 @@ def test_cli_imports_openclaw_file_operations(capsys, db_path) -> None:
     )
 
 
+def test_cli_reports_unsupported_openclaw_session_record_types(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "unsupported-record-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_unsupported_record_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_unsupported_record_cli"
+    assert imported["imported_event_count"] == 4
+    assert imported["unsupported_record_type_counts"] == {"checkpoint": 1}
+
+
 def test_cli_imports_openclaw_view_image_as_file_read(capsys, db_path) -> None:
     fixture_path = (
         Path(__file__).parent / "fixtures" / "openclaw_sessions" / "view-image-session.jsonl"
@@ -461,7 +483,11 @@ def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Pa
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
     sessions_dir.mkdir()
-    for name in ("sample-session.jsonl", "failing-command-session.jsonl"):
+    for name in (
+        "sample-session.jsonl",
+        "failing-command-session.jsonl",
+        "unsupported-record-session.jsonl",
+    ):
         (sessions_dir / name).write_text(
             (fixture_dir / name).read_text(encoding="utf-8"),
             encoding="utf-8",
@@ -481,6 +507,12 @@ def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Pa
                     "updatedAt": 1741498000000,
                     "label": "User session: failing command",
                 },
+                {
+                    "sessionId": "unsupported-record-session",
+                    "sessionFile": str(sessions_dir / "unsupported-record-session.jsonl"),
+                    "updatedAt": 1741499000000,
+                    "label": "User session: unsupported record",
+                },
             ]
         ),
         encoding="utf-8",
@@ -492,6 +524,7 @@ def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Pa
                 "imported_session_ids": [
                     "failing-command-session",
                     "sample-session",
+                    "unsupported-record-session",
                 ]
             }
         ),
@@ -514,7 +547,52 @@ def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Pa
     )
     assert result == 0
     report = json.loads(capsys.readouterr().out)
-    assert report["total_sessions"] == 2
-    assert report["evaluated_cases"] == 2
+    assert report["total_sessions"] == 3
+    assert report["evaluated_cases"] == 3
     assert "retry_or_recover" in report["decision_type_counts"]
+    assert report["unsupported_record_type_counts"] == {"checkpoint": 1}
     assert report_path.exists()
+
+
+def test_cli_renders_unsupported_record_type_summary_for_collected_sessions(capsys, db_path, tmp_path: Path) -> None:
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    name = "unsupported-record-session.jsonl"
+    (sessions_dir / name).write_text(
+        (fixture_dir / name).read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (sessions_dir / "sessions.json").write_text(
+        json.dumps(
+            [
+                {
+                    "sessionId": "unsupported-record-session",
+                    "sessionFile": str(sessions_dir / name),
+                    "updatedAt": 1741499000000,
+                    "label": "User session: unsupported record",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    state_path = tmp_path / "collector-state.json"
+    state_path.write_text(
+        json.dumps({"imported_session_ids": ["unsupported-record-session"]}),
+        encoding="utf-8",
+    )
+
+    result = main(
+        [
+            "eval",
+            "collected-openclaw-sessions",
+            "--sessions-root",
+            str(sessions_dir),
+            "--state-file",
+            str(state_path),
+        ]
+    )
+    assert result == 0
+    rendered = capsys.readouterr().out
+    assert "Unsupported record types: checkpoint=1" in rendered
+    assert "unsupported record types: checkpoint=1" in rendered

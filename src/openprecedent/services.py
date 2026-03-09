@@ -69,6 +69,7 @@ class RuntimeTraceImportResult(BaseModel):
 
     case: Case
     imported_events: list[Event]
+    unsupported_record_type_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class OpenClawSessionReference(BaseModel):
@@ -97,6 +98,7 @@ class CollectedSessionResult(BaseModel):
     case_id: str
     title: str
     imported_event_count: int
+    unsupported_record_type_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class OpenClawCollectionResult(BaseModel):
@@ -162,6 +164,7 @@ class CollectedSessionEvaluationResult(BaseModel):
     has_file_write: bool = False
     has_recovery: bool = False
     final_summary: str | None = None
+    unsupported_record_type_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class CollectedSessionEvaluationReport(BaseModel):
@@ -180,6 +183,7 @@ class CollectedSessionEvaluationReport(BaseModel):
     average_event_count: float
     average_decision_count: float
     decision_type_counts: dict[str, int]
+    unsupported_record_type_counts: dict[str, int] = Field(default_factory=dict)
     missing_session_ids: list[str] = Field(default_factory=list)
     results: list[CollectedSessionEvaluationResult]
 
@@ -357,21 +361,28 @@ class OpenPrecedentService:
             )
 
         imported: list[Event] = []
+        unsupported_record_type_counts: Counter[str] = Counter()
         with transcript_path.open("r", encoding="utf-8") as handle:
             for line_no, line in enumerate(handle, start=1):
                 stripped = line.strip()
                 if not stripped:
                     continue
                 raw_item = json.loads(stripped)
-                normalized_events = self._normalize_openclaw_session_line(
+                normalized_events, unsupported_record_type = self._normalize_openclaw_session_line(
                     raw_item,
                     line_no,
                     transcript_path=transcript_path,
                 )
+                if unsupported_record_type is not None:
+                    unsupported_record_type_counts[unsupported_record_type] += 1
                 for normalized in normalized_events:
                     imported.append(self.append_event(case_id, normalized))
 
-        return RuntimeTraceImportResult(case=case, imported_events=imported)
+        return RuntimeTraceImportResult(
+            case=case,
+            imported_events=imported,
+            unsupported_record_type_counts=dict(sorted(unsupported_record_type_counts.items())),
+        )
 
     def collect_openclaw_sessions(
         self,
@@ -407,6 +418,7 @@ class OpenPrecedentService:
                     case_id=result.case.case_id,
                     title=result.case.title,
                     imported_event_count=len(result.imported_events),
+                    unsupported_record_type_counts=result.unsupported_record_type_counts,
                 )
             )
             seen.add(reference.session_id)
@@ -497,6 +509,7 @@ class OpenPrecedentService:
             selected_references = selected_references[:limit]
 
         decision_type_counts: Counter[str] = Counter()
+        unsupported_record_type_counts: Counter[str] = Counter()
         results: list[CollectedSessionEvaluationResult] = []
         missing_session_ids: list[str] = []
 
@@ -512,11 +525,20 @@ class OpenPrecedentService:
                     agent_id=agent_id,
                 )
                 case = import_result.case
+            else:
+                import_result = RuntimeTraceImportResult(
+                    case=case,
+                    imported_events=[],
+                    unsupported_record_type_counts=self._summarize_unsupported_openclaw_session_record_types(
+                        Path(reference.transcript_path)
+                    ),
+                )
 
             events = self.list_events(case_id)
             decisions = self.extract_decisions(case_id)
             precedents = self.find_precedents(case_id, limit=3)
             decision_type_counts.update(decision.decision_type.value for decision in decisions)
+            unsupported_record_type_counts.update(import_result.unsupported_record_type_counts)
 
             results.append(
                 CollectedSessionEvaluationResult(
@@ -536,6 +558,7 @@ class OpenPrecedentService:
                         for decision in decisions
                     ),
                     final_summary=case.final_summary,
+                    unsupported_record_type_counts=import_result.unsupported_record_type_counts,
                 )
             )
 
@@ -560,6 +583,7 @@ class OpenPrecedentService:
             average_event_count=statistics.fmean(event_counts) if event_counts else 0.0,
             average_decision_count=statistics.fmean(decision_counts) if decision_counts else 0.0,
             decision_type_counts=dict(sorted(decision_type_counts.items())),
+            unsupported_record_type_counts=dict(sorted(unsupported_record_type_counts.items())),
             missing_session_ids=missing_session_ids,
             results=results,
         )
@@ -1094,7 +1118,7 @@ class OpenPrecedentService:
         line_no: int,
         *,
         transcript_path: Path,
-    ) -> list[AppendEventInput]:
+    ) -> tuple[list[AppendEventInput], str | None]:
         record_type = raw_item.get("type")
         if not isinstance(record_type, str) or not record_type:
             raise ValueError(f"line {line_no}: type is required for openclaw session import")
@@ -1104,7 +1128,7 @@ class OpenPrecedentService:
         parent_id = _string_or_none(raw_item.get("parentId"))
 
         if record_type == "session":
-            return [
+            return ([
                 AppendEventInput(
                     event_id=f"evt_session_{record_id}",
                     event_type=EventType.CASE_STARTED,
@@ -1118,10 +1142,10 @@ class OpenPrecedentService:
                         "source": "openclaw.session",
                     },
                 )
-            ]
+            ], None)
 
         if record_type == "model_change":
-            return [
+            return ([
                 AppendEventInput(
                     event_id=f"evt_model_{record_id}",
                     event_type=EventType.MODEL_COMPLETED,
@@ -1134,14 +1158,14 @@ class OpenPrecedentService:
                         "source": "openclaw.session",
                     },
                 )
-            ]
+            ], None)
 
         if record_type != "message":
-            return []
+            return [], record_type
 
         message = raw_item.get("message")
         if not isinstance(message, dict):
-            return []
+            return [], None
 
         role = _string_or_none(message.get("role"))
         content = message.get("content")
@@ -1167,7 +1191,7 @@ class OpenPrecedentService:
                         },
                     )
                 )
-            return normalized_events
+            return normalized_events, None
 
         if role == "assistant":
             visible_chunks = _extract_openclaw_visible_assistant_text(content)
@@ -1221,7 +1245,7 @@ class OpenPrecedentService:
                         arguments=arguments,
                     )
                 )
-            return normalized_events
+            return normalized_events, None
 
         if role == "toolResult":
             text = "\n".join(text_chunks).strip()
@@ -1253,9 +1277,29 @@ class OpenPrecedentService:
                     details=message.get("details") if isinstance(message.get("details"), dict) else {},
                 )
             )
-            return normalized_events
+            return normalized_events, None
 
-        return []
+        return [], None
+
+    def _summarize_unsupported_openclaw_session_record_types(
+        self,
+        transcript_path: Path,
+    ) -> dict[str, int]:
+        unsupported_record_type_counts: Counter[str] = Counter()
+        with transcript_path.open("r", encoding="utf-8") as handle:
+            for line_no, line in enumerate(handle, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                raw_item = json.loads(stripped)
+                _, unsupported_record_type = self._normalize_openclaw_session_line(
+                    raw_item,
+                    line_no,
+                    transcript_path=transcript_path,
+                )
+                if unsupported_record_type is not None:
+                    unsupported_record_type_counts[unsupported_record_type] += 1
+        return dict(sorted(unsupported_record_type_counts.items()))
 
     def _load_openclaw_collection_state(self, state_path: Path) -> OpenClawCollectionState:
         if not state_path.exists():

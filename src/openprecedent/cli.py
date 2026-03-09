@@ -286,6 +286,7 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
                 "case": result.case.model_dump(mode="json"),
                 "transcript_path": str(transcript_path),
                 "imported_event_count": len(result.imported_events),
+                "unsupported_record_type_counts": result.unsupported_record_type_counts,
                 "events": [event.model_dump(mode="json") for event in result.imported_events],
             }
         )
@@ -374,6 +375,14 @@ def _handle_eval(args: argparse.Namespace, service: OpenPrecedentService) -> int
                     for decision_type, count in report.decision_type_counts.items()
                 )
             )
+        if report.unsupported_record_type_counts:
+            print(
+                "Unsupported record types: "
+                + ", ".join(
+                    f"{record_type}={count}"
+                    for record_type, count in report.unsupported_record_type_counts.items()
+                )
+            )
         if report.missing_session_ids:
             print("Missing sessions: " + ",".join(report.missing_session_ids))
         for result in report.results:
@@ -382,6 +391,14 @@ def _handle_eval(args: argparse.Namespace, service: OpenPrecedentService) -> int
                 f"events={result.event_count} decisions={result.decision_count} "
                 f"precedents={result.precedent_count}"
             )
+            if result.unsupported_record_type_counts:
+                print(
+                    "  unsupported record types: "
+                    + ", ".join(
+                        f"{record_type}={count}"
+                        for record_type, count in result.unsupported_record_type_counts.items()
+                    )
+                )
             if result.top_precedent_case_id is not None:
                 print(
                     f"  top precedent: {result.top_precedent_case_id} "
