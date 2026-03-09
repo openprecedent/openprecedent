@@ -70,12 +70,25 @@ Minimum review expectation for normal changes:
 3. at least one human review is completed
 4. PR is merged only after comments are resolved
 
+## Local Pre-Push Review
+
+This repository may also enforce a local pre-push review checkpoint through a Git hook.
+
+The intended behavior is:
+
+- before pushing, the author runs a Codex review
+- the author records the result in `.codex-review`
+- the pre-push hook blocks the push if no review note is present
+
+This is a lightweight reliability mechanism, not a substitute for PR review.
+
 ## Initial Rollout
 
 Phase 1:
 
 - use Codex for manual review
 - add markdownlint or Vale
+- install the local Codex pre-push hook
 
 Phase 2:
 

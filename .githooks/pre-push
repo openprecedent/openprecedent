@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+review_file="$repo_root/.codex-review"
+
+if [[ "${BYPASS_CODEX_REVIEW:-}" == "1" ]]; then
+  echo "Bypassing Codex review hook because BYPASS_CODEX_REVIEW=1"
+  exit 0
+fi
+
+if [[ ! -f "$review_file" ]]; then
+  cat <<'EOF'
+Push blocked: missing .codex-review
+
+Before pushing, run a Codex review for your staged or branch changes and write a short note to:
+  .codex-review
+
+Minimum content:
+  - scope reviewed
+  - findings or "no findings"
+  - remaining risks
+
+If you must bypass this hook temporarily, set:
+  BYPASS_CODEX_REVIEW=1
+EOF
+  exit 1
+fi
+
+if ! grep -Eq 'scope reviewed|no findings|remaining risks' "$review_file"; then
+  cat <<'EOF'
+Push blocked: .codex-review exists but is incomplete.
+
+Include at least:
+  - scope reviewed
+  - findings or "no findings"
+  - remaining risks
+EOF
+  exit 1
+fi
+
+echo "Codex review note detected."
