@@ -1,14 +1,14 @@
 ## Summary
 
-- 
+- Describe the change.
 
 ## Changes
 
-- 
+- List the main changes.
 
 ## Review Focus
 
-- 
+- Note what reviewers should focus on.
 
 ## Validation
 
@@ -18,4 +18,4 @@
 
 ## Risks
 
-- 
+- Describe remaining risks or write `none`.
