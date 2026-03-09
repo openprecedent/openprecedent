@@ -230,7 +230,31 @@ def test_service_reports_unsupported_openclaw_session_record_types(db_path) -> N
 
     assert result.case.case_id == "case_session_unsupported_record"
     assert len(result.imported_events) == 4
-    assert result.unsupported_record_type_counts == {"checkpoint": 1}
+    assert result.unsupported_record_type_counts == {"audit_marker": 1}
+
+
+def test_service_imports_openclaw_checkpoint_record_as_event(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "checkpoint-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_checkpoint",
+        title="Imported OpenClaw checkpoint session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_checkpoint"
+    assert len(result.imported_events) == 5
+    assert result.unsupported_record_type_counts == {}
+
+    events = service.list_events("case_session_checkpoint")
+    checkpoint_events = [event for event in events if event.event_type.value == "checkpoint.saved"]
+    assert len(checkpoint_events) == 1
+    assert checkpoint_events[0].payload["checkpoint_id"] == "checkpoint-record-1"
+    assert checkpoint_events[0].payload["status"] == "saved"
 
 
 def test_service_imports_openclaw_file_operations(db_path) -> None:
@@ -424,7 +448,7 @@ def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) 
     assert report.failed_cases == 0
     assert report.cases_with_precedents >= 1
     assert "retry_or_recover" in report.decision_type_counts
-    assert report.unsupported_record_type_counts == {"checkpoint": 1}
+    assert report.unsupported_record_type_counts == {"audit_marker": 1}
     assert {item.session_id for item in report.results} == {
         "sample-session",
         "failing-command-session",
@@ -433,7 +457,7 @@ def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) 
     failing_result = next(item for item in report.results if item.session_id == "failing-command-session")
     assert failing_result.has_recovery is True
     unsupported_result = next(item for item in report.results if item.session_id == "unsupported-record-session")
-    assert unsupported_result.unsupported_record_type_counts == {"checkpoint": 1}
+    assert unsupported_result.unsupported_record_type_counts == {"audit_marker": 1}
 
 
 def test_service_precedent_prefers_semantically_related_case(db_path) -> None:

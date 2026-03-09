@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class EventType(StrEnum):
     CASE_STARTED = "case.started"
+    CHECKPOINT_SAVED = "checkpoint.saved"
     MESSAGE_USER = "message.user"
     MESSAGE_AGENT = "message.agent"
     MODEL_INVOKED = "model.invoked"
