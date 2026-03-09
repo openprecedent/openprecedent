@@ -26,6 +26,11 @@ The first implementation target is a local single-agent workflow. The current go
 - Preserve a clear separation between raw events and derived decision records.
 - Prefer simple local-first development flows.
 - Once a PR branch has been merged, do not add new commits to that branch. Start a fresh branch from `upstream/main` for all follow-up work.
+- Track agent development as GitHub issues broken down to the smallest deliverable unit that can be completed and reviewed independently.
+- When an agent starts work on one issue, create a fresh branch from the latest `upstream/main` for that issue only.
+- After completing one issue, open exactly one PR for that issue instead of batching multiple issues into the same PR.
+- Link the PR to its issue in the PR body using a closing reference such as `Closes #24` so the issue is closed automatically when the PR is merged.
+- After a PR is merged, continue the next task on a new branch and a new PR linked to the next issue.
 
 ## Documentation Rules
 
