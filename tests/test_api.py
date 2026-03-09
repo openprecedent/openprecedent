@@ -135,7 +135,6 @@ def test_service_imports_openclaw_runtime_trace(db_path) -> None:
     assert replay.summary == "Provided the context-graph document summary."
     assert replay.artifacts
 
-
 def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
@@ -219,3 +218,14 @@ def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path
     )
     assert second.imported == []
     assert "sample-session" in second.skipped_session_ids
+
+
+def test_service_evaluates_fixture_suite(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "suite.json"
+
+    report = service.evaluate_openclaw_fixture_suite(suite_path)
+
+    assert report.total_cases == 3
+    assert report.failed_cases == 0
+    assert report.passed_cases == 3

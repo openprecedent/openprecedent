@@ -104,6 +104,45 @@ class OpenClawCollectionResult(BaseModel):
     state_path: str
 
 
+class EvaluationCaseSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str
+    title: str
+    trace_path: str
+    expected_decision_types: list[DecisionType]
+    expected_precedent_case_ids: list[str] = Field(default_factory=list)
+
+
+class EvaluationSuiteSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cases: list[EvaluationCaseSpec]
+
+
+class EvaluationCaseResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str
+    expected_decision_types: list[DecisionType]
+    actual_decision_types: list[DecisionType]
+    missing_decision_types: list[DecisionType]
+    extra_decision_types: list[DecisionType]
+    expected_precedent_case_ids: list[str]
+    actual_precedent_case_ids: list[str]
+    missing_precedent_case_ids: list[str]
+    passed: bool
+
+
+class EvaluationReport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total_cases: int
+    passed_cases: int
+    failed_cases: int
+    results: list[EvaluationCaseResult]
+
+
 @dataclass
 class OpenPrecedentService:
     store: SQLiteStore
@@ -339,6 +378,65 @@ class OpenPrecedentService:
             imported=imported,
             skipped_session_ids=skipped,
             state_path=str(state_path),
+        )
+
+    def evaluate_openclaw_fixture_suite(self, suite_path: Path) -> EvaluationReport:
+        suite = EvaluationSuiteSpec.model_validate_json(suite_path.read_text(encoding="utf-8"))
+        base_dir = suite_path.parent
+
+        imported_case_ids: list[str] = []
+        for case_spec in suite.cases:
+            trace_path = (base_dir / case_spec.trace_path).resolve()
+            self.import_openclaw_jsonl(
+                trace_path,
+                case_id=case_spec.case_id,
+                title=case_spec.title,
+            )
+            self.extract_decisions(case_spec.case_id)
+            imported_case_ids.append(case_spec.case_id)
+
+        results: list[EvaluationCaseResult] = []
+        for case_spec in suite.cases:
+            actual_decisions = self.list_decisions(case_spec.case_id)
+            actual_decision_types = [decision.decision_type for decision in actual_decisions]
+            expected_decision_types = case_spec.expected_decision_types
+
+            missing_decision_types = [
+                item for item in expected_decision_types if item not in actual_decision_types
+            ]
+            extra_decision_types = [
+                item for item in actual_decision_types if item not in expected_decision_types
+            ]
+
+            precedents = self.find_precedents(case_spec.case_id, limit=5)
+            actual_precedent_case_ids = [precedent.case_id for precedent in precedents]
+            missing_precedent_case_ids = [
+                item
+                for item in case_spec.expected_precedent_case_ids
+                if item not in actual_precedent_case_ids
+            ]
+
+            passed = not missing_decision_types and not missing_precedent_case_ids
+            results.append(
+                EvaluationCaseResult(
+                    case_id=case_spec.case_id,
+                    expected_decision_types=expected_decision_types,
+                    actual_decision_types=actual_decision_types,
+                    missing_decision_types=missing_decision_types,
+                    extra_decision_types=extra_decision_types,
+                    expected_precedent_case_ids=case_spec.expected_precedent_case_ids,
+                    actual_precedent_case_ids=actual_precedent_case_ids,
+                    missing_precedent_case_ids=missing_precedent_case_ids,
+                    passed=passed,
+                )
+            )
+
+        passed_cases = sum(1 for result in results if result.passed)
+        return EvaluationReport(
+            total_cases=len(results),
+            passed_cases=passed_cases,
+            failed_cases=len(results) - passed_cases,
+            results=results,
         )
 
     def list_events(self, case_id: str) -> list[Event]:

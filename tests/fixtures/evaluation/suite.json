@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "case_id": "eval_summary_a",
+      "title": "Evaluation summary case A",
+      "trace_path": "openclaw_summary_a.jsonl",
+      "expected_decision_types": ["plan", "select_tool", "apply_change", "finalize"],
+      "expected_precedent_case_ids": ["eval_summary_b"]
+    },
+    {
+      "case_id": "eval_summary_b",
+      "title": "Evaluation summary case B",
+      "trace_path": "openclaw_summary_b.jsonl",
+      "expected_decision_types": ["plan", "select_tool", "apply_change", "finalize"],
+      "expected_precedent_case_ids": ["eval_summary_a"]
+    },
+    {
+      "case_id": "eval_recovery",
+      "title": "Evaluation recovery case",
+      "trace_path": "openclaw_recovery.jsonl",
+      "expected_decision_types": ["plan", "select_tool", "retry_or_recover", "finalize"],
+      "expected_precedent_case_ids": []
+    }
+  ]
+}
