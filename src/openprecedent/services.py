@@ -80,6 +80,30 @@ class OpenClawSessionReference(BaseModel):
     is_active: bool = False
 
 
+class OpenClawCollectionState(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    imported_session_ids: list[str] = Field(default_factory=list)
+
+
+class CollectedSessionResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str
+    transcript_path: str
+    case_id: str
+    title: str
+    imported_event_count: int
+
+
+class OpenClawCollectionResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    imported: list[CollectedSessionResult]
+    skipped_session_ids: list[str] = Field(default_factory=list)
+    state_path: str
+
+
 @dataclass
 class OpenPrecedentService:
     store: SQLiteStore
@@ -268,6 +292,54 @@ class OpenPrecedentService:
                     imported.append(self.append_event(case_id, normalized))
 
         return RuntimeTraceImportResult(case=case, imported_events=imported)
+
+    def collect_openclaw_sessions(
+        self,
+        sessions_root: Path,
+        *,
+        state_path: Path,
+        limit: int = 1,
+        user_id: str | None = None,
+        agent_id: str = "openclaw",
+    ) -> OpenClawCollectionResult:
+        references = self.list_openclaw_sessions(sessions_root, limit=200)
+        state = self._load_openclaw_collection_state(state_path)
+        seen = set(state.imported_session_ids)
+
+        imported: list[CollectedSessionResult] = []
+        skipped: list[str] = []
+
+        for reference in references:
+            if reference.session_id in seen:
+                skipped.append(reference.session_id)
+                continue
+            result = self.import_openclaw_session(
+                Path(reference.transcript_path),
+                case_id=_case_id_for_openclaw_session(reference.session_id),
+                title=reference.label or f"OpenClaw session {reference.session_id}",
+                user_id=user_id,
+                agent_id=agent_id,
+            )
+            imported.append(
+                CollectedSessionResult(
+                    session_id=reference.session_id,
+                    transcript_path=reference.transcript_path,
+                    case_id=result.case.case_id,
+                    title=result.case.title,
+                    imported_event_count=len(result.imported_events),
+                )
+            )
+            seen.add(reference.session_id)
+            state.imported_session_ids.append(reference.session_id)
+            if len(imported) >= limit:
+                break
+
+        self._write_openclaw_collection_state(state_path, state)
+        return OpenClawCollectionResult(
+            imported=imported,
+            skipped_session_ids=skipped,
+            state_path=str(state_path),
+        )
 
     def list_events(self, case_id: str) -> list[Event]:
         case = self.store.get_case(case_id)
@@ -871,6 +943,22 @@ class OpenPrecedentService:
 
         return []
 
+    def _load_openclaw_collection_state(self, state_path: Path) -> OpenClawCollectionState:
+        if not state_path.exists():
+            return OpenClawCollectionState()
+        return OpenClawCollectionState.model_validate_json(state_path.read_text(encoding="utf-8"))
+
+    def _write_openclaw_collection_state(
+        self,
+        state_path: Path,
+        state: OpenClawCollectionState,
+    ) -> None:
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(
+            state.model_dump_json(indent=2),
+            encoding="utf-8",
+        )
+
     def _parse_optional_timestamp(self, value: object, line_no: int) -> datetime | None:
         if value is None:
             return None
@@ -935,3 +1023,8 @@ def _extract_openclaw_visible_assistant_text(content: list[object]) -> list[str]
                     if text:
                         segments.append(text)
     return segments
+
+
+def _case_id_for_openclaw_session(session_id: str) -> str:
+    normalized = "".join(ch for ch in session_id.lower() if ch.isalnum())
+    return f"openclaw_{normalized[:24]}"

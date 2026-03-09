@@ -46,6 +46,22 @@ The current CLI entry points are:
 - `openprecedent runtime import-openclaw-session --latest --case-id <id>`
 - `openprecedent runtime import-openclaw-session --session-id <id> --case-id <id>`
 - `openprecedent runtime import-openclaw-session --session-file <path> --case-id <id>`
+- `openprecedent runtime collect-openclaw-sessions`
+
+## Automated Collection
+
+For background collection, use:
+
+- `openprecedent runtime collect-openclaw-sessions --limit 1`
+
+This command:
+
+- reads the session index
+- imports the latest unseen session transcript
+- writes a local collector state file
+- skips sessions that were already collected
+
+This is the intended MVP path for cron-based silent collection.
 
 ## MVP Boundary
 
