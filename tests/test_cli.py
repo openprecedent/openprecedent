@@ -199,3 +199,57 @@ def test_cli_import_openclaw_runtime_trace(capsys, db_path) -> None:
     assert replay["case"]["status"] == "completed"
     assert replay["summary"] == "Provided the context-graph document summary."
     assert replay["artifacts"]
+
+
+def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    transcript_path = sessions_dir / "sample-session.jsonl"
+    transcript_path.write_text(
+        (fixture_dir / "sample-session.jsonl").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (sessions_dir / "sessions.json").write_text(
+        (fixture_dir / "sessions.json").read_text(encoding="utf-8").replace(
+            "__FIXTURE_DIR__",
+            str(sessions_dir),
+        ),
+        encoding="utf-8",
+    )
+
+    result = main(
+        [
+            "runtime",
+            "list-openclaw-sessions",
+            "--sessions-root",
+            str(sessions_dir),
+        ]
+    )
+    assert result == 0
+    sessions = json.loads(capsys.readouterr().out)
+    assert len(sessions) == 1
+    assert sessions[0]["session_id"] == "sample-session"
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--sessions-root",
+            str(sessions_dir),
+            "--latest",
+            "--case-id",
+            "case_session_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_cli"
+    assert imported["imported_event_count"] == 7
+    assert imported["transcript_path"] == str(transcript_path)
+
+    result = main(["replay", "case", "case_session_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    assert replay["events"][0]["event_type"] == "case.started"
+    assert any(event["event_type"] == "tool.called" for event in replay["events"])

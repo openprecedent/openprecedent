@@ -1,0 +1,12 @@
+[
+  {
+    "key": "agent:main:user:sample",
+    "label": "User session: summarize context graph",
+    "displayName": "User session: summarize context graph",
+    "updatedAt": 1773018022840,
+    "sessionId": "sample-session",
+    "model": "gpt-5.3-codex",
+    "sessionFile": "__FIXTURE_DIR__/sample-session.jsonl",
+    "isActive": true
+  }
+]

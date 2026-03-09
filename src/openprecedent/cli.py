@@ -62,12 +62,24 @@ def build_parser() -> argparse.ArgumentParser:
 
     runtime_parser = subparsers.add_parser("runtime")
     runtime_subparsers = runtime_parser.add_subparsers(dest="action", required=True)
+    runtime_list = runtime_subparsers.add_parser("list-openclaw-sessions")
+    runtime_list.add_argument("--sessions-root")
+    runtime_list.add_argument("--limit", type=int, default=10)
     runtime_import = runtime_subparsers.add_parser("import-openclaw")
     runtime_import.add_argument("path")
     runtime_import.add_argument("--case-id", required=True)
     runtime_import.add_argument("--title", required=True)
     runtime_import.add_argument("--user-id")
     runtime_import.add_argument("--agent-id", default="openclaw")
+    runtime_import_session = runtime_subparsers.add_parser("import-openclaw-session")
+    runtime_import_session.add_argument("--session-file")
+    runtime_import_session.add_argument("--session-id")
+    runtime_import_session.add_argument("--latest", action="store_true")
+    runtime_import_session.add_argument("--sessions-root")
+    runtime_import_session.add_argument("--case-id", required=True)
+    runtime_import_session.add_argument("--title")
+    runtime_import_session.add_argument("--user-id")
+    runtime_import_session.add_argument("--agent-id", default="openclaw")
 
     return parser
 
@@ -215,6 +227,13 @@ def _handle_precedent(args: argparse.Namespace, service: OpenPrecedentService) -
 
 
 def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> int:
+    if args.action == "list-openclaw-sessions":
+        sessions = service.list_openclaw_sessions(
+            _resolve_openclaw_sessions_root(args.sessions_root),
+            limit=args.limit,
+        )
+        _print_json([session.model_dump(mode="json") for session in sessions])
+        return 0
     if args.action == "import-openclaw":
         result = service.import_openclaw_jsonl(
             Path(args.path),
@@ -231,8 +250,58 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
             }
         )
         return 0
+    if args.action == "import-openclaw-session":
+        transcript_path, session_title = _resolve_openclaw_session_target(args, service)
+        result = service.import_openclaw_session(
+            transcript_path,
+            case_id=args.case_id,
+            title=args.title or session_title,
+            user_id=args.user_id,
+            agent_id=args.agent_id,
+        )
+        _print_json(
+            {
+                "case": result.case.model_dump(mode="json"),
+                "transcript_path": str(transcript_path),
+                "imported_event_count": len(result.imported_events),
+                "events": [event.model_dump(mode="json") for event in result.imported_events],
+            }
+        )
+        return 0
     return 2
 
 
 def _print_json(data: object) -> None:
     print(json.dumps(data, ensure_ascii=True, indent=2, sort_keys=True))
+
+
+def _resolve_openclaw_sessions_root(value: str | None) -> Path:
+    if value:
+        return Path(value)
+    return Path.home() / ".openclaw" / "agents" / "main" / "sessions"
+
+
+def _resolve_openclaw_session_target(
+    args: argparse.Namespace,
+    service: OpenPrecedentService,
+) -> tuple[Path, str]:
+    if args.session_file:
+        return Path(args.session_file), args.title or Path(args.session_file).stem
+
+    sessions = service.list_openclaw_sessions(
+        _resolve_openclaw_sessions_root(args.sessions_root),
+        limit=50,
+    )
+    if args.latest:
+        if not sessions:
+            raise ValueError("no OpenClaw sessions found")
+        session = sessions[0]
+        return Path(session.transcript_path), args.title or session.label or session.session_id
+
+    if args.session_id:
+        for session in sessions:
+            if session.session_id == args.session_id:
+                return Path(session.transcript_path), args.title or session.label or session.session_id
+        raise ValueError(f"OpenClaw session not found: {args.session_id}")
+
+    raise ValueError("one of --session-file, --session-id, or --latest is required")
