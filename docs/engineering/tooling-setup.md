@@ -5,6 +5,7 @@
 The repository already includes:
 
 - `markdownlint` GitHub Actions workflow for Markdown review
+- `python-ci` GitHub Actions workflow for dependency install and tests
 - a local Git pre-push hook that requires a Codex review note
 
 To enable the local hook:
@@ -39,6 +40,7 @@ These still require manual installation from GitHub by a repository admin:
 Recommended rollout:
 
 1. enable repository-local Markdown checks
-2. enable Codex pre-push review hook
-3. install CodeFactor
-4. install CodeAnt AI
+2. enable Python CI checks on pull requests
+3. enable Codex pre-push review hook
+4. install CodeFactor
+5. install CodeAnt AI
