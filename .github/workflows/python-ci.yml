@@ -7,7 +7,8 @@ on:
       - main
 
 jobs:
-  test:
+  python-ci:
+    name: python-ci
     runs-on: ubuntu-latest
 
     steps:
