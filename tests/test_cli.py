@@ -362,6 +362,36 @@ def test_cli_imports_openclaw_view_image_as_file_read(capsys, db_path) -> None:
     )
 
 
+def test_cli_imports_openclaw_search_command_as_file_reads(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "search-read-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_search_read_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_search_read_cli"
+    assert imported["imported_event_count"] == 9
+
+    result = main(["replay", "case", "case_session_search_read_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    file_reads = [event for event in replay["events"] if event["event_type"] == "file.read"]
+    assert [event["payload"]["path"] for event in file_reads] == [
+        "docs/product/mvp-roadmap.md",
+        "docs/architecture/openclaw-silent-collection.md",
+    ]
+
+
 def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"

@@ -35,7 +35,7 @@ The current importer maps transcript records into OpenPrecedent events as follow
 - `message.role=assistant` text/summary -> `message.agent`
 - `assistant.content[type=toolCall]` -> `tool.called`
 - `assistant.content[type=toolCall name=exec_command]` -> `command.started`
-- `assistant.content[type=toolCall name=exec_command]` with read-only commands -> `file.read`
+- `assistant.content[type=toolCall name=exec_command]` with read-only commands such as `cat`, `sed`, `head`, `tail`, `rg`, or `grep` -> `file.read`
 - `assistant.content[type=toolCall name=apply_patch]` -> `file.write`
 - `assistant.content[type=toolCall name=view_image]` -> `file.read`
 - `message.role=toolResult` -> `tool.completed`

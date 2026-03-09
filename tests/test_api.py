@@ -263,6 +263,31 @@ def test_service_imports_openclaw_view_image_as_file_read(db_path) -> None:
     )
 
 
+def test_service_imports_openclaw_search_command_as_file_reads(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "search-read-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_search_read",
+        title="Imported OpenClaw search session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_search_read"
+    assert len(result.imported_events) == 9
+
+    events = service.list_events("case_session_search_read")
+    file_reads = [event for event in events if event.event_type.value == "file.read"]
+    assert len(file_reads) == 2
+    assert [event.payload["path"] for event in file_reads] == [
+        "docs/product/mvp-roadmap.md",
+        "docs/architecture/openclaw-silent-collection.md",
+    ]
+
+
 def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"

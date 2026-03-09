@@ -1295,18 +1295,18 @@ def _extract_file_reads_from_command(command: str) -> list[str]:
     if not tokens:
         return []
 
-    read_commands = {"cat", "sed", "head", "tail"}
-    if tokens[0] not in read_commands:
-        return []
+    command_name = tokens[0]
 
-    paths: list[str] = []
-    for token in tokens[1:]:
-        if token.startswith("-"):
-            continue
-        if "/" not in token and "." not in Path(token).name:
-            continue
-        paths.append(token)
-    return _dedupe_preserve_order(paths)
+    if command_name in {"cat", "head", "tail"}:
+        return _dedupe_preserve_order(_extract_path_like_tokens(tokens[1:]))
+
+    if command_name == "sed":
+        return _dedupe_preserve_order(_extract_path_like_tokens(tokens[1:]))
+
+    if command_name in {"rg", "grep"}:
+        return _dedupe_preserve_order(_extract_search_command_paths(tokens[1:]))
+
+    return []
 
 
 def _extract_paths_from_apply_patch(patch_text: str) -> list[str]:
@@ -1330,3 +1330,42 @@ def _dedupe_preserve_order(values: list[str]) -> list[str]:
         seen.add(value)
         deduped.append(value)
     return deduped
+
+
+def _extract_path_like_tokens(tokens: list[str]) -> list[str]:
+    paths: list[str] = []
+    for token in tokens:
+        if token.startswith("-"):
+            continue
+        if "/" not in token and "." not in Path(token).name:
+            continue
+        paths.append(token)
+    return paths
+
+
+def _extract_search_command_paths(tokens: list[str]) -> list[str]:
+    paths: list[str] = []
+    saw_pattern = False
+    skip_next = False
+
+    for token in tokens:
+        if skip_next:
+            skip_next = False
+            continue
+
+        if token in {"-g", "-e", "-f", "--glob", "--regexp", "--file"}:
+            skip_next = True
+            continue
+
+        if token.startswith("-"):
+            continue
+
+        if not saw_pattern:
+            saw_pattern = True
+            continue
+
+        if "/" not in token and "." not in Path(token).name:
+            continue
+        paths.append(token)
+
+    return paths
