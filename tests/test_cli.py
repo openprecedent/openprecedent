@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 from pathlib import Path
 
 from openprecedent.cli import main
@@ -525,6 +527,35 @@ def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None
     collected_again = json.loads(capsys.readouterr().out)
     assert collected_again["imported"] == []
     assert "sample-session" in collected_again["skipped_session_ids"]
+
+
+def test_run_collector_script_prefers_repo_venv_binary(tmp_path: Path) -> None:
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    (sessions_dir / "sessions.json").write_text("[]", encoding="utf-8")
+
+    db_path = tmp_path / "openprecedent.db"
+    state_path = tmp_path / "collector-state.json"
+    env = os.environ.copy()
+    env.pop("OPENPRECEDENT_BIN", None)
+    env["OPENPRECEDENT_DB"] = str(db_path)
+    env["OPENPRECEDENT_COLLECTOR_STATE"] = str(state_path)
+    env["OPENCLAW_SESSIONS_ROOT"] = str(sessions_dir)
+    env["PATH"] = "/usr/bin:/bin"
+    env["PYTHONPATH"] = str(Path(__file__).parent.parent / "src")
+
+    result = subprocess.run(
+        ["./scripts/run-collector.sh"],
+        cwd=Path(__file__).parent.parent,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert db_path.exists()
+    assert state_path.exists()
 
 
 def test_cli_evaluates_fixture_suite(capsys, db_path) -> None:

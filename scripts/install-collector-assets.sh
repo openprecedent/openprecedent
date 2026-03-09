@@ -7,8 +7,13 @@ MODE="${1:-systemd}"
 render_template() {
   local source_path="$1"
   local escaped_root
+  local escaped_home
   escaped_root="$(printf '%s\n' "$ROOT_DIR" | sed 's/[&]/\\&/g')"
-  sed "s|__OPENPRECEDENT_ROOT__|$escaped_root|g" "$source_path"
+  escaped_home="$(printf '%s\n' "$HOME" | sed 's/[&]/\\&/g')"
+  sed \
+    -e "s|__OPENPRECEDENT_ROOT__|$escaped_root|g" \
+    -e "s|__OPENCLAW_HOME__|$escaped_home|g" \
+    "$source_path"
 }
 
 install_systemd() {

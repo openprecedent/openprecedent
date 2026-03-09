@@ -24,6 +24,7 @@ coverage/
 
 # Logs
 *.log
+runtime/*.log
 
 # Local review notes
 .codex-review
@@ -34,3 +35,9 @@ coverage/
 build/
 tmp/
 .cache/
+
+# Local runtime data
+openprecedent.db
+runtime/*.db
+runtime/*.json
+runtime/*.cron

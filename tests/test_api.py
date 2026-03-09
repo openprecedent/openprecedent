@@ -185,6 +185,38 @@ def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> 
     assert replay.summary == "Imported OpenClaw session: 9 events, 2 decisions, status=started"
 
 
+def test_service_lists_openclaw_sessions_from_dict_index(db_path, tmp_path: Path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+
+    transcript_path = sessions_dir / "sample-session.jsonl"
+    transcript_path.write_text(
+        (fixture_dir / "sample-session.jsonl").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (sessions_dir / "sessions.json").write_text(
+        json.dumps(
+            {
+                "agent:main:main": {
+                    "sessionId": "sample-session",
+                    "sessionFile": str(transcript_path),
+                    "updatedAt": 1730948045000,
+                    "model": "gpt-5.3-codex",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    sessions = service.list_openclaw_sessions(sessions_dir)
+
+    assert len(sessions) == 1
+    assert sessions[0].session_id == "sample-session"
+    assert sessions[0].transcript_path == str(transcript_path)
+
+
 def test_service_imports_failing_openclaw_command_without_output(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = (
