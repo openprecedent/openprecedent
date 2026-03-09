@@ -1,5 +1,27 @@
 # OpenPrecedent MVP Roadmap
 
+## Current Status
+
+As of 2026-03-09, the MVP core loop is largely implemented.
+
+Completed:
+
+- repository foundation, governance, CI, and review workflow
+- core schemas for `case`, `event`, `decision`, `artifact`, and `precedent`
+- SQLite-backed ingestion, replay, extraction, and precedent APIs
+- CLI flows for case/event/replay/decision/precedent operations
+- OpenClaw-style runtime trace import
+- OpenClaw session transcript import for silent trajectory collection
+- automated OpenClaw session collection with a local cursor/state file
+- curated MVP evaluation fixture suite for regression checks
+
+Still open:
+
+- connect the collector to a real scheduled/background job in the target environment
+- improve transcript mapping coverage for more OpenClaw record types
+- strengthen precedent quality on larger real-case histories
+- expand evaluation beyond curated fixtures into real collected trajectories
+
 ## Objective
 
 Deliver a working MVP that proves the minimal decision loop:
@@ -11,6 +33,10 @@ Deliver a working MVP that proves the minimal decision loop:
 5. retrieve precedent
 
 ## Phase 0: Foundation
+
+Status:
+
+- completed
 
 Goal:
 
@@ -29,7 +55,16 @@ Exit criteria:
 
 - repository can serve as the single implementation home for the MVP
 
+Completed work:
+
+- in-repo strategy, PRD, design, roadmap, and competitive research
+- repository governance, branch protection, review policy, CI, and notification setup
+
 ## Phase 1: Core Schemas
+
+Status:
+
+- completed
 
 Goal:
 
@@ -47,7 +82,16 @@ Exit criteria:
 
 - schema names and fields are stable enough for ingestion and replay work
 
+Completed work:
+
+- stable first-pass schemas for `case`, `event`, `decision`, `artifact`, and `precedent`
+- explanation contract and precedent response contract
+
 ## Phase 2: Event Ingestion
+
+Status:
+
+- completed
 
 Goal:
 
@@ -63,7 +107,18 @@ Exit criteria:
 
 - a full sample case can be written as ordered events
 
+Completed work:
+
+- case/event API and SQLite persistence
+- JSONL import path for sample traces
+- CLI ingestion commands
+- OpenClaw-style runtime trace import
+
 ## Phase 3: Replay
+
+Status:
+
+- completed
 
 Goal:
 
@@ -79,7 +134,17 @@ Exit criteria:
 
 - a reviewer can understand a case after the fact
 
+Completed work:
+
+- replay API
+- CLI replay rendering for raw events, decisions, and derived artifacts
+- artifact derivation from message, command, and file events
+
 ## Phase 4: Decision Extraction
+
+Status:
+
+- completed for MVP v1
 
 Goal:
 
@@ -95,7 +160,22 @@ Exit criteria:
 
 - extracted decisions are meaningfully more useful than raw logs alone
 
+Completed work:
+
+- rule-based decision extractor
+- explanation contract with goal, evidence, constraints, reason, and result
+- support for `plan`, `select_tool`, `apply_change`, `retry_or_recover`, and `finalize`
+
+Remaining gaps:
+
+- broader decision coverage on real OpenClaw transcripts
+- stronger extraction quality evaluation on non-curated trajectories
+
 ## Phase 5: Precedent Retrieval
+
+Status:
+
+- completed for MVP v1
 
 Goal:
 
@@ -111,7 +191,23 @@ Exit criteria:
 
 - historical cases can help a user interpret a current task
 
+Completed work:
+
+- case summary generation
+- fingerprint-based precedent retrieval
+- precedent response with similarities, differences, score, and reusable takeaway
+- curated fixture-based precedent evaluation
+
+Remaining gaps:
+
+- stronger retrieval quality on larger real history
+- richer semantic retrieval beyond current lightweight matching
+
 ## Phase 6: Local Runtime Validation
+
+Status:
+
+- partially completed
 
 Goal:
 
@@ -127,3 +223,25 @@ Deliverables:
 Exit criteria:
 
 - the MVP proves value on a real task, not only synthetic samples
+
+Completed work:
+
+- OpenClaw session transcript import from `~/.openclaw/agents/main/sessions/`
+- session discovery and `--latest` import flow
+- automated collector command with local state cursor for silent collection
+- curated evaluation suite for summary and recovery trajectories
+
+Remaining gaps:
+
+- run the collector on a real schedule in the target machine environment
+- validate replay/extraction/precedent quality on a growing set of real collected sessions
+- document the recommended cron/systemd setup once the collection loop is confirmed
+
+## Next Tasks
+
+The next MVP work should focus on operationalizing and validating what already exists:
+
+1. run `openprecedent runtime collect-openclaw-sessions --limit 1` on a schedule in the real environment
+2. collect a small set of real OpenClaw sessions and inspect replay / decision / precedent quality
+3. extend transcript mapping for additional OpenClaw record types where the current importer loses useful trajectory detail
+4. expand the evaluation suite with real anonymized trajectories once collection volume is sufficient
