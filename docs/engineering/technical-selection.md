@@ -44,6 +44,15 @@ Storage for the MVP is expected to remain simple:
 - PostgreSQL for relational data
 - pgvector later if retrieval needs vector support
 
+## Review and Quality Direction
+
+Recommended review stack:
+
+- Codex for high-context code and documentation review
+- CodeFactor for baseline repository code quality review
+- CodeAnt AI for PR-oriented automated review
+- Vale or markdownlint for documentation hygiene
+
 ## Constraints
 
 - keep the MVP single-language for now
