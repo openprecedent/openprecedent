@@ -238,6 +238,31 @@ def test_service_imports_openclaw_file_operations(db_path) -> None:
     assert any(item.decision_type.value == "apply_change" for item in decisions)
 
 
+def test_service_imports_openclaw_view_image_as_file_read(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "view-image-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_view_image",
+        title="Imported OpenClaw image session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_view_image"
+    assert len(result.imported_events) == 6
+
+    events = service.list_events("case_session_view_image")
+    file_reads = [event for event in events if event.event_type.value == "file.read"]
+    assert len(file_reads) == 1
+    assert (
+        file_reads[0].payload["path"]
+        == "/workspace/04-assets/exports/browser-tools/playwright/demo-protected.png"
+    )
+
+
 def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"

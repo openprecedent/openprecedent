@@ -331,6 +331,37 @@ def test_cli_imports_openclaw_file_operations(capsys, db_path) -> None:
     )
 
 
+def test_cli_imports_openclaw_view_image_as_file_read(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "view-image-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_view_image_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_view_image_cli"
+    assert imported["imported_event_count"] == 6
+
+    result = main(["replay", "case", "case_session_view_image_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    assert any(
+        event["event_type"] == "file.read"
+        and event["payload"]["path"]
+        == "/workspace/04-assets/exports/browser-tools/playwright/demo-protected.png"
+        for event in replay["events"]
+    )
+
+
 def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
