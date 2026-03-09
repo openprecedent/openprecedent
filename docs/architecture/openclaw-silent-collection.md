@@ -34,7 +34,9 @@ The current importer maps transcript records into OpenPrecedent events as follow
 - `message.role=user` -> `message.user`
 - `message.role=assistant` text/summary -> `message.agent`
 - `assistant.content[type=toolCall]` -> `tool.called`
+- `assistant.content[type=toolCall name=exec_command]` -> `command.started`
 - `message.role=toolResult` -> `tool.completed`
+- `message.role=toolResult toolName=exec_command` -> `command.completed`
 
 This is intentionally trajectory-first. We do not parse gateway stdout/stderr logs in MVP.
 
