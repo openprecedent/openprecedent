@@ -408,6 +408,19 @@ def test_service_evaluates_fixture_suite(db_path) -> None:
     assert report.passed_cases == 3
 
 
+def test_service_evaluates_real_session_fixture_suite(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
+
+    report = service.evaluate_openclaw_fixture_suite(suite_path)
+
+    assert report.total_cases == 3
+    assert report.failed_cases == 0
+    assert report.passed_cases == 3
+    clarify_result = next(item for item in report.results if item.case_id == "eval_real_clarify")
+    assert "clarify" in [decision_type.value for decision_type in clarify_result.actual_decision_types]
+
+
 def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
