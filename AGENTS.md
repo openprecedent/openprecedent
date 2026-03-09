@@ -32,6 +32,11 @@ The first implementation target is a local single-agent workflow. The current go
 - Link the PR to its issue in the PR body using a closing reference such as `Closes #24` so the issue is closed automatically when the PR is merged.
 - After a PR is merged, continue the next task on a new branch and a new PR linked to the next issue.
 
+## Project-Local Codex Skill
+
+- For project-management work in this repository, use the local skill at `.codex/skills/ccpm-codex/`.
+- Use it for PRD, epic, task, issue, and PR workflow management instead of inventing an ad hoc process each time.
+
 ## Documentation Rules
 
 - Update docs when schemas, APIs, or core object models change.

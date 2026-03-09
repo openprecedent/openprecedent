@@ -1,0 +1,155 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from openprecedent.codex_pm import main
+
+
+def test_codex_pm_init_creates_workspace(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    result = main(["init"])
+
+    assert result == 0
+    assert (tmp_path / ".codex" / "pm" / "prds").exists()
+    assert (tmp_path / ".codex" / "pm" / "epics").exists()
+    assert (tmp_path / ".codex" / "pm" / "tasks").exists()
+
+
+def test_codex_pm_scaffolds_and_selects_next_task(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert main(["prd-new", "runtime-validation", "--title", "Runtime validation"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "epic-new",
+                "runtime-validation",
+                "--title",
+                "Runtime validation",
+                "--prd",
+                "runtime-validation",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "runtime-validation",
+                "collector-rollout",
+                "--title",
+                "Roll out collector",
+                "--issue",
+                "23",
+                "--labels",
+                "feature,ops",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "runtime-validation",
+                "quality-pass",
+                "--title",
+                "Inspect collected session quality",
+                "--issue",
+                "26",
+                "--status",
+                "done",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert main(["next", "--json"]) == 0
+    next_task = json.loads(capsys.readouterr().out)
+    assert next_task["title"] == "Roll out collector"
+    assert next_task["issue"] == "23"
+
+    assert main(["tasks", "--json"]) == 0
+    tasks = json.loads(capsys.readouterr().out)
+    assert len(tasks) == 2
+
+
+def test_codex_pm_updates_status_and_renders_issue_and_pr_body(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "runtime-validation" / "collector-rollout.md"
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "runtime-validation",
+                "collector-rollout",
+                "--title",
+                "Roll out collector",
+                "--issue",
+                "23",
+                "--labels",
+                "feature,ops",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_text = task_path.read_text(encoding="utf-8")
+    task_text = task_text.replace("## Context\n\n", "## Context\n\nCollector rollout still needs a real target host.\n\n")
+    task_text = task_text.replace("## Deliverable\n\n", "## Deliverable\n\nRun the collector on a real schedule.\n\n")
+    task_text = task_text.replace("## Scope\n\n- \n\n", "## Scope\n\n- install the scheduled collector\n- validate cursor advance\n\n")
+    task_text = task_text.replace(
+        "## Acceptance Criteria\n\n- \n\n",
+        "## Acceptance Criteria\n\n- repeated runs do not duplicate sessions\n\n",
+    )
+    task_text = task_text.replace(
+        "## Validation\n\n- \n\n",
+        "## Validation\n\n- .venv/bin/python -m pytest tests/test_api.py tests/test_cli.py\n\n",
+    )
+    task_text = task_text.replace(
+        "## Implementation Notes\n\n",
+        "## Implementation Notes\n\nUse the systemd timer path for the first rollout.\n\n",
+    )
+    task_path.write_text(task_text, encoding="utf-8")
+
+    assert main(["blocked", str(task_path), "--reason", "waiting on host access"]) == 0
+    capsys.readouterr()
+    assert main(["set-status", str(task_path), "in_progress"]) == 0
+    capsys.readouterr()
+
+    assert main(["issue-body", str(task_path)]) == 0
+    issue_body = capsys.readouterr().out
+    assert "## Context" in issue_body
+    assert "Collector rollout still needs a real target host." in issue_body
+    assert "## Acceptance Criteria" in issue_body
+
+    assert (
+        main(
+            [
+                "pr-body",
+                str(task_path),
+                "--issue",
+                "23",
+                "--tests",
+                ".venv/bin/python -m pytest tests/test_api.py tests/test_cli.py",
+            ]
+        )
+        == 0
+    )
+    pr_body = capsys.readouterr().out
+    assert "Closes #23" in pr_body
+    assert "Run the collector on a real schedule." in pr_body
+    assert "Validation:" in pr_body
