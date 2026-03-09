@@ -388,3 +388,6 @@ def _parse_issue_number(value: str) -> int | None:
         return int(value)
     return None
 
+
+if __name__ == "__main__":
+    run()
