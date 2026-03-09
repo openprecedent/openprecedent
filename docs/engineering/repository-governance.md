@@ -58,6 +58,7 @@ Expected local behavior:
 - authors run a Codex review before push
 - authors record the result in `.codex-review`
 - the local pre-push hook blocks the push if the review note is missing
+- the local pre-push hook also blocks pushes to branches whose PRs have already been merged into `openprecedent/openprecedent`
 
 This is a local reliability measure, not a substitute for repository review requirements.
 
@@ -68,6 +69,12 @@ Changes to repository governance should follow this rule:
 - repository content changes go through pull requests
 - GitHub settings changes are applied directly by an admin
 - any meaningful GitHub settings change should also be reflected in this document
+
+Additional branch hygiene rule:
+
+- once a pull request branch has been merged, that branch must be treated as closed
+- any follow-up work must start from a new branch created from the latest `upstream/main`
+- do not append new commits to a branch that already maps to a merged PR
 
 ## Review Gate Model
 

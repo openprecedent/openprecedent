@@ -25,6 +25,7 @@ The first implementation target is a local single-agent workflow. The current go
 - Prefer small, auditable changes over broad scaffolding.
 - Preserve a clear separation between raw events and derived decision records.
 - Prefer simple local-first development flows.
+- Once a PR branch has been merged, do not add new commits to that branch. Start a fresh branch from `upstream/main` for all follow-up work.
 
 ## Documentation Rules
 

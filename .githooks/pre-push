@@ -3,6 +3,17 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 review_file="$repo_root/.codex-review"
+current_branch="$(git branch --show-current)"
+origin_url="$(git remote get-url origin 2>/dev/null || true)"
+
+extract_owner() {
+  local remote_url="$1"
+  if [[ "$remote_url" =~ github\.com[:/]([^/]+)/[^/]+(\.git)?$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+    return 0
+  fi
+  return 1
+}
 
 if [[ "${BYPASS_CODEX_REVIEW:-}" == "1" ]]; then
   echo "Bypassing Codex review hook because BYPASS_CODEX_REVIEW=1"
@@ -37,6 +48,28 @@ Include at least:
   - remaining risks
 EOF
   exit 1
+fi
+
+if [[ -n "$current_branch" ]] && owner="$(extract_owner "$origin_url")"; then
+  merged_pr_json="$(
+    gh pr list \
+      --repo openprecedent/openprecedent \
+      --head "$owner:$current_branch" \
+      --state merged \
+      --json number,url \
+      2>/dev/null || true
+  )"
+
+  if [[ "$merged_pr_json" != "[]" ]] && [[ -n "$merged_pr_json" ]]; then
+    cat <<EOF
+Push blocked: the current branch already has a merged PR in openprecedent/openprecedent.
+
+Branch: $current_branch
+
+Create a new branch from upstream/main for follow-up work instead of pushing more commits to a merged PR branch.
+EOF
+    exit 1
+  fi
 fi
 
 echo "Codex review note detected."
