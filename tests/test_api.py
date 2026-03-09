@@ -134,3 +134,48 @@ def test_service_imports_openclaw_runtime_trace(db_path) -> None:
     assert replay.case.status.value == "completed"
     assert replay.summary == "Provided the context-graph document summary."
     assert replay.artifacts
+
+
+def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+
+    transcript_path = sessions_dir / "sample-session.jsonl"
+    transcript_path.write_text(
+        (fixture_dir / "sample-session.jsonl").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    index_text = (fixture_dir / "sessions.json").read_text(encoding="utf-8").replace(
+        "__FIXTURE_DIR__",
+        str(sessions_dir),
+    )
+    (sessions_dir / "sessions.json").write_text(index_text, encoding="utf-8")
+
+    sessions = service.list_openclaw_sessions(sessions_dir)
+    assert len(sessions) == 1
+    assert sessions[0].session_id == "sample-session"
+    assert sessions[0].label == "User session: summarize context graph"
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session",
+        title="Imported OpenClaw session",
+        user_id="u1",
+    )
+    assert result.case.case_id == "case_session"
+    assert len(result.imported_events) == 7
+
+    events = service.list_events("case_session")
+    assert events[0].event_type.value == "case.started"
+    assert any(event.event_type.value == "message.user" for event in events)
+    assert any(event.event_type.value == "tool.called" for event in events)
+    assert any(event.event_type.value == "tool.completed" for event in events)
+
+    decisions = service.extract_decisions("case_session")
+    assert any(item.decision_type.value == "plan" for item in decisions)
+    assert any(item.decision_type.value == "select_tool" for item in decisions)
+
+    replay = service.replay_case("case_session")
+    assert replay.summary == "Imported OpenClaw session: 7 events, 2 decisions, status=started"

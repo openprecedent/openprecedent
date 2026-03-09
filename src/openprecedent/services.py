@@ -68,6 +68,18 @@ class RuntimeTraceImportResult(BaseModel):
     imported_events: list[Event]
 
 
+class OpenClawSessionReference(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str
+    transcript_path: str
+    updated_at: datetime | None = None
+    label: str | None = None
+    key: str | None = None
+    model: str | None = None
+    is_active: bool = False
+
+
 @dataclass
 class OpenPrecedentService:
     store: SQLiteStore
@@ -167,6 +179,93 @@ class OpenPrecedentService:
                 raw_item = json.loads(stripped)
                 normalized = self._normalize_openclaw_trace_line(raw_item, line_no)
                 imported.append(self.append_event(case_id, normalized))
+
+        return RuntimeTraceImportResult(case=case, imported_events=imported)
+
+    def list_openclaw_sessions(self, sessions_root: Path, limit: int = 10) -> list[OpenClawSessionReference]:
+        references: list[OpenClawSessionReference] = []
+        index_path = sessions_root / "sessions.json"
+        if index_path.exists():
+            entries = json.loads(index_path.read_text(encoding="utf-8"))
+            for item in entries:
+                session_id = _string_or_none(item.get("sessionId"))
+                transcript_path = _string_or_none(item.get("sessionFile")) or _string_or_none(
+                    item.get("transcriptPath")
+                )
+                if session_id is None or transcript_path is None:
+                    continue
+                resolved_path = Path(transcript_path)
+                if not resolved_path.is_absolute():
+                    resolved_path = sessions_root / resolved_path
+                updated_at = _parse_epoch_millis(item.get("updatedAt"))
+                references.append(
+                    OpenClawSessionReference(
+                        session_id=session_id,
+                        transcript_path=str(resolved_path),
+                        updated_at=updated_at,
+                        label=_string_or_none(item.get("label")) or _string_or_none(item.get("displayName")),
+                        key=_string_or_none(item.get("key")),
+                        model=_string_or_none(item.get("model")),
+                        is_active=bool(item.get("isActive", False)),
+                    )
+                )
+        else:
+            for transcript_path in sorted(sessions_root.glob("*.jsonl")):
+                references.append(
+                    OpenClawSessionReference(
+                        session_id=transcript_path.stem,
+                        transcript_path=str(transcript_path),
+                        updated_at=datetime.fromtimestamp(
+                            transcript_path.stat().st_mtime,
+                            tz=UTC,
+                        ),
+                        label=transcript_path.stem,
+                    )
+                )
+
+        references.sort(
+            key=lambda item: (
+                item.updated_at or datetime.fromtimestamp(0, tz=UTC),
+                item.session_id,
+            ),
+            reverse=True,
+        )
+        return references[:limit]
+
+    def import_openclaw_session(
+        self,
+        transcript_path: Path,
+        *,
+        case_id: str,
+        title: str,
+        user_id: str | None = None,
+        agent_id: str = "openclaw",
+    ) -> RuntimeTraceImportResult:
+        case = self.store.get_case(case_id)
+        if case is None:
+            case = self.create_case(
+                CreateCaseInput(
+                    case_id=case_id,
+                    title=title,
+                    user_id=user_id,
+                    agent_id=agent_id,
+                )
+            )
+
+        imported: list[Event] = []
+        with transcript_path.open("r", encoding="utf-8") as handle:
+            for line_no, line in enumerate(handle, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                raw_item = json.loads(stripped)
+                normalized_events = self._normalize_openclaw_session_line(
+                    raw_item,
+                    line_no,
+                    transcript_path=transcript_path,
+                )
+                for normalized in normalized_events:
+                    imported.append(self.append_event(case_id, normalized))
 
         return RuntimeTraceImportResult(case=case, imported_events=imported)
 
@@ -628,6 +727,150 @@ class OpenPrecedentService:
 
         raise ValueError(f"line {line_no}: unsupported openclaw kind '{kind}'")
 
+    def _normalize_openclaw_session_line(
+        self,
+        raw_item: dict[str, object],
+        line_no: int,
+        *,
+        transcript_path: Path,
+    ) -> list[AppendEventInput]:
+        record_type = raw_item.get("type")
+        if not isinstance(record_type, str) or not record_type:
+            raise ValueError(f"line {line_no}: type is required for openclaw session import")
+
+        timestamp = self._parse_optional_timestamp(raw_item.get("timestamp"), line_no)
+        record_id = _string_or_none(raw_item.get("id")) or f"session_line_{line_no}"
+        parent_id = _string_or_none(raw_item.get("parentId"))
+
+        if record_type == "session":
+            return [
+                AppendEventInput(
+                    event_id=f"evt_session_{record_id}",
+                    event_type=EventType.CASE_STARTED,
+                    actor=EventActor.SYSTEM,
+                    timestamp=timestamp,
+                    parent_event_id=parent_id,
+                    payload={
+                        "session_id": _string_or_default(raw_item.get("id"), transcript_path.stem),
+                        "transcript_version": raw_item.get("version"),
+                        "cwd": _string_or_none(raw_item.get("cwd")),
+                        "source": "openclaw.session",
+                    },
+                )
+            ]
+
+        if record_type == "model_change":
+            return [
+                AppendEventInput(
+                    event_id=f"evt_model_{record_id}",
+                    event_type=EventType.MODEL_COMPLETED,
+                    actor=EventActor.SYSTEM,
+                    timestamp=timestamp,
+                    parent_event_id=parent_id,
+                    payload={
+                        "provider": _string_or_none(raw_item.get("provider")),
+                        "model_id": _string_or_none(raw_item.get("modelId")),
+                        "source": "openclaw.session",
+                    },
+                )
+            ]
+
+        if record_type != "message":
+            return []
+
+        message = raw_item.get("message")
+        if not isinstance(message, dict):
+            return []
+
+        role = _string_or_none(message.get("role"))
+        content = message.get("content")
+        if not isinstance(content, list):
+            content = []
+
+        normalized_events: list[AppendEventInput] = []
+        text_chunks = _extract_openclaw_text_segments(content)
+
+        if role == "user":
+            text = "\n".join(text_chunks).strip()
+            if text:
+                normalized_events.append(
+                    AppendEventInput(
+                        event_id=f"evt_message_{record_id}",
+                        event_type=EventType.MESSAGE_USER,
+                        actor=EventActor.USER,
+                        timestamp=timestamp,
+                        parent_event_id=parent_id,
+                        payload={
+                            "message": text,
+                            "source": "openclaw.session",
+                        },
+                    )
+                )
+            return normalized_events
+
+        if role == "assistant":
+            visible_chunks = _extract_openclaw_visible_assistant_text(content)
+            visible_text = "\n".join(visible_chunks).strip()
+            if visible_text:
+                normalized_events.append(
+                    AppendEventInput(
+                        event_id=f"evt_message_{record_id}",
+                        event_type=EventType.MESSAGE_AGENT,
+                        actor=EventActor.AGENT,
+                        timestamp=timestamp,
+                        parent_event_id=parent_id,
+                        payload={
+                            "message": visible_text,
+                            "source": "openclaw.session",
+                        },
+                    )
+                )
+
+            for index, item in enumerate(content, start=1):
+                if not isinstance(item, dict):
+                    continue
+                if item.get("type") != "toolCall":
+                    continue
+                normalized_events.append(
+                    AppendEventInput(
+                        event_id=f"evt_tool_{record_id}_{index}",
+                        event_type=EventType.TOOL_CALLED,
+                        actor=EventActor.AGENT,
+                        timestamp=timestamp,
+                        parent_event_id=parent_id,
+                        payload={
+                            "tool_name": _string_or_default(item.get("name"), "unknown_tool"),
+                            "arguments": item.get("arguments") if isinstance(item.get("arguments"), dict) else {},
+                            "tool_call_id": _string_or_none(item.get("id")),
+                            "source": "openclaw.session",
+                        },
+                    )
+                )
+            return normalized_events
+
+        if role == "toolResult":
+            text = "\n".join(text_chunks).strip()
+            normalized_events.append(
+                AppendEventInput(
+                    event_id=f"evt_tool_result_{record_id}",
+                    event_type=EventType.TOOL_COMPLETED,
+                    actor=EventActor.TOOL,
+                    timestamp=timestamp,
+                    parent_event_id=parent_id,
+                    payload={
+                        "tool_name": _string_or_none(message.get("toolName")),
+                        "tool_call_id": _string_or_none(message.get("toolCallId")),
+                        "content": text or None,
+                        "is_error": bool(message.get("isError", False)),
+                        "details": message.get("details") if isinstance(message.get("details"), dict) else {},
+                        "source": "openclaw.session",
+                    },
+                )
+            )
+            return normalized_events
+
+        return []
+
     def _parse_optional_timestamp(self, value: object, line_no: int) -> datetime | None:
         if value is None:
             return None
@@ -645,3 +888,50 @@ def _string_or_none(value: object) -> str | None:
 def _string_or_default(value: object, default: str) -> str:
     parsed = _string_or_none(value)
     return parsed or default
+
+
+def _parse_epoch_millis(value: object) -> datetime | None:
+    if isinstance(value, int):
+        return datetime.fromtimestamp(value / 1000, tz=UTC)
+    return None
+
+
+def _extract_openclaw_text_segments(content: list[object]) -> list[str]:
+    segments: list[str] = []
+    for item in content:
+        if not isinstance(item, dict):
+            continue
+        item_type = item.get("type")
+        if item_type == "text":
+            text = _string_or_none(item.get("text"))
+            if text:
+                segments.append(text)
+        elif item_type == "thinking":
+            thinking = _string_or_none(item.get("thinking"))
+            if thinking:
+                segments.append(thinking)
+    return segments
+
+
+def _extract_openclaw_visible_assistant_text(content: list[object]) -> list[str]:
+    segments: list[str] = []
+    for item in content:
+        if not isinstance(item, dict):
+            continue
+        item_type = item.get("type")
+        if item_type == "text":
+            text = _string_or_none(item.get("text"))
+            if text:
+                segments.append(text)
+        elif item_type == "thinking":
+            summary = item.get("summary")
+            if isinstance(summary, list):
+                for part in summary:
+                    if not isinstance(part, dict):
+                        continue
+                    if part.get("type") != "summary_text":
+                        continue
+                    text = _string_or_none(part.get("text"))
+                    if text:
+                        segments.append(text)
+    return segments
