@@ -31,8 +31,9 @@ The intended protection state for `main` is:
 
 The intended review state for `main` is:
 
-- at least `1` approving review is required
-- `CODEOWNER` review is required
+- direct self-approval should not be required for admin-authored pull requests
+- non-admin pull requests should still require review
+- this is enforced through a custom required check instead of GitHub's native required approval rule
 
 Current owner model:
 
@@ -44,6 +45,7 @@ The intended required checks for `main` are:
 
 - `markdownlint`
 - `python-ci`
+- `pr-review-gate`
 
 These checks should remain required once the workflows are present on the default branch and stable.
 
@@ -66,6 +68,15 @@ Changes to repository governance should follow this rule:
 - repository content changes go through pull requests
 - GitHub settings changes are applied directly by an admin
 - any meaningful GitHub settings change should also be reflected in this document
+
+## Review Gate Model
+
+OpenPrecedent uses a custom review gate for pull requests:
+
+- if the PR author is a repository admin, the review gate passes without a separate approval
+- if the PR author is not a repository admin, at least one approval from another reviewer is required
+
+This model is intended for the current stage of the project, where the repository may still have a single primary maintainer but should not require direct pushes to `main`.
 
 ## Bootstrap Exception
 

@@ -67,8 +67,13 @@ Minimum review expectation for normal changes:
 
 1. author opens PR from fork
 2. automated checks run
-3. at least one human review is completed
+3. the PR review gate passes
 4. PR is merged only after comments are resolved
+
+The review gate may be implemented as:
+
+- admin-authored PRs: merge allowed after required checks pass
+- non-admin PRs: at least one approval is required before the review gate passes
 
 ## Local Pre-Push Review
 

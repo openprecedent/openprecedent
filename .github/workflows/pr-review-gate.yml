@@ -1,0 +1,77 @@
+name: pr-review-gate
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+      - ready_for_review
+      - review_requested
+      - review_request_removed
+      - submitted
+
+jobs:
+  pr-review-gate:
+    name: pr-review-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Evaluate PR review gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            const author = context.payload.pull_request.user.login;
+
+            const permissionResp = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner,
+              repo,
+              username: author,
+            });
+
+            const role = permissionResp.data.permission;
+            core.info(`PR author: ${author}`);
+            core.info(`Permission level: ${role}`);
+
+            if (role === "admin") {
+              core.notice("PR author is an admin. Review gate passed.");
+              return;
+            }
+
+            const reviews = await github.paginate(
+              github.rest.pulls.listReviews,
+              {
+                owner,
+                repo,
+                pull_number,
+                per_page: 100,
+              }
+            );
+
+            const latestByUser = new Map();
+            for (const review of reviews) {
+              const reviewer = review.user?.login;
+              if (!reviewer || reviewer === author) {
+                continue;
+              }
+
+              latestByUser.set(reviewer, review.state);
+            }
+
+            const approvers = [...latestByUser.entries()]
+              .filter(([, state]) => state === "APPROVED")
+              .map(([reviewer]) => reviewer);
+
+            if (approvers.length === 0) {
+              core.setFailed("PR review gate failed: non-admin authors require at least one approval from another reviewer.");
+              return;
+            }
+
+            core.notice(`PR review gate passed with approval from: ${approvers.join(", ")}`);
