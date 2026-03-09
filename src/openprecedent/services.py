@@ -11,6 +11,8 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from openprecedent.schemas import (
+    Artifact,
+    ArtifactType,
     Case,
     CaseStatus,
     Decision,
@@ -51,6 +53,7 @@ class ReplayResponse(BaseModel):
     case: Case
     events: list[Event]
     decisions: list[Decision]
+    artifacts: list[Artifact]
     summary: str | None = None
 
 
@@ -310,8 +313,9 @@ class OpenPrecedentService:
             raise KeyError(case_id)
         events = self.store.list_events(case_id)
         decisions = self.store.list_decisions(case_id)
+        artifacts = self._derive_artifacts(case_id, events)
         summary = case.final_summary or self._build_case_summary(case, events, decisions)
-        return ReplayResponse(case=case, events=events, decisions=decisions, summary=summary)
+        return ReplayResponse(case=case, events=events, decisions=decisions, artifacts=artifacts, summary=summary)
 
     def find_precedents(self, case_id: str, limit: int = 3) -> list[Precedent]:
         current_case = self.store.get_case(case_id)
@@ -453,6 +457,55 @@ class OpenPrecedentService:
         if case.final_summary:
             return case.final_summary
         return None
+
+    def _derive_artifacts(self, case_id: str, events: list[Event]) -> list[Artifact]:
+        derived: list[Artifact] = []
+        seen_ids: set[str] = set()
+
+        for event in events:
+            payload = event.payload
+            artifact: Artifact | None = None
+
+            if event.event_type == EventType.FILE_WRITE:
+                path = _string_or_none(payload.get("path"))
+                if path:
+                    artifact = Artifact(
+                        artifact_id=f"artifact_{event.event_id}",
+                        case_id=case_id,
+                        artifact_type=ArtifactType.FILE,
+                        uri_or_path=path,
+                        summary=_string_or_none(payload.get("summary")),
+                    )
+            elif event.event_type == EventType.COMMAND_COMPLETED:
+                command = _string_or_none(payload.get("command"))
+                if command:
+                    artifact = Artifact(
+                        artifact_id=f"artifact_{event.event_id}",
+                        case_id=case_id,
+                        artifact_type=ArtifactType.COMMAND_OUTPUT,
+                        uri_or_path=command,
+                        summary=_string_or_none(payload.get("stdout"))
+                        or _string_or_none(payload.get("stderr")),
+                    )
+            elif event.event_type in (EventType.MESSAGE_USER, EventType.MESSAGE_AGENT):
+                message = _string_or_none(payload.get("message"))
+                if message:
+                    artifact = Artifact(
+                        artifact_id=f"artifact_{event.event_id}",
+                        case_id=case_id,
+                        artifact_type=ArtifactType.MESSAGE,
+                        uri_or_path=f"{event.event_type.value}:{event.event_id}",
+                        summary=message,
+                    )
+
+            if artifact is None or artifact.artifact_id in seen_ids:
+                continue
+
+            self.store.upsert_artifact(artifact)
+            seen_ids.add(artifact.artifact_id)
+            derived.append(artifact)
+
+        return derived
 
     def _normalize_openclaw_trace_line(
         self,

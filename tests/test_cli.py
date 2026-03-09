@@ -66,6 +66,13 @@ def test_cli_end_to_end(capsys, db_path) -> None:
     replay = json.loads(capsys.readouterr().out)
     assert replay["case"]["case_id"] == "case_cli"
     assert replay["summary"] == "done"
+    assert replay["artifacts"]
+
+    result = main(["decisions", "show", "case_cli"])
+    assert result == 0
+    rendered = capsys.readouterr().out
+    assert "chosen_action:" in rendered
+    assert "why:" in rendered
 
 
 def test_cli_precedent_output(capsys, db_path) -> None:
@@ -191,3 +198,4 @@ def test_cli_import_openclaw_runtime_trace(capsys, db_path) -> None:
     replay = json.loads(capsys.readouterr().out)
     assert replay["case"]["status"] == "completed"
     assert replay["summary"] == "Provided the context-graph document summary."
+    assert replay["artifacts"]

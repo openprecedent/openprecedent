@@ -90,6 +90,7 @@ async def test_case_ingestion_replay_and_precedent_flow(db_path) -> None:
         assert body["case"]["case_id"] == "case_alpha"
         assert len(body["events"]) == 5
         assert len(body["decisions"]) >= 3
+        assert len(body["artifacts"]) >= 3
         assert body["summary"] == "summary delivered"
 
         precedents = await client.get("/cases/case_alpha/precedents")
@@ -132,3 +133,4 @@ def test_service_imports_openclaw_runtime_trace(db_path) -> None:
     replay = service.replay_case("case_runtime")
     assert replay.case.status.value == "completed"
     assert replay.summary == "Provided the context-graph document summary."
+    assert replay.artifacts

@@ -52,6 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
     decisions_subparsers = decisions_parser.add_subparsers(dest="action", required=True)
     decisions_show = decisions_subparsers.add_parser("show")
     decisions_show.add_argument("case_id")
+    decisions_show.add_argument("--json", action="store_true", dest="as_json")
 
     precedent_parser = subparsers.add_parser("precedent")
     precedent_subparsers = precedent_parser.add_subparsers(dest="action", required=True)
@@ -166,6 +167,14 @@ def _handle_replay(args: argparse.Namespace, service: OpenPrecedentService) -> i
     print("Decisions:")
     for decision in replay.decisions:
         print(f"  [{decision.sequence_no}] {decision.decision_type.value}: {decision.title}")
+        print(f"      why: {decision.explanation.selection_reason}")
+        if decision.explanation.result:
+            print(f"      result: {decision.explanation.result}")
+    print("Artifacts:")
+    for artifact in replay.artifacts:
+        print(f"  - {artifact.artifact_type.value}: {artifact.uri_or_path}")
+        if artifact.summary:
+            print(f"      summary: {artifact.summary}")
     if replay.summary:
         print(f"Summary: {replay.summary}")
     return 0
@@ -179,7 +188,23 @@ def _handle_extract(args: argparse.Namespace, service: OpenPrecedentService) -> 
 
 def _handle_decisions(args: argparse.Namespace, service: OpenPrecedentService) -> int:
     decisions = service.list_decisions(args.case_id)
-    _print_json([decision.model_dump(mode="json") for decision in decisions])
+    if args.as_json:
+        _print_json([decision.model_dump(mode="json") for decision in decisions])
+        return 0
+
+    for decision in decisions:
+        print(f"[{decision.sequence_no}] {decision.decision_type.value}: {decision.title}")
+        print(f"  question: {decision.question}")
+        print(f"  chosen_action: {decision.chosen_action}")
+        print(f"  confidence: {decision.confidence:.2f}")
+        print(f"  goal: {decision.explanation.goal}")
+        print(f"  why: {decision.explanation.selection_reason}")
+        if decision.explanation.evidence:
+            print(f"  evidence: {', '.join(decision.explanation.evidence)}")
+        if decision.explanation.constraints:
+            print(f"  constraints: {', '.join(decision.explanation.constraints)}")
+        if decision.explanation.result:
+            print(f"  result: {decision.explanation.result}")
     return 0
 
 
