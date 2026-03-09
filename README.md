@@ -16,27 +16,44 @@ The first target runtime is a local single-agent workflow such as OpenClaw. The 
 
 ## Repository Scope
 
-This repository is for the executable project and implementation artifacts.
+This repository contains:
 
-Product and research documents currently live in `/workspace/01-product/` and can be migrated into this repository over time as needed.
+- product direction and MVP documentation
+- competitive and technical research
+- the initial Python implementation scaffold
 
 ## Initial Structure
 
 ```text
 openprecedent/
 ├── docs/
+│   ├── architecture/
+│   ├── engineering/
+│   ├── product/
+│   └── research/
 ├── scripts/
 ├── src/
 └── tests/
 ```
 
-## Near-Term Goals
+## Near-Term Roadmap
 
-- Define the event schema for case capture
-- Define the decision record schema
-- Build a minimal replay API
-- Build precedent retrieval for historical cases
-- Validate the loop against a local agent runtime
+- phase 0: align strategy, MVP, design, and technical direction
+- phase 1: define core schemas for case, event, decision, artifact, and precedent
+- phase 2: build minimal event ingestion and replay APIs
+- phase 3: implement first decision extraction pipeline
+- phase 4: implement case-level precedent retrieval
+- phase 5: validate the full loop against a local agent runtime
+
+## Current Stack Direction
+
+- Python first
+- Rust later for engine-grade components if real bottlenecks appear
+- FastAPI + Pydantic for the first executable layer
+
+## Current Status
+
+The repository currently contains the first documentation set and Python project scaffold. Dependencies have not yet been installed in this environment.
 
 ## License
 
