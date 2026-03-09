@@ -244,7 +244,7 @@ def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path
     assert result == 0
     imported = json.loads(capsys.readouterr().out)
     assert imported["case"]["case_id"] == "case_session_cli"
-    assert imported["imported_event_count"] == 7
+    assert imported["imported_event_count"] == 9
     assert imported["transcript_path"] == str(transcript_path)
 
     result = main(["replay", "case", "case_session_cli", "--json"])
@@ -252,6 +252,8 @@ def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path
     replay = json.loads(capsys.readouterr().out)
     assert replay["events"][0]["event_type"] == "case.started"
     assert any(event["event_type"] == "tool.called" for event in replay["events"])
+    assert any(event["event_type"] == "command.started" for event in replay["events"])
+    assert any(event["event_type"] == "command.completed" for event in replay["events"])
 
 
 def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:

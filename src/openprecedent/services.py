@@ -1001,6 +1001,9 @@ class OpenPrecedentService:
                     continue
                 if item.get("type") != "toolCall":
                     continue
+                tool_name = _string_or_default(item.get("name"), "unknown_tool")
+                arguments = item.get("arguments") if isinstance(item.get("arguments"), dict) else {}
+                tool_call_id = _string_or_none(item.get("id"))
                 normalized_events.append(
                     AppendEventInput(
                         event_id=f"evt_tool_{record_id}_{index}",
@@ -1009,11 +1012,22 @@ class OpenPrecedentService:
                         timestamp=timestamp,
                         parent_event_id=parent_id,
                         payload={
-                            "tool_name": _string_or_default(item.get("name"), "unknown_tool"),
-                            "arguments": item.get("arguments") if isinstance(item.get("arguments"), dict) else {},
-                            "tool_call_id": _string_or_none(item.get("id")),
+                            "tool_name": tool_name,
+                            "arguments": arguments,
+                            "tool_call_id": tool_call_id,
                             "source": "openclaw.session",
                         },
+                    )
+                )
+                normalized_events.extend(
+                    _normalize_openclaw_tool_call_events(
+                        record_id=record_id,
+                        index=index,
+                        parent_id=parent_id,
+                        timestamp=timestamp,
+                        tool_name=tool_name,
+                        tool_call_id=tool_call_id,
+                        arguments=arguments,
                     )
                 )
             return normalized_events
@@ -1035,6 +1049,17 @@ class OpenPrecedentService:
                         "details": message.get("details") if isinstance(message.get("details"), dict) else {},
                         "source": "openclaw.session",
                     },
+                )
+            )
+            normalized_events.extend(
+                _normalize_openclaw_tool_result_events(
+                    record_id=record_id,
+                    parent_id=parent_id,
+                    timestamp=timestamp,
+                    tool_name=_string_or_none(message.get("toolName")),
+                    tool_call_id=_string_or_none(message.get("toolCallId")),
+                    text=text or None,
+                    details=message.get("details") if isinstance(message.get("details"), dict) else {},
                 )
             )
             return normalized_events
@@ -1121,6 +1146,79 @@ def _extract_openclaw_visible_assistant_text(content: list[object]) -> list[str]
                     if text:
                         segments.append(text)
     return segments
+
+
+def _normalize_openclaw_tool_call_events(
+    *,
+    record_id: str,
+    index: int,
+    parent_id: str | None,
+    timestamp: datetime | None,
+    tool_name: str,
+    tool_call_id: str | None,
+    arguments: dict[str, object],
+) -> list[AppendEventInput]:
+    if tool_name != "exec_command":
+        return []
+
+    command = _string_or_none(arguments.get("cmd"))
+    if command is None:
+        return []
+
+    return [
+        AppendEventInput(
+            event_id=f"evt_command_started_{record_id}_{index}",
+            event_type=EventType.COMMAND_STARTED,
+            actor=EventActor.AGENT,
+            timestamp=timestamp,
+            parent_event_id=parent_id,
+            payload={
+                "command": command,
+                "tool_call_id": tool_call_id,
+                "source": "openclaw.session",
+            },
+        )
+    ]
+
+
+def _normalize_openclaw_tool_result_events(
+    *,
+    record_id: str,
+    parent_id: str | None,
+    timestamp: datetime | None,
+    tool_name: str | None,
+    tool_call_id: str | None,
+    text: str | None,
+    details: dict[str, object],
+) -> list[AppendEventInput]:
+    if tool_name != "exec_command":
+        return []
+
+    command = _string_or_none(details.get("cmd")) or _string_or_none(details.get("command"))
+    exit_code = details.get("exit_code")
+    normalized_exit_code = exit_code if isinstance(exit_code, int) else 0
+    stderr = _string_or_none(details.get("stderr"))
+    stdout = text
+    if stdout is None and stderr is None:
+        return []
+
+    return [
+        AppendEventInput(
+            event_id=f"evt_command_completed_{record_id}",
+            event_type=EventType.COMMAND_COMPLETED,
+            actor=EventActor.SYSTEM,
+            timestamp=timestamp,
+            parent_event_id=parent_id,
+            payload={
+                "command": command or "exec_command",
+                "exit_code": normalized_exit_code,
+                "stdout": stdout,
+                "stderr": stderr,
+                "tool_call_id": tool_call_id,
+                "source": "openclaw.session",
+            },
+        )
+    ]
 
 
 def _case_id_for_openclaw_session(session_id: str) -> str:

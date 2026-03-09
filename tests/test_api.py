@@ -164,20 +164,22 @@ def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> 
         user_id="u1",
     )
     assert result.case.case_id == "case_session"
-    assert len(result.imported_events) == 7
+    assert len(result.imported_events) == 9
 
     events = service.list_events("case_session")
     assert events[0].event_type.value == "case.started"
     assert any(event.event_type.value == "message.user" for event in events)
     assert any(event.event_type.value == "tool.called" for event in events)
     assert any(event.event_type.value == "tool.completed" for event in events)
+    assert any(event.event_type.value == "command.started" for event in events)
+    assert any(event.event_type.value == "command.completed" for event in events)
 
     decisions = service.extract_decisions("case_session")
     assert any(item.decision_type.value == "plan" for item in decisions)
     assert any(item.decision_type.value == "select_tool" for item in decisions)
 
     replay = service.replay_case("case_session")
-    assert replay.summary == "Imported OpenClaw session: 7 events, 2 decisions, status=started"
+    assert replay.summary == "Imported OpenClaw session: 9 events, 2 decisions, status=started"
 
 
 def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path) -> None:
