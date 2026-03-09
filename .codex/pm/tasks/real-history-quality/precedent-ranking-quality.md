@@ -9,8 +9,6 @@ depends_on: 26
 issue: 28
 ---
 
-# Improve precedent ranking quality on larger real-case history
-
 ## Context
 
 Precedent retrieval works for MVP v1, but the roadmap still calls out ranking quality as a gap once real-case history grows. This should be improved against a stronger real-session corpus, not only against the current curated examples.

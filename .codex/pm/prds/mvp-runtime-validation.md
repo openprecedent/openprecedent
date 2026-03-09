@@ -5,8 +5,6 @@ title: MVP runtime validation and quality
 status: draft
 ---
 
-# MVP runtime validation and quality
-
 ## Summary
 
 Backfill the remaining MVP validation and quality work into the local Codex PM workspace so future development can run through repository-local PRD, epic, and task files instead of relying only on ad hoc issue discovery.

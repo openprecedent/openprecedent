@@ -8,8 +8,6 @@ labels: feature,test
 issue: 26
 ---
 
-# Add anonymized real-session fixtures to the evaluation suite
-
 ## Context
 
 Current evaluation coverage is still dominated by curated fixtures. The roadmap explicitly calls for expanding evaluation with real collected trajectories once enough collection volume exists.

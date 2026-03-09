@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 from openprecedent.codex_pm import main
@@ -21,7 +22,7 @@ def test_codex_pm_init_creates_workspace(tmp_path: Path, monkeypatch) -> None:
 def test_codex_pm_module_invocation_runs_cli(tmp_path: Path) -> None:
     repo_root = Path("/workspace/02-projects/incubation/openprecedent")
     result = subprocess.run(
-        [str(repo_root / ".venv" / "bin" / "python"), "-m", "openprecedent.codex_pm", "init"],
+        [sys.executable, "-m", "openprecedent.codex_pm", "init"],
         cwd=tmp_path,
         env={"PYTHONPATH": str(repo_root / "src")},
         check=False,

@@ -6,8 +6,6 @@ status: backlog
 prd: mvp-runtime-validation
 ---
 
-# Local runtime validation
-
 ## Outcome
 
 Operationalize the existing collector path in a real target environment so the MVP loop is validated on scheduled collection rather than only on curated or manually imported sessions.

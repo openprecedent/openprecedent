@@ -239,8 +239,6 @@ def _persist_document(document: PMDocument) -> None:
             lines.append(f"{key}: {value}")
     lines.append("---")
     lines.append("")
-    lines.append(f"# {document.metadata.get('title', document.path.stem)}")
-    lines.append("")
     for heading, body in document.sections.items():
         lines.append(f"## {heading}")
         lines.append("")

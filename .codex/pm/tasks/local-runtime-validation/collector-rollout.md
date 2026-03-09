@@ -8,8 +8,6 @@ labels: feature,ops
 issue: 23
 ---
 
-# Roll out scheduled OpenClaw collector in a real target environment
-
 ## Context
 
 The collector command, wrapper script, and scheduling assets already exist, but the roadmap still treats real scheduled execution in the target machine environment as unfinished. This task is the operational prerequisite for the rest of the runtime-validation loop.

@@ -6,8 +6,6 @@ status: backlog
 prd: mvp-runtime-validation
 ---
 
-# Real history quality
-
 ## Outcome
 
 Improve the quality of replay, evaluation, and precedent behavior on real or anonymized collected session history instead of relying only on curated fixtures.
