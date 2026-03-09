@@ -598,10 +598,29 @@ class OpenPrecedentService:
         events = self.list_events(case_id)
         extracted: list[Decision] = []
         seen_plan = False
+        seen_user_message = False
 
         for event in events:
             event_payload = event.payload
-            if event.event_type == EventType.USER_CONFIRMED:
+            if event.event_type == EventType.MESSAGE_USER:
+                message = _string_or_none(event_payload.get("message"))
+                if seen_user_message and message is not None:
+                    extracted.append(
+                        self._build_decision(
+                            case_id=case_id,
+                            decision_type=DecisionType.CLARIFY,
+                            title="User clarification received",
+                            question="Did the user refine the task or add a new constraint?",
+                            chosen_action="Incorporate the follow-up user guidance",
+                            evidence_event_ids=[event.event_id],
+                            constraints=["Later user messages can narrow scope or add constraints"],
+                            selection_reason="A follow-up user message during execution usually reflects clarified scope, constraints, or new instructions.",
+                            outcome=message,
+                            confidence=0.85,
+                        )
+                    )
+                seen_user_message = True
+            elif event.event_type == EventType.USER_CONFIRMED:
                 extracted.append(
                     self._build_decision(
                         case_id=case_id,

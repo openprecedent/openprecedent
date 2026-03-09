@@ -257,6 +257,30 @@ def test_service_imports_openclaw_checkpoint_record_as_event(db_path) -> None:
     assert checkpoint_events[0].payload["status"] == "saved"
 
 
+def test_service_extracts_clarify_decision_from_follow_up_user_message(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "clarify-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_clarify",
+        title="Imported OpenClaw clarify session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_clarify"
+    assert len(result.imported_events) == 11
+
+    decisions = service.extract_decisions("case_session_clarify")
+    clarify_decisions = [item for item in decisions if item.decision_type.value == "clarify"]
+    assert len(clarify_decisions) == 1
+    assert clarify_decisions[0].outcome == "Focus on collector scheduling and evaluation gaps."
+    assert clarify_decisions[0].evidence_event_ids == ["evt_message_msg-user-clarify-followup"]
+    assert clarify_decisions[0].explanation.selection_reason
+
+
 def test_service_imports_openclaw_file_operations(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = Path(__file__).parent / "fixtures" / "openclaw_sessions" / "file-ops-session.jsonl"
