@@ -10,7 +10,17 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from openprecedent.schemas import Case, CaseStatus, Decision, DecisionType, Event, EventActor, EventType, Precedent
+from openprecedent.schemas import (
+    Case,
+    CaseStatus,
+    Decision,
+    DecisionExplanation,
+    DecisionType,
+    Event,
+    EventActor,
+    EventType,
+    Precedent,
+)
 from openprecedent.storage import SQLiteStore
 
 
@@ -140,7 +150,10 @@ class OpenPrecedentService:
                         question="Did the user confirm a constraint or proposed next step?",
                         chosen_action="Continue with confirmed instruction",
                         evidence_event_ids=[event.event_id],
+                        constraints=["User confirmation received"],
+                        selection_reason="The user explicitly confirmed the next step or constraint.",
                         outcome=_string_or_none(event_payload.get("message")),
+                        confidence=0.9,
                     )
                 )
             elif event.event_type == EventType.MESSAGE_AGENT and not seen_plan:
@@ -152,7 +165,10 @@ class OpenPrecedentService:
                         question="What path should the agent take first?",
                         chosen_action=_string_or_default(event_payload.get("message"), "Proceed with the first stated plan"),
                         evidence_event_ids=[event.event_id],
+                        constraints=["Use the first explicit agent plan as the baseline path"],
+                        selection_reason="The first substantive agent response usually establishes the initial execution path.",
                         outcome="Initial plan captured from agent response",
+                        confidence=0.7,
                     )
                 )
                 seen_plan = True
@@ -166,7 +182,10 @@ class OpenPrecedentService:
                         question="Which tool should be used next?",
                         chosen_action=f"Use {tool_name}",
                         evidence_event_ids=[event.event_id],
+                        constraints=["Prefer the tool explicitly chosen by the runtime"],
+                        selection_reason=f"The runtime selected {tool_name} for the next operation.",
                         outcome=_string_or_none(event_payload.get("reason")),
+                        confidence=0.8,
                     )
                 )
             elif event.event_type == EventType.FILE_WRITE:
@@ -179,7 +198,10 @@ class OpenPrecedentService:
                         question="Should the agent modify repository state?",
                         chosen_action=f"Write {file_path}",
                         evidence_event_ids=[event.event_id],
+                        constraints=["File write indicates a committed repository change"],
+                        selection_reason=f"The runtime wrote {file_path}, which marks an applied change decision.",
                         outcome=_string_or_none(event_payload.get("summary")),
+                        confidence=0.85,
                     )
                 )
             elif event.event_type == EventType.COMMAND_COMPLETED:
@@ -193,7 +215,10 @@ class OpenPrecedentService:
                             question="How should execution proceed after a failing command?",
                             chosen_action="Inspect failure and choose a narrower recovery path",
                             evidence_event_ids=[event.event_id],
+                            constraints=["Non-zero command exit indicates recovery is required"],
+                            selection_reason="The command failed, so the next meaningful step is a recovery choice rather than normal continuation.",
                             outcome=_string_or_none(event_payload.get("stderr")) or f"exit_code={exit_code}",
+                            confidence=0.9,
                         )
                     )
             elif event.event_type == EventType.CASE_COMPLETED:
@@ -205,7 +230,10 @@ class OpenPrecedentService:
                         question="Is the case ready to conclude?",
                         chosen_action="Return the final result",
                         evidence_event_ids=[event.event_id],
+                        constraints=["Case completion event closes execution"],
+                        selection_reason="The runtime emitted a completion event, so the case should be finalized successfully.",
                         outcome=_string_or_none(event_payload.get("summary")) or "Case completed",
+                        confidence=0.95,
                     )
                 )
             elif event.event_type == EventType.CASE_FAILED:
@@ -217,7 +245,10 @@ class OpenPrecedentService:
                         question="Should the case terminate with a failure outcome?",
                         chosen_action="Stop execution and surface failure",
                         evidence_event_ids=[event.event_id],
+                        constraints=["Case failure event closes execution with an error state"],
+                        selection_reason="The runtime emitted a failure event, so execution should stop and surface the failure.",
                         outcome=_string_or_none(event_payload.get("summary")) or "Case failed",
+                        confidence=0.95,
                     )
                 )
 
@@ -259,7 +290,7 @@ class OpenPrecedentService:
             other_events = self.store.list_events(other_case.case_id)
             other_decisions = self.store.list_decisions(other_case.case_id)
             other_fingerprint = self._fingerprint(other_case, other_events, other_decisions)
-            score, reason, differences = self._compare_fingerprints(
+            score, similarities, differences = self._compare_fingerprints(
                 current_fingerprint,
                 other_fingerprint,
             )
@@ -271,8 +302,11 @@ class OpenPrecedentService:
                     Precedent(
                         case_id=other_case.case_id,
                         title=other_case.title,
-                        similarity_reason=reason,
+                        summary=self._build_case_summary(other_case, other_events, other_decisions),
+                        similarity_score=score,
+                        similarities=similarities,
                         differences=differences,
+                        reusable_takeaway=self._build_reusable_takeaway(other_case, other_decisions),
                         historical_outcome=other_case.final_summary,
                     ),
                 )
@@ -290,8 +324,18 @@ class OpenPrecedentService:
         question: str,
         chosen_action: str,
         evidence_event_ids: list[str],
+        constraints: list[str],
+        selection_reason: str,
         outcome: str | None,
+        confidence: float,
     ) -> Decision:
+        explanation = DecisionExplanation(
+            goal=question,
+            evidence=[f"event:{event_id}" for event_id in evidence_event_ids],
+            constraints=constraints,
+            selection_reason=selection_reason,
+            result=outcome,
+        )
         return Decision(
             decision_id=f"dec_{uuid4().hex[:12]}",
             case_id=case_id,
@@ -301,9 +345,11 @@ class OpenPrecedentService:
             chosen_action=chosen_action,
             alternatives=[],
             evidence_event_ids=evidence_event_ids,
-            constraint_summary=None,
+            constraint_summary="; ".join(constraints) if constraints else None,
             requires_human_confirmation=False,
             outcome=outcome,
+            confidence=confidence,
+            explanation=explanation,
             sequence_no=0,
         )
 
@@ -330,15 +376,15 @@ class OpenPrecedentService:
         self,
         current: dict[str, object],
         other: dict[str, object],
-    ) -> tuple[int, str, list[str]]:
+    ) -> tuple[int, list[str], list[str]]:
         score = 0
-        reasons: list[str] = []
+        similarities: list[str] = []
         differences: list[str] = []
 
         for key in ("has_file_write", "has_recovery", "status"):
             if current[key] == other[key]:
                 score += 2
-                reasons.append(f"same {key}")
+                similarities.append(f"same {key}")
             else:
                 differences.append(f"different {key}")
 
@@ -346,21 +392,28 @@ class OpenPrecedentService:
         other_decisions = other["decision_types"]
         if current_decisions == other_decisions:
             score += 3
-            reasons.append("same decision shape")
+            similarities.append("same decision shape")
         else:
             differences.append("different decision shape")
 
         tool_delta = abs(int(current["tool_count"]) - int(other["tool_count"]))
         if tool_delta == 0:
             score += 2
-            reasons.append("same tool call count")
+            similarities.append("same tool call count")
         elif tool_delta == 1:
             score += 1
-            reasons.append("nearby tool call count")
+            similarities.append("nearby tool call count")
         else:
             differences.append("different tool call count")
 
-        return score, ", ".join(reasons) or "similar case structure", differences
+        return score, similarities or ["similar case structure"], differences
+
+    def _build_reusable_takeaway(self, case: Case, decisions: list[Decision]) -> str | None:
+        if decisions:
+            return decisions[-1].chosen_action
+        if case.final_summary:
+            return case.final_summary
+        return None
 
 
 def _string_or_none(value: object) -> str | None:

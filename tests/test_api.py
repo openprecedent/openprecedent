@@ -72,6 +72,11 @@ async def test_case_ingestion_replay_and_precedent_flow(db_path) -> None:
         extracted = await client.post("/cases/case_alpha/extract-decisions")
         assert extracted.status_code == 200
         assert len(extracted.json()["decisions"]) >= 3
+        first_decision = extracted.json()["decisions"][0]
+        assert "explanation" in first_decision
+        assert "goal" in first_decision["explanation"]
+        assert "selection_reason" in first_decision["explanation"]
+        assert isinstance(first_decision["confidence"], float)
 
         extracted_beta = await client.post("/cases/case_beta/extract-decisions")
         assert extracted_beta.status_code == 200
@@ -89,6 +94,9 @@ async def test_case_ingestion_replay_and_precedent_flow(db_path) -> None:
         precedent_body = precedents.json()
         assert len(precedent_body) == 1
         assert precedent_body[0]["case_id"] == "case_beta"
+        assert precedent_body[0]["similarity_score"] > 0
+        assert precedent_body[0]["similarities"]
+        assert "summary" in precedent_body[0]
 
 
 @pytest.mark.anyio

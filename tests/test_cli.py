@@ -58,12 +58,67 @@ def test_cli_end_to_end(capsys, db_path) -> None:
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
     assert len(decisions) >= 2
+    assert "explanation" in decisions[0]
+    assert "selection_reason" in decisions[0]["explanation"]
 
     result = main(["replay", "case", "case_cli", "--json"])
     assert result == 0
     replay = json.loads(capsys.readouterr().out)
     assert replay["case"]["case_id"] == "case_cli"
     assert replay["summary"] == "done"
+
+
+def test_cli_precedent_output(capsys, db_path) -> None:
+    for case_id, title, summary in (
+        ("case_prev_a", "Previous A", "done a"),
+        ("case_prev_b", "Previous B", "done b"),
+    ):
+        result = main(["case", "create", "--case-id", case_id, "--title", title])
+        assert result == 0
+        capsys.readouterr()
+        for command in (
+            [
+                "event",
+                "append",
+                case_id,
+                "message.agent",
+                "agent",
+                "--payload",
+                '{"message":"I will inspect files first."}',
+            ],
+            [
+                "event",
+                "append",
+                case_id,
+                "tool.called",
+                "agent",
+                "--payload",
+                '{"tool_name":"rg","reason":"search"}',
+            ],
+            [
+                "event",
+                "append",
+                case_id,
+                "case.completed",
+                "system",
+                "--payload",
+                f'{{"summary":"{summary}"}}',
+            ],
+        ):
+            result = main(command)
+            assert result == 0
+            capsys.readouterr()
+        result = main(["extract", "decisions", case_id])
+        assert result == 0
+        capsys.readouterr()
+
+    result = main(["precedent", "find", "case_prev_a"])
+    assert result == 0
+    precedents = json.loads(capsys.readouterr().out)
+    assert len(precedents) == 1
+    assert precedents[0]["case_id"] == "case_prev_b"
+    assert precedents[0]["similarities"]
+    assert precedents[0]["similarity_score"] > 0
 
 
 def test_cli_import_jsonl(capsys, db_path, tmp_path: Path) -> None:
