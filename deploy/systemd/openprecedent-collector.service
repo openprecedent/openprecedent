@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenPrecedent OpenClaw collector
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=__OPENPRECEDENT_ROOT__
+Environment=OPENPRECEDENT_DB=__OPENPRECEDENT_ROOT__/runtime/openprecedent.db
+Environment=OPENPRECEDENT_COLLECTOR_STATE=__OPENPRECEDENT_ROOT__/runtime/openprecedent-collector-state.json
+Environment=OPENCLAW_SESSIONS_ROOT=%h/.openclaw/agents/main/sessions
+Environment=OPENPRECEDENT_COLLECT_LIMIT=1
+ExecStart=__OPENPRECEDENT_ROOT__/scripts/run-collector.sh

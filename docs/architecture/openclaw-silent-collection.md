@@ -68,6 +68,15 @@ This command:
 
 This is the intended MVP path for cron-based silent collection.
 
+Operational assets now live in:
+
+- `scripts/run-collector.sh`
+- `scripts/install-collector-assets.sh`
+- `deploy/systemd/openprecedent-collector.service`
+- `deploy/systemd/openprecedent-collector.timer`
+- `deploy/cron/openprecedent-collector.cron`
+- `docs/engineering/openclaw-collector-operations.md`
+
 ## MVP Boundary
 
 This is an import-based silent collector, not a live hook into OpenClaw internals.

@@ -1,0 +1,9 @@
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+OPENPRECEDENT_DB=__OPENPRECEDENT_ROOT__/runtime/openprecedent.db
+OPENPRECEDENT_COLLECTOR_STATE=__OPENPRECEDENT_ROOT__/runtime/openprecedent-collector-state.json
+OPENCLAW_SESSIONS_ROOT=$HOME/.openclaw/agents/main/sessions
+OPENPRECEDENT_COLLECT_LIMIT=1
+
+*/5 * * * * cd "__OPENPRECEDENT_ROOT__" && ./scripts/run-collector.sh >> "__OPENPRECEDENT_ROOT__/runtime/collector.log" 2>&1

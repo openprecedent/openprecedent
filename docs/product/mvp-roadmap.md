@@ -230,12 +230,15 @@ Completed work:
 - session discovery and `--latest` import flow
 - automated collector command with local state cursor for silent collection
 - curated evaluation suite for summary and recovery trajectories
+- operational collector assets for `systemd` / `cron`
+- path-aware installer script for collector scheduling assets
+- collected-session evaluation/report command for real imported sessions
 
 Remaining gaps:
 
 - run the collector on a real schedule in the target machine environment
 - validate replay/extraction/precedent quality on a growing set of real collected sessions
-- document the recommended cron/systemd setup once the collection loop is confirmed
+- keep improving precedent ranking as real history grows
 
 ## Next Tasks
 

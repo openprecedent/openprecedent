@@ -92,6 +92,14 @@ def build_parser() -> argparse.ArgumentParser:
     eval_fixtures = eval_subparsers.add_parser("fixtures")
     eval_fixtures.add_argument("path")
     eval_fixtures.add_argument("--json", action="store_true", dest="as_json")
+    eval_collected = eval_subparsers.add_parser("collected-openclaw-sessions")
+    eval_collected.add_argument("--sessions-root")
+    eval_collected.add_argument("--state-file")
+    eval_collected.add_argument("--limit", type=int)
+    eval_collected.add_argument("--user-id")
+    eval_collected.add_argument("--agent-id", default="openclaw")
+    eval_collected.add_argument("--report-file")
+    eval_collected.add_argument("--json", action="store_true", dest="as_json")
 
     return parser
 
@@ -329,6 +337,55 @@ def _handle_eval(args: argparse.Namespace, service: OpenPrecedentService) -> int
                 print(
                     "  missing precedents: "
                     + ",".join(result.missing_precedent_case_ids)
+                )
+        return 0
+    if args.action == "collected-openclaw-sessions":
+        report = service.evaluate_collected_openclaw_sessions(
+            _resolve_openclaw_sessions_root(args.sessions_root),
+            state_path=_resolve_collector_state_path(args.state_file),
+            limit=args.limit,
+            user_id=args.user_id,
+            agent_id=args.agent_id,
+        )
+        if args.report_file:
+            report_path = Path(args.report_file)
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text(
+                json.dumps(report.model_dump(mode="json"), ensure_ascii=True, indent=2, sort_keys=True),
+                encoding="utf-8",
+            )
+        if args.as_json:
+            _print_json(report.model_dump(mode="json"))
+            return 0
+
+        print(
+            f"Collected evaluation: {report.evaluated_cases} cases, "
+            f"{report.completed_cases} completed, {report.failed_cases} failed"
+        )
+        print(
+            f"Average events={report.average_event_count:.2f}, "
+            f"average decisions={report.average_decision_count:.2f}"
+        )
+        if report.decision_type_counts:
+            print(
+                "Decision types: "
+                + ", ".join(
+                    f"{decision_type}={count}"
+                    for decision_type, count in report.decision_type_counts.items()
+                )
+            )
+        if report.missing_session_ids:
+            print("Missing sessions: " + ",".join(report.missing_session_ids))
+        for result in report.results:
+            print(
+                f"- {result.case_id} status={result.status} "
+                f"events={result.event_count} decisions={result.decision_count} "
+                f"precedents={result.precedent_count}"
+            )
+            if result.top_precedent_case_id is not None:
+                print(
+                    f"  top precedent: {result.top_precedent_case_id} "
+                    f"(score={result.top_precedent_score})"
                 )
         return 0
     return 2
