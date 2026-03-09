@@ -870,6 +870,14 @@ class OpenPrecedentService:
                 if (path := _string_or_none(event.payload.get("path"))) is not None
             }
         )
+        file_read_paths = sorted(
+            {
+                Path(path).name
+                for event in events
+                if event.event_type == EventType.FILE_READ
+                and (path := _string_or_none(event.payload.get("path"))) is not None
+            }
+        )
         keywords = sorted(self._case_keywords(case, events, decisions))
         return {
             "status": case.status.value,
@@ -878,6 +886,7 @@ class OpenPrecedentService:
             "tool_count": event_types[EventType.TOOL_CALLED.value],
             "tool_names": tool_names,
             "file_paths": file_paths,
+            "file_read_paths": file_read_paths,
             "keywords": keywords,
             "decision_types": dict(decision_types),
         }
@@ -891,10 +900,17 @@ class OpenPrecedentService:
         similarities: list[str] = []
         differences: list[str] = []
 
-        for key in ("has_file_write", "has_recovery", "status"):
+        if current["status"] == other["status"]:
+            score += 2
+            similarities.append("same status")
+        else:
+            differences.append("different status")
+
+        for key in ("has_file_write", "has_recovery"):
             if current[key] == other[key]:
-                score += 2
-                similarities.append(f"same {key}")
+                if current[key]:
+                    score += 2
+                    similarities.append(f"same {key}")
             else:
                 differences.append(f"different {key}")
 
@@ -935,12 +951,24 @@ class OpenPrecedentService:
             score += min(len(shared_paths), 2)
             similarities.append("shared file targets: " + ",".join(shared_paths[:3]))
 
+        shared_read_paths = sorted(set(current["file_read_paths"]) & set(other["file_read_paths"]))
+        if shared_read_paths:
+            score += min(len(shared_read_paths) * 2, 4)
+            similarities.append("shared read targets: " + ",".join(shared_read_paths[:3]))
+
         shared_keywords = sorted(set(current["keywords"]) & set(other["keywords"]))
         if shared_keywords:
             score += min(len(shared_keywords), 4)
             similarities.append("shared keywords: " + ",".join(shared_keywords[:4]))
         else:
             differences.append("different task keywords")
+
+        current_decision_keys = set(current["decision_types"])
+        other_decision_keys = set(other["decision_types"])
+        clarify_mismatch = DecisionType.CLARIFY.value in (current_decision_keys ^ other_decision_keys)
+        if clarify_mismatch:
+            score -= 1
+            differences.append("different clarification pattern")
 
         return score, similarities or ["similar case structure"], differences
 

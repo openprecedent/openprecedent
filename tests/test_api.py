@@ -421,6 +421,19 @@ def test_service_evaluates_real_session_fixture_suite(db_path) -> None:
     assert "clarify" in [decision_type.value for decision_type in clarify_result.actual_decision_types]
 
 
+def test_service_precedent_prefers_shared_read_targets_for_real_session_search(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
+
+    service.evaluate_openclaw_fixture_suite(suite_path)
+
+    precedents = service.find_precedents("eval_real_search_read", limit=2)
+
+    assert len(precedents) == 2
+    assert precedents[0].case_id == "eval_real_file_ops"
+    assert precedents[0].similarity_score >= precedents[1].similarity_score
+
+
 def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
