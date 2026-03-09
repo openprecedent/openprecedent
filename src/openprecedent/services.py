@@ -1199,7 +1199,8 @@ def _normalize_openclaw_tool_result_events(
     normalized_exit_code = exit_code if isinstance(exit_code, int) else 0
     stderr = _string_or_none(details.get("stderr"))
     stdout = text
-    if stdout is None and stderr is None:
+    # Preserve command completion for silent failures where OpenClaw records only an exit code.
+    if stdout is None and stderr is None and not isinstance(exit_code, int):
         return []
 
     return [

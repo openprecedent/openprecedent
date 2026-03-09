@@ -1,0 +1,4 @@
+{"type":"session","version":3,"id":"failing-command-session","timestamp":"2026-03-09T02:00:00.000Z","cwd":"/root/.openclaw/workspace"}
+{"type":"message","id":"msg-user-fail","parentId":null,"timestamp":"2026-03-09T02:00:00.100Z","message":{"role":"user","content":[{"type":"text","text":"Try a command that will fail."}]}}
+{"type":"message","id":"msg-assistant-fail","parentId":"msg-user-fail","timestamp":"2026-03-09T02:00:01.000Z","message":{"role":"assistant","content":[{"type":"text","text":"I will run the failing command."},{"type":"toolCall","id":"call_fail","name":"exec_command","arguments":{"cmd":"false"}}]}}
+{"type":"message","id":"msg-tool-fail","parentId":"msg-assistant-fail","timestamp":"2026-03-09T02:00:01.200Z","message":{"role":"toolResult","toolCallId":"call_fail","toolName":"exec_command","content":[],"isError":true,"details":{"exit_code":1}}}
