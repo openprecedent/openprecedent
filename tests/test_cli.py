@@ -200,7 +200,6 @@ def test_cli_import_openclaw_runtime_trace(capsys, db_path) -> None:
     assert replay["summary"] == "Provided the context-graph document summary."
     assert replay["artifacts"]
 
-
 def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
@@ -307,3 +306,14 @@ def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None
     collected_again = json.loads(capsys.readouterr().out)
     assert collected_again["imported"] == []
     assert "sample-session" in collected_again["skipped_session_ids"]
+
+
+def test_cli_evaluates_fixture_suite(capsys, db_path) -> None:
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "suite.json"
+
+    result = main(["eval", "fixtures", str(suite_path), "--json"])
+    assert result == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["total_cases"] == 3
+    assert report["failed_cases"] == 0
+    assert report["passed_cases"] == 3

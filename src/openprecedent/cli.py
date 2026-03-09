@@ -87,6 +87,12 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_collect.add_argument("--user-id")
     runtime_collect.add_argument("--agent-id", default="openclaw")
 
+    eval_parser = subparsers.add_parser("eval")
+    eval_subparsers = eval_parser.add_subparsers(dest="action", required=True)
+    eval_fixtures = eval_subparsers.add_parser("fixtures")
+    eval_fixtures.add_argument("path")
+    eval_fixtures.add_argument("--json", action="store_true", dest="as_json")
+
     return parser
 
 
@@ -110,6 +116,8 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_precedent(args, service)
         if args.resource == "runtime":
             return _handle_runtime(args, service)
+        if args.resource == "eval":
+            return _handle_eval(args, service)
     except KeyError as error:
         print(f"case not found: {error.args[0]}", file=sys.stderr)
         return 1
@@ -283,6 +291,45 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
             agent_id=args.agent_id,
         )
         _print_json(result.model_dump(mode="json"))
+        return 0
+    return 2
+
+
+def _handle_eval(args: argparse.Namespace, service: OpenPrecedentService) -> int:
+    if args.action == "fixtures":
+        report = service.evaluate_openclaw_fixture_suite(Path(args.path))
+        if args.as_json:
+            _print_json(report.model_dump(mode="json"))
+            return 0
+
+        print(
+            f"Evaluation: {report.passed_cases}/{report.total_cases} passed, "
+            f"{report.failed_cases} failed"
+        )
+        for result in report.results:
+            status = "PASS" if result.passed else "FAIL"
+            print(f"- {status} {result.case_id}")
+            print(
+                "  decisions: "
+                f"expected={','.join(item.value for item in result.expected_decision_types)} "
+                f"actual={','.join(item.value for item in result.actual_decision_types)}"
+            )
+            if result.expected_precedent_case_ids:
+                print(
+                    "  precedents: "
+                    f"expected={','.join(result.expected_precedent_case_ids)} "
+                    f"actual={','.join(result.actual_precedent_case_ids)}"
+                )
+            if result.missing_decision_types:
+                print(
+                    "  missing decisions: "
+                    + ",".join(item.value for item in result.missing_decision_types)
+                )
+            if result.missing_precedent_case_ids:
+                print(
+                    "  missing precedents: "
+                    + ",".join(result.missing_precedent_case_ids)
+                )
         return 0
     return 2
 
