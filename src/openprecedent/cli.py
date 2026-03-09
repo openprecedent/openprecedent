@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from openprecedent.config import get_db_path
+from openprecedent.config import get_collector_state_path, get_db_path
 from openprecedent.schemas import EventActor, EventType
 from openprecedent.services import AppendEventInput, CreateCaseInput, OpenPrecedentService
 
@@ -80,6 +80,12 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_import_session.add_argument("--title")
     runtime_import_session.add_argument("--user-id")
     runtime_import_session.add_argument("--agent-id", default="openclaw")
+    runtime_collect = runtime_subparsers.add_parser("collect-openclaw-sessions")
+    runtime_collect.add_argument("--sessions-root")
+    runtime_collect.add_argument("--state-file")
+    runtime_collect.add_argument("--limit", type=int, default=1)
+    runtime_collect.add_argument("--user-id")
+    runtime_collect.add_argument("--agent-id", default="openclaw")
 
     return parser
 
@@ -268,6 +274,16 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
             }
         )
         return 0
+    if args.action == "collect-openclaw-sessions":
+        result = service.collect_openclaw_sessions(
+            _resolve_openclaw_sessions_root(args.sessions_root),
+            state_path=_resolve_collector_state_path(args.state_file),
+            limit=args.limit,
+            user_id=args.user_id,
+            agent_id=args.agent_id,
+        )
+        _print_json(result.model_dump(mode="json"))
+        return 0
     return 2
 
 
@@ -279,6 +295,12 @@ def _resolve_openclaw_sessions_root(value: str | None) -> Path:
     if value:
         return Path(value)
     return Path.home() / ".openclaw" / "agents" / "main" / "sessions"
+
+
+def _resolve_collector_state_path(value: str | None) -> Path:
+    if value:
+        return Path(value)
+    return get_collector_state_path()
 
 
 def _resolve_openclaw_session_target(

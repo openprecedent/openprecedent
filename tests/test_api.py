@@ -179,3 +179,43 @@ def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> 
 
     replay = service.replay_case("case_session")
     assert replay.summary == "Imported OpenClaw session: 7 events, 2 decisions, status=started"
+
+
+def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    transcript_path = sessions_dir / "sample-session.jsonl"
+    transcript_path.write_text(
+        (fixture_dir / "sample-session.jsonl").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (sessions_dir / "sessions.json").write_text(
+        (fixture_dir / "sessions.json").read_text(encoding="utf-8").replace(
+            "__FIXTURE_DIR__",
+            str(sessions_dir),
+        ),
+        encoding="utf-8",
+    )
+    state_path = tmp_path / "collector-state.json"
+
+    first = service.collect_openclaw_sessions(
+        sessions_dir,
+        state_path=state_path,
+        limit=1,
+        user_id="u1",
+    )
+    assert len(first.imported) == 1
+    assert first.imported[0].session_id == "sample-session"
+    assert first.imported[0].case_id == "openclaw_samplesession"
+    assert state_path.exists()
+
+    second = service.collect_openclaw_sessions(
+        sessions_dir,
+        state_path=state_path,
+        limit=1,
+        user_id="u1",
+    )
+    assert second.imported == []
+    assert "sample-session" in second.skipped_session_ids
