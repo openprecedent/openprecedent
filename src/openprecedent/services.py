@@ -254,6 +254,22 @@ class RuntimeDecisionLineageInvocation(BaseModel):
     known_files: list[str] = Field(default_factory=list)
     case_id: str | None = None
     session_id: str | None = None
+    matched_case_ids: list[str] = Field(default_factory=list)
+    task_frame: str | None = None
+    accepted_constraints: list[str] = Field(default_factory=list)
+    success_criteria: list[str] = Field(default_factory=list)
+    rejected_options: list[str] = Field(default_factory=list)
+    authority_signals: list[str] = Field(default_factory=list)
+    cautions: list[str] = Field(default_factory=list)
+    suggested_focus: str | None = None
+
+
+class RuntimeDecisionLineageInspection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    invocation: RuntimeDecisionLineageInvocation
+    downstream_events: list[Event] = Field(default_factory=list)
+    downstream_decisions: list[Decision] = Field(default_factory=list)
 
 
 @dataclass
@@ -993,6 +1009,7 @@ class OpenPrecedentService:
     def record_runtime_decision_lineage_invocation(
         self,
         input_data: DecisionLineageBriefInput,
+        brief: DecisionLineageBrief,
         *,
         log_path: Path,
         case_id: str | None = None,
@@ -1008,6 +1025,14 @@ class OpenPrecedentService:
             known_files=input_data.known_files,
             case_id=case_id,
             session_id=session_id,
+            matched_case_ids=[item.case_id for item in brief.matched_cases],
+            task_frame=brief.task_frame,
+            accepted_constraints=brief.accepted_constraints,
+            success_criteria=brief.success_criteria,
+            rejected_options=brief.rejected_options,
+            authority_signals=brief.authority_signals,
+            cautions=brief.cautions,
+            suggested_focus=brief.suggested_focus,
         )
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with log_path.open("a", encoding="utf-8") as handle:
@@ -1035,6 +1060,43 @@ class OpenPrecedentService:
                         f"invalid runtime decision-lineage invocation log at line {line_no}"
                     ) from error
         return invocations
+
+    def inspect_runtime_decision_lineage_invocation(
+        self,
+        invocation_id: str,
+        log_path: Path,
+    ) -> RuntimeDecisionLineageInspection:
+        invocation = next(
+            (
+                item
+                for item in self.list_runtime_decision_lineage_invocations(log_path)
+                if item.invocation_id == invocation_id
+            ),
+            None,
+        )
+        if invocation is None:
+            raise KeyError(invocation_id)
+
+        if not invocation.case_id:
+            return RuntimeDecisionLineageInspection(invocation=invocation)
+
+        case = self.store.get_case(invocation.case_id)
+        if case is None:
+            return RuntimeDecisionLineageInspection(invocation=invocation)
+
+        events = self.store.list_events(invocation.case_id)
+        downstream_events = [event for event in events if event.timestamp > invocation.recorded_at]
+        downstream_event_ids = {event.event_id for event in downstream_events}
+        downstream_decisions = [
+            decision
+            for decision in self.store.list_decisions(invocation.case_id)
+            if downstream_event_ids.intersection(decision.evidence_event_ids)
+        ]
+        return RuntimeDecisionLineageInspection(
+            invocation=invocation,
+            downstream_events=downstream_events,
+            downstream_decisions=downstream_decisions,
+        )
 
     def _build_decision(
         self,

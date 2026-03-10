@@ -108,6 +108,9 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_brief.add_argument("--limit", type=int, default=3)
     runtime_list_invocations = runtime_subparsers.add_parser("list-decision-lineage-invocations")
     runtime_list_invocations.add_argument("--log-file")
+    runtime_inspect_invocation = runtime_subparsers.add_parser("inspect-decision-lineage-invocation")
+    runtime_inspect_invocation.add_argument("--invocation-id", required=True)
+    runtime_inspect_invocation.add_argument("--log-file")
 
     eval_parser = subparsers.add_parser("eval")
     eval_subparsers = eval_parser.add_subparsers(dest="action", required=True)
@@ -335,6 +338,7 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
         brief = service.build_decision_lineage_brief(input_data)
         service.record_runtime_decision_lineage_invocation(
             input_data,
+            brief,
             log_path=_resolve_runtime_invocation_log_path(args.log_file),
             case_id=args.case_id,
             session_id=args.session_id,
@@ -346,6 +350,13 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
             _resolve_runtime_invocation_log_path(args.log_file)
         )
         _print_json([item.model_dump(mode="json") for item in invocations])
+        return 0
+    if args.action == "inspect-decision-lineage-invocation":
+        inspection = service.inspect_runtime_decision_lineage_invocation(
+            args.invocation_id,
+            _resolve_runtime_invocation_log_path(args.log_file),
+        )
+        _print_json(inspection.model_dump(mode="json"))
         return 0
     return 2
 

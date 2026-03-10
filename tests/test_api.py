@@ -1021,6 +1021,37 @@ def test_service_records_runtime_decision_lineage_invocation(db_path, tmp_path: 
     service = OpenPrecedentService.from_path(get_db_path())
     log_path = tmp_path / "runtime-invocations.jsonl"
 
+    service.create_case(CreateCaseInput(case_id="case_runtime_scope", title="Runtime scope case"))
+    service.create_case(CreateCaseInput(case_id="case_brief_guidance", title="Docs-only recommendation"))
+    for index, (event_type, actor, payload) in enumerate(
+        [
+            ("message.user", "user", {"message": "Do not edit code. Provide a short written recommendation only."}),
+            ("message.agent", "agent", {"message": "I will stay within docs-only scope and provide a short recommendation."}),
+            ("user.confirmed", "user", {"message": "Approved. Stay within docs-only scope."}),
+        ],
+        start=1,
+    ):
+        service.append_event(
+            "case_brief_guidance",
+            AppendEventInput(
+                event_type=EventType(event_type),
+                actor=EventActor(actor),
+                payload=payload,
+                sequence_no=index,
+            ),
+        )
+    service.extract_decisions("case_brief_guidance")
+
+    brief = service.build_decision_lineage_brief(
+        DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason.BEFORE_FILE_WRITE,
+            task_summary="Do not edit code. Provide a short written recommendation only.",
+            current_plan="Prepare a short recommendation.",
+            candidate_action="Edit src/openprecedent/services.py",
+            known_files=["src/openprecedent/services.py"],
+        )
+    )
+
     invocation = service.record_runtime_decision_lineage_invocation(
         DecisionLineageBriefInput(
             query_reason=DecisionLineageQueryReason.BEFORE_FILE_WRITE,
@@ -1029,6 +1060,7 @@ def test_service_records_runtime_decision_lineage_invocation(db_path, tmp_path: 
             candidate_action="Edit src/openprecedent/services.py",
             known_files=["src/openprecedent/services.py"],
         ),
+        brief,
         log_path=log_path,
         case_id="case_runtime_scope",
         session_id="session_runtime_scope",
@@ -1042,6 +1074,24 @@ def test_service_records_runtime_decision_lineage_invocation(db_path, tmp_path: 
     assert stored[0].case_id == "case_runtime_scope"
     assert stored[0].session_id == "session_runtime_scope"
     assert stored[0].known_files == ["src/openprecedent/services.py"]
+    assert stored[0].matched_case_ids == ["case_brief_guidance"]
+    assert stored[0].accepted_constraints
+
+    service.append_event(
+        "case_runtime_scope",
+        AppendEventInput(
+            event_type=EventType.MESSAGE_AGENT,
+            actor=EventActor.AGENT,
+            payload={"message": "I will keep this docs-only and avoid code edits."},
+        ),
+    )
+    service.extract_decisions("case_runtime_scope")
+
+    inspection = service.inspect_runtime_decision_lineage_invocation(invocation.invocation_id, log_path)
+    assert inspection.invocation.invocation_id == invocation.invocation_id
+    assert inspection.downstream_events
+    assert inspection.downstream_decisions
+    assert inspection.downstream_decisions[0].decision_type.value == "task_frame_defined"
 
 
 def test_service_fixture_suite_includes_operational_negative_case(db_path) -> None:
