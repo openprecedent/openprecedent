@@ -17,6 +17,7 @@ def test_codex_pm_init_creates_workspace(tmp_path: Path, monkeypatch) -> None:
     assert (tmp_path / ".codex" / "pm" / "prds").exists()
     assert (tmp_path / ".codex" / "pm" / "epics").exists()
     assert (tmp_path / ".codex" / "pm" / "tasks").exists()
+    assert (tmp_path / ".codex" / "pm" / "issue-state").exists()
 
 
 def test_codex_pm_module_invocation_runs_cli(tmp_path: Path) -> None:
@@ -484,3 +485,106 @@ def test_codex_pm_pr_body_omits_closing_clause_for_umbrella_task(tmp_path: Path,
     pr_body = capsys.readouterr().out
 
     assert "Closes #100" not in pr_body
+
+
+def test_codex_pm_issue_state_init_creates_state_doc_and_updates_task(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "issue-scoped-dev-state",
+                "--title",
+                "Capture issue-scoped development state",
+                "--issue",
+                "106",
+                "--status",
+                "in_progress",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "issue-scoped-dev-state.md"
+    assert main(["issue-state-init", str(task_path)]) == 0
+    state_path = (tmp_path / capsys.readouterr().out.strip()).resolve()
+
+    assert state_path == (tmp_path / ".codex" / "pm" / "issue-state" / "106-issue-scoped-dev-state.md").resolve()
+    assert state_path.exists()
+    task_document = task_path.read_text(encoding="utf-8")
+    assert "state_path: .codex/pm/issue-state/106-issue-scoped-dev-state.md" in task_document
+
+
+def test_codex_pm_issue_state_check_fails_for_in_progress_issue_without_state(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "issue-scoped-dev-state",
+                "--title",
+                "Capture issue-scoped development state",
+                "--issue",
+                "106",
+                "--status",
+                "in_progress",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert main(["issue-state-check", "--branch", "codex/issue-106-issue-scoped-dev-state"]) == 1
+    assert "in-progress issue has no state document" in capsys.readouterr().err
+
+
+def test_codex_pm_issue_state_check_passes_after_state_init(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "issue-scoped-dev-state",
+                "--title",
+                "Capture issue-scoped development state",
+                "--issue",
+                "106",
+                "--status",
+                "in_progress",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "issue-scoped-dev-state.md"
+    assert main(["issue-state-init", str(task_path)]) == 0
+    capsys.readouterr()
+
+    assert main(["issue-state-check", "--branch", "codex/issue-106-issue-scoped-dev-state"]) == 0
+    assert "Issue state check passed" in capsys.readouterr().out
