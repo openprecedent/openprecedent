@@ -385,6 +385,41 @@ def test_cli_imports_openclaw_checkpoint_record_as_event(capsys, db_path) -> Non
     assert checkpoint_events[0]["payload"]["status"] == "saved"
 
 
+def test_cli_imports_additional_live_openclaw_record_types(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "live-record-types-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_live_record_types_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_live_record_types_cli"
+    assert imported["imported_event_count"] == 5
+    assert imported["unsupported_record_type_counts"] == {}
+
+    result = main(["replay", "case", "case_session_live_record_types_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    thinking_events = [event for event in replay["events"] if event["event_type"] == "model.invoked"]
+    custom_events = [event for event in replay["events"] if event["event_type"] == "tool.completed"]
+    assert len(thinking_events) == 1
+    assert thinking_events[0]["payload"]["thinking_level"] == "high"
+    assert thinking_events[0]["payload"]["changed_by"] == "user"
+    assert thinking_events[0]["payload"]["trigger"] == "slash_command"
+    assert len(custom_events) == 1
+    assert custom_events[0]["payload"]["tool_name"] == "web_search"
+    assert custom_events[0]["payload"]["details"]["status"] == "error"
+
+
 def test_cli_extracts_clarify_decision_from_follow_up_user_message(capsys, db_path) -> None:
     fixture_path = (
         Path(__file__).parent / "fixtures" / "openclaw_sessions" / "clarify-session.jsonl"

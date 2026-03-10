@@ -1247,6 +1247,35 @@ class OpenPrecedentService:
                 )
             ], None)
 
+        if record_type == "thinking_level_change":
+            return ([
+                AppendEventInput(
+                    event_id=f"evt_thinking_level_{record_id}",
+                    event_type=EventType.MODEL_INVOKED,
+                    actor=EventActor.SYSTEM,
+                    timestamp=timestamp,
+                    parent_event_id=parent_id,
+                    payload={
+                        "thinking_level": _string_or_none(raw_item.get("thinkingLevel"))
+                        or _string_or_none(raw_item.get("level")),
+                        "changed_by": _string_or_none(raw_item.get("source")),
+                        "trigger": _string_or_none(raw_item.get("trigger")),
+                        "source": "openclaw.session",
+                    },
+                )
+            ], None)
+
+        if record_type == "custom":
+            normalized_custom_event = _normalize_openclaw_custom_record(
+                raw_item=raw_item,
+                record_id=record_id,
+                parent_id=parent_id,
+                timestamp=timestamp,
+            )
+            if normalized_custom_event is None:
+                return [], record_type
+            return [normalized_custom_event], None
+
         if record_type != "message":
             return [], record_type
 
@@ -1676,6 +1705,47 @@ def _normalize_openclaw_tool_result_events(
             },
         )
     ]
+
+
+def _normalize_openclaw_custom_record(
+    *,
+    raw_item: dict[str, object],
+    record_id: str,
+    parent_id: str | None,
+    timestamp: datetime | None,
+) -> AppendEventInput | None:
+    tool_name = (
+        _string_or_none(raw_item.get("name"))
+        or _string_or_none(raw_item.get("customType"))
+        or _string_or_none(raw_item.get("event"))
+    )
+    details = raw_item.get("data")
+    if not isinstance(details, dict):
+        details = raw_item.get("details")
+    normalized_details = details if isinstance(details, dict) else {}
+    content = (
+        _string_or_none(raw_item.get("text"))
+        or _string_or_none(raw_item.get("summary"))
+        or _string_or_none(raw_item.get("content"))
+    )
+
+    if tool_name is None and content is None and not normalized_details:
+        return None
+
+    return AppendEventInput(
+        event_id=f"evt_custom_{record_id}",
+        event_type=EventType.TOOL_COMPLETED,
+        actor=EventActor.TOOL,
+        timestamp=timestamp,
+        parent_event_id=parent_id,
+        payload={
+            "tool_name": tool_name or "custom",
+            "tool_call_id": _string_or_none(raw_item.get("toolCallId")),
+            "content": content,
+            "details": normalized_details,
+            "source": "openclaw.session.custom",
+        },
+    )
 
 
 _STOP_WORDS = {
