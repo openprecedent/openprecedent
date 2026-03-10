@@ -20,6 +20,13 @@ At this stage, the repository should be read as a local-first validation platfor
 This is no longer primarily a core-loop plumbing effort.
 The current platform role is to make those hypotheses fast to test against a real OpenClaw-first environment without reopening MVP foundation work each time.
 
+## Research Governance
+
+The long-lived umbrella for this phase is GitHub issue `#100`, `Define the post-MVP research evolution framework for OpenPrecedent`.
+
+That issue should remain open as the parent framing artifact for later hypothesis-driven child issues.
+Repository docs should point to it, but should not duplicate the full research program each time.
+
 ## Completed Core Loop
 
 The shipped MVP now covers:
