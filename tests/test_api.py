@@ -1017,6 +1017,33 @@ def test_service_runtime_decision_lineage_trigger_baseline(db_path) -> None:
     assert failure_brief.matched_cases
 
 
+def test_service_records_runtime_decision_lineage_invocation(db_path, tmp_path: Path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    log_path = tmp_path / "runtime-invocations.jsonl"
+
+    invocation = service.record_runtime_decision_lineage_invocation(
+        DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason.BEFORE_FILE_WRITE,
+            task_summary="Do not edit code. Provide a short written recommendation only.",
+            current_plan="Prepare a short recommendation.",
+            candidate_action="Edit src/openprecedent/services.py",
+            known_files=["src/openprecedent/services.py"],
+        ),
+        log_path=log_path,
+        case_id="case_runtime_scope",
+        session_id="session_runtime_scope",
+    )
+
+    assert invocation.query_reason.value == "before_file_write"
+    assert log_path.exists()
+
+    stored = service.list_runtime_decision_lineage_invocations(log_path)
+    assert len(stored) == 1
+    assert stored[0].case_id == "case_runtime_scope"
+    assert stored[0].session_id == "session_runtime_scope"
+    assert stored[0].known_files == ["src/openprecedent/services.py"]
+
+
 def test_service_fixture_suite_includes_operational_negative_case(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "suite.json"
