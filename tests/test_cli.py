@@ -790,6 +790,22 @@ def test_cli_builds_decision_lineage_brief(capsys, db_path) -> None:
     assert brief["authority_signals"]
 
 
+def test_openclaw_skill_bundle_exists() -> None:
+    skill_path = (
+        Path(__file__).parent.parent
+        / "skills"
+        / "openprecedent-decision-lineage"
+        / "SKILL.md"
+    )
+
+    content = skill_path.read_text(encoding="utf-8")
+
+    assert content.startswith("---\n")
+    assert 'name: openprecedent-decision-lineage' in content
+    assert '"bins":["openprecedent"]' in content
+    assert "openprecedent runtime decision-lineage-brief" in content
+
+
 def test_cli_evaluates_real_session_fixture_suite(capsys, db_path) -> None:
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
 

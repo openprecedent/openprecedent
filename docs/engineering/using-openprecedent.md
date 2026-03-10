@@ -260,6 +260,13 @@ This command is intentionally narrow.
 It returns a semantic brief built from prior cases, including task framing, accepted constraints, success criteria, rejected options, and authority signals.
 It does not prescribe tools, commands, or file writes directly.
 
+An installable OpenClaw skill is also included in this repository:
+
+- [SKILL.md](/workspace/02-projects/incubation/openprecedent/skills/openprecedent-decision-lineage/SKILL.md)
+
+That skill is designed for progressive disclosure.
+It teaches OpenClaw when to call `openprecedent runtime decision-lineage-brief`, how to choose `query_reason`, and how to use the returned brief as judgment context rather than operational instructions.
+
 ## What Humans Usually Need
 
 Human users usually care about:
