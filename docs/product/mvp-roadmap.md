@@ -2,7 +2,7 @@
 
 ## Current Status
 
-As of 2026-03-10, the MVP core loop is implemented and validated in a real local target environment.
+As of 2026-03-10, MVP v1 is complete: the core loop is implemented, validated in a real local target environment, and brought through the first round of real-session quality fixes.
 
 Completed:
 
@@ -21,12 +21,15 @@ Completed:
 - precedent ranking improvements validated against anonymized real-session cases
 - real-environment scheduled collector rollout validated through cron
 - first collected OpenClaw session replayed and evaluated end-to-end in the target environment
+- wrapped OpenClaw session messages sanitized before replay and decision extraction
+- false-positive `clarify` decisions reduced on wrapped multi-turn real sessions
+- additional real-session OpenClaw record types mapped into replayable events where they carry useful signal
 
-Still open:
+Current MVP v1 status:
 
-- reduce real-session noise in imported OpenClaw messages and derived decisions
-- improve transcript mapping coverage for real-world OpenClaw record types that still carry useful signal
-- strengthen precedent quality and evaluation depth on larger real-case histories
+- no open implementation issues remain in the current MVP v1 scope
+- the shipped loop now covers collection, replay, explanation, precedent retrieval, and the first real-session quality pass
+- follow-up work should be treated as post-MVP expansion rather than MVP-blocking scope
 
 ## Objective
 
@@ -174,8 +177,8 @@ Completed work:
 
 Remaining gaps:
 
-- broader decision coverage may still be needed as real collected transcripts reveal new patterns
-- stronger extraction quality evaluation on a growing set of real collected trajectories
+- broader decision coverage belongs to post-MVP iteration as real collected transcripts reveal new patterns
+- stronger extraction quality evaluation should continue on a growing set of real collected trajectories
 
 ## Phase 5: Precedent Retrieval
 
@@ -208,14 +211,14 @@ Completed work:
 
 Remaining gaps:
 
-- stronger retrieval quality validation on larger continuously collected real history
-- richer semantic retrieval beyond current lightweight matching
+- stronger retrieval quality validation belongs to post-MVP work on larger continuously collected real history
+- richer semantic retrieval remains out of scope for MVP v1
 
 ## Phase 6: Local Runtime Validation
 
 Status:
 
-- completed for MVP rollout
+- completed for MVP v1 rollout
 
 Goal:
 
@@ -245,6 +248,9 @@ Completed work:
 - unsupported OpenClaw record type reporting in import and collected-session evaluation output
 - `checkpoint` session record mapping into replayable raw events
 - follow-up user clarification extraction on multi-turn session transcripts
+- wrapped session-message noise stripped before replay and extraction
+- false-positive `clarify` decisions reduced on wrapped repeat messages
+- additional real-session record types such as `thinking_level_change` and useful `custom` records mapped into replayable events
 - precedent ranking tuned and regression-tested against anonymized real-session cases
 - validated cron-based rollout in the real target environment
 - first live collected session replayed and evaluated end-to-end
@@ -252,15 +258,15 @@ Completed work:
 
 Remaining gaps:
 
-- reduce import-time noise and false-positive decision extraction on real collected sessions
-- validate replay/extraction/precedent quality on a broader set of real collected sessions
-- keep improving precedent ranking and record-type coverage as real history grows
+- validate replay, extraction, and precedent quality on a broader set of real collected sessions beyond the first quality pass
+- keep improving precedent ranking as real history grows
+- evaluate whether a second runtime integration path is warranted after the current OpenClaw-first validation loop
 
-## Next Tasks
+## Post-MVP Next Stage
 
-The next MVP work should focus on improving quality on top of the validated live collection path:
+The next stage should build on the completed MVP v1 loop instead of re-opening MVP scope:
 
-1. strip operator policy and transport metadata noise from imported OpenClaw session messages
-2. tighten `clarify` decision extraction against real multi-turn sessions
-3. extend transcript mapping for additional OpenClaw record types only where live collection exposes useful signal
-4. grow the real-session evaluation set and re-tune precedent ranking against the larger history
+1. grow the real-session evaluation set and re-validate replay, extraction, and precedent behavior against the larger history
+2. keep improving precedent ranking quality as the collected corpus expands
+3. broaden decision coverage only where real collected sessions show repeated missing patterns
+4. decide whether the next validation target is a second local runtime or deeper OpenClaw-specific quality work
