@@ -1,5 +1,7 @@
 # OpenPrecedent MVP v1 Architecture
 
+Chinese version: [中文版本 / MVP v1 架构文档](/workspace/02-projects/incubation/openprecedent/docs/zh/architecture/mvp-design.md)
+
 ## Purpose
 
 This document describes the architecture that is actually shipped in MVP v1 as of 2026-03-10.
