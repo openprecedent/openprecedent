@@ -414,6 +414,39 @@ def test_cli_extracts_clarify_decision_from_follow_up_user_message(capsys, db_pa
     assert clarify_decisions[0]["evidence_event_ids"] == ["evt_message_msg-user-clarify-followup"]
 
 
+def test_cli_strips_openclaw_message_wrappers_before_import(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "wrapped-message-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_wrapped_messages_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_wrapped_messages_cli"
+    assert imported["imported_event_count"] == 4
+
+    result = main(["replay", "case", "case_session_wrapped_messages_cli", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    message_events = [event for event in replay["events"] if event["event_type"] == "message.user"]
+    assert len(message_events) == 1
+    assert message_events[0]["payload"]["message"] == "Summarize the collector rollout findings."
+
+    result = main(["extract", "decisions", "case_session_wrapped_messages_cli"])
+    assert result == 0
+    decisions = json.loads(capsys.readouterr().out)
+    assert [item["decision_type"] for item in decisions] == ["plan"]
+
+
 def test_cli_imports_openclaw_view_image_as_file_read(capsys, db_path) -> None:
     fixture_path = (
         Path(__file__).parent / "fixtures" / "openclaw_sessions" / "view-image-session.jsonl"

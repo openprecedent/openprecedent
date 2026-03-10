@@ -1259,7 +1259,7 @@ class OpenPrecedentService:
         text_chunks = _extract_openclaw_text_segments(content)
 
         if role == "user":
-            text = "\n".join(text_chunks).strip()
+            text = _sanitize_openclaw_message_text("\n".join(text_chunks).strip())
             if text:
                 normalized_events.append(
                     AppendEventInput(
@@ -1278,7 +1278,7 @@ class OpenPrecedentService:
 
         if role == "assistant":
             visible_chunks = _extract_openclaw_visible_assistant_text(content)
-            visible_text = "\n".join(visible_chunks).strip()
+            visible_text = _sanitize_openclaw_message_text("\n".join(visible_chunks).strip())
             if visible_text:
                 normalized_events.append(
                     AppendEventInput(
@@ -1482,6 +1482,40 @@ def _extract_openclaw_visible_assistant_text(content: list[object]) -> list[str]
                     if text:
                         segments.append(text)
     return segments
+
+
+_OPENCLAW_NOISE_TAG_RE = re.compile(
+    r"(?is)<(?P<tag>operator_policy|transport_metadata)>\s*.*?\s*</(?P=tag)>"
+)
+_OPENCLAW_NOISE_LINE_PREFIXES = (
+    "operator policy",
+    "transport metadata",
+    "[operator policy]",
+    "[transport metadata]",
+)
+
+
+def _sanitize_openclaw_message_text(text: str) -> str | None:
+    cleaned = _OPENCLAW_NOISE_TAG_RE.sub("\n", text.replace("\r\n", "\n")).strip()
+    if not cleaned:
+        return None
+
+    kept_lines: list[str] = []
+    dropping_noise_block = False
+    for raw_line in cleaned.splitlines():
+        line = raw_line.strip()
+        normalized = line.lower()
+        if any(normalized.startswith(prefix) for prefix in _OPENCLAW_NOISE_LINE_PREFIXES):
+            dropping_noise_block = True
+            continue
+        if dropping_noise_block:
+            if not line:
+                dropping_noise_block = False
+            continue
+        kept_lines.append(raw_line)
+
+    sanitized = "\n".join(kept_lines).strip()
+    return sanitized or None
 
 
 def _normalize_openclaw_tool_call_events(
