@@ -6,8 +6,18 @@
 - 主题：以本机 OpenClaw 为锚点的最小决策轨迹闭环验证
 - 版本：v1
 - 日期：2026-03-09
-- 状态：Draft
+- 状态：Historical draft（已被当前 OpenPrecedent MVP 文档取代）
 - 关联战略：[2026-03-context-graph-product-strategy.md](/workspace/01-product/01-strategy/2026-03-context-graph-product-strategy.md)
+
+## 当前状态说明
+
+这份文档保留的是 `2026-03-09` 的早期中文草案，主要用于记录当时从 `Context Graph` 命名和方向向当前 OpenPrecedent MVP 收敛时的思路。
+
+如果要看当前已交付状态，请以这些文档为准：
+
+- [MVP 状态说明](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
+- [MVP 路线图](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-roadmap.md)
+- [MVP 架构文档](/workspace/02-projects/incubation/openprecedent/docs/zh/architecture/mvp-design.md)
 
 ## 一句话定义
 

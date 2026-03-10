@@ -1,5 +1,26 @@
 # OpenPrecedent MVP PRD
 
+## Status
+
+- status: shipped MVP v1
+- core-loop status date: `2026-03-10`
+- repository summary: [mvp-status.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
+- implementation boundary: [mvp-design.md](/workspace/02-projects/incubation/openprecedent/docs/architecture/mvp-design.md)
+- completion roadmap: [mvp-roadmap.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-roadmap.md)
+
+## Current Outcome
+
+The MVP described in this PRD is no longer a planned target only.
+As of `2026-03-10`, the core loop is implemented and validated in the repository's OpenClaw-first local environment:
+
+1. capture a case
+2. store the ordered event timeline
+3. extract decision records
+4. replay and explain decisions
+5. retrieve similar precedent
+
+What remains after this point is post-MVP validation and quality work rather than unfinished core-loop engineering.
+
 ## MVP Anchor
 
 The first MVP is anchored on a local single-agent runtime such as OpenClaw.
@@ -60,3 +81,13 @@ Out of scope:
 - decision explanations are evidence-backed
 - replay is useful for real post-hoc review
 - precedent retrieval returns helpful historical cases
+
+## Post-MVP Boundary
+
+The next stage should focus on:
+
+- measuring whether runtime precedent usage improves downstream task quality
+- improving extraction and retrieval quality on a broader real-history corpus
+- deciding whether to deepen OpenClaw-specific quality work or validate a second runtime
+
+Those are important, but they are no longer prerequisites for calling the MVP core loop complete.
