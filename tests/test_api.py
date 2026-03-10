@@ -313,6 +313,37 @@ def test_service_extracts_clarify_decision_from_follow_up_user_message(db_path) 
     assert clarify_decisions[0].explanation.selection_reason
 
 
+def test_service_strips_openclaw_message_wrappers_before_import(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "wrapped-message-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_wrapped_messages",
+        title="Imported OpenClaw wrapped message session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_wrapped_messages"
+    assert len(result.imported_events) == 4
+
+    replay = service.replay_case("case_session_wrapped_messages")
+    message_events = [event for event in replay.events if event.event_type.value == "message.user"]
+    assert len(message_events) == 1
+    assert message_events[0].payload["message"] == "Summarize the collector rollout findings."
+
+    assistant_messages = [event for event in replay.events if event.event_type.value == "message.agent"]
+    assert [event.payload["message"] for event in assistant_messages] == [
+        "I will summarize the collector rollout findings.",
+        "The collector rollout validated scheduled imports without duplicate sessions.",
+    ]
+
+    decisions = service.extract_decisions("case_session_wrapped_messages")
+    assert [item.decision_type.value for item in decisions] == ["plan"]
+
+
 def test_service_imports_openclaw_file_operations(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = Path(__file__).parent / "fixtures" / "openclaw_sessions" / "file-ops-session.jsonl"
