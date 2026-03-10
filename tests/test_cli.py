@@ -59,7 +59,7 @@ def test_cli_end_to_end(capsys, db_path) -> None:
     result = main(["extract", "decisions", "case_cli"])
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
-    assert len(decisions) >= 2
+    assert len(decisions) >= 1
     assert "explanation" in decisions[0]
     assert "selection_reason" in decisions[0]["explanation"]
 
@@ -190,10 +190,9 @@ def test_cli_import_openclaw_runtime_trace(capsys, db_path) -> None:
     result = main(["extract", "decisions", "case_openclaw"])
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
-    assert any(item["decision_type"] == "plan" for item in decisions)
-    assert any(item["decision_type"] == "select_tool" for item in decisions)
-    assert any(item["decision_type"] == "apply_change" for item in decisions)
-    assert any(item["decision_type"] == "finalize" for item in decisions)
+    decision_types = [item["decision_type"] for item in decisions]
+    assert "task_frame_defined" in decision_types
+    assert "success_criteria_set" in decision_types
 
     result = main(["replay", "case", "case_openclaw", "--json"])
     assert result == 0
@@ -281,7 +280,7 @@ def test_cli_imports_failing_openclaw_command_without_output(capsys, db_path) ->
     result = main(["extract", "decisions", "case_session_failure_cli"])
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
-    assert any(item["decision_type"] == "retry_or_recover" for item in decisions)
+    assert [item["decision_type"] for item in decisions] == ["task_frame_defined"]
 
     result = main(["replay", "case", "case_session_failure_cli", "--json"])
     assert result == 0
@@ -316,7 +315,7 @@ def test_cli_imports_openclaw_file_operations(capsys, db_path) -> None:
     result = main(["extract", "decisions", "case_session_file_ops_cli"])
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
-    assert any(item["decision_type"] == "apply_change" for item in decisions)
+    assert [item["decision_type"] for item in decisions] == ["task_frame_defined"]
 
     result = main(["replay", "case", "case_session_file_ops_cli", "--json"])
     assert result == 0
@@ -420,7 +419,7 @@ def test_cli_imports_additional_live_openclaw_record_types(capsys, db_path) -> N
     assert custom_events[0]["payload"]["details"]["status"] == "error"
 
 
-def test_cli_extracts_clarify_decision_from_follow_up_user_message(capsys, db_path) -> None:
+def test_cli_extracts_semantic_decisions_from_follow_up_user_message(capsys, db_path) -> None:
     fixture_path = (
         Path(__file__).parent / "fixtures" / "openclaw_sessions" / "clarify-session.jsonl"
     )
@@ -443,13 +442,18 @@ def test_cli_extracts_clarify_decision_from_follow_up_user_message(capsys, db_pa
     result = main(["extract", "decisions", "case_session_clarify_cli"])
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
-    clarify_decisions = [item for item in decisions if item["decision_type"] == "clarify"]
-    assert len(clarify_decisions) == 1
-    assert clarify_decisions[0]["outcome"] == "Focus on collector scheduling and evaluation gaps."
-    assert clarify_decisions[0]["evidence_event_ids"] == ["evt_message_msg-user-clarify-followup"]
+    assert [item["decision_type"] for item in decisions] == [
+        "success_criteria_set",
+        "task_frame_defined",
+        "clarification_resolved",
+        "constraint_adopted",
+    ]
+    clarification = next(item for item in decisions if item["decision_type"] == "clarification_resolved")
+    assert clarification["outcome"] == "Focus on collector scheduling and evaluation gaps."
+    assert clarification["evidence_event_ids"] == ["evt_message_msg-user-clarify-followup"]
 
 
-def test_cli_skips_false_clarify_on_wrapped_repeat_message(capsys, db_path) -> None:
+def test_cli_skips_false_clarification_on_wrapped_repeat_message(capsys, db_path) -> None:
     fixture_path = (
         Path(__file__).parent
         / "fixtures"
@@ -475,7 +479,10 @@ def test_cli_skips_false_clarify_on_wrapped_repeat_message(capsys, db_path) -> N
     result = main(["extract", "decisions", "case_session_wrapped_clarify_false_cli"])
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
-    assert [item["decision_type"] for item in decisions] == ["plan", "select_tool"]
+    assert [item["decision_type"] for item in decisions] == [
+        "success_criteria_set",
+        "task_frame_defined",
+    ]
 
 
 def test_cli_strips_openclaw_message_wrappers_before_import(capsys, db_path) -> None:
@@ -508,7 +515,10 @@ def test_cli_strips_openclaw_message_wrappers_before_import(capsys, db_path) -> 
     result = main(["extract", "decisions", "case_session_wrapped_messages_cli"])
     assert result == 0
     decisions = json.loads(capsys.readouterr().out)
-    assert [item["decision_type"] for item in decisions] == ["plan"]
+    assert [item["decision_type"] for item in decisions] == [
+        "success_criteria_set",
+        "task_frame_defined",
+    ]
 
 
 def test_cli_imports_openclaw_view_image_as_file_read(capsys, db_path) -> None:
@@ -829,7 +839,7 @@ def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Pa
     report = json.loads(capsys.readouterr().out)
     assert report["total_sessions"] == 3
     assert report["evaluated_cases"] == 3
-    assert "retry_or_recover" in report["decision_type_counts"]
+    assert "task_frame_defined" in report["decision_type_counts"]
     assert report["unsupported_record_type_counts"] == {"audit_marker": 1}
     assert report_path.exists()
 

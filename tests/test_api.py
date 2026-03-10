@@ -77,7 +77,7 @@ async def test_case_ingestion_replay_and_precedent_flow(db_path) -> None:
 
         extracted = await client.post("/cases/case_alpha/extract-decisions")
         assert extracted.status_code == 200
-        assert len(extracted.json()["decisions"]) >= 3
+        assert len(extracted.json()["decisions"]) >= 2
         first_decision = extracted.json()["decisions"][0]
         assert "explanation" in first_decision
         assert "goal" in first_decision["explanation"]
@@ -92,7 +92,7 @@ async def test_case_ingestion_replay_and_precedent_flow(db_path) -> None:
         body = replay.json()
         assert body["case"]["case_id"] == "case_alpha"
         assert len(body["events"]) == 5
-        assert len(body["decisions"]) >= 3
+        assert len(body["decisions"]) >= 2
         assert len(body["artifacts"]) >= 3
         assert body["summary"] == "summary delivered"
 
@@ -131,7 +131,7 @@ def test_service_imports_openclaw_runtime_trace(db_path) -> None:
     assert len(result.imported_events) == 6
 
     decisions = service.extract_decisions("case_runtime")
-    assert len(decisions) >= 4
+    assert len(decisions) >= 2
 
     replay = service.replay_case("case_runtime")
     assert replay.case.status.value == "completed"
@@ -178,8 +178,9 @@ def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> 
     assert any(event.event_type.value == "command.completed" for event in events)
 
     decisions = service.extract_decisions("case_session")
-    assert any(item.decision_type.value == "plan" for item in decisions)
-    assert any(item.decision_type.value == "select_tool" for item in decisions)
+    decision_types = [item.decision_type.value for item in decisions]
+    assert "task_frame_defined" in decision_types
+    assert "success_criteria_set" in decision_types
 
     replay = service.replay_case("case_session")
     assert replay.summary == "Imported OpenClaw session: 9 events, 2 decisions, status=started"
@@ -244,7 +245,7 @@ def test_service_imports_failing_openclaw_command_without_output(db_path) -> Non
     assert command_completed[0].payload["stderr"] is None
 
     decisions = service.extract_decisions("case_session_failure")
-    assert any(item.decision_type.value == "retry_or_recover" for item in decisions)
+    assert [item.decision_type.value for item in decisions] == ["task_frame_defined"]
 
 
 def test_service_reports_unsupported_openclaw_session_record_types(db_path) -> None:
@@ -323,10 +324,10 @@ def test_service_imports_additional_live_openclaw_record_types(db_path) -> None:
     }
 
     decisions = service.extract_decisions("case_session_live_record_types")
-    assert [item.decision_type.value for item in decisions] == ["plan"]
+    assert [item.decision_type.value for item in decisions] == ["task_frame_defined"]
 
 
-def test_service_extracts_clarify_decision_from_follow_up_user_message(db_path) -> None:
+def test_service_extracts_semantic_decisions_from_follow_up_user_message(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = (
         Path(__file__).parent / "fixtures" / "openclaw_sessions" / "clarify-session.jsonl"
@@ -343,14 +344,22 @@ def test_service_extracts_clarify_decision_from_follow_up_user_message(db_path) 
     assert len(result.imported_events) == 11
 
     decisions = service.extract_decisions("case_session_clarify")
-    clarify_decisions = [item for item in decisions if item.decision_type.value == "clarify"]
-    assert len(clarify_decisions) == 1
-    assert clarify_decisions[0].outcome == "Focus on collector scheduling and evaluation gaps."
-    assert clarify_decisions[0].evidence_event_ids == ["evt_message_msg-user-clarify-followup"]
-    assert clarify_decisions[0].explanation.selection_reason
+    decision_types = [item.decision_type.value for item in decisions]
+    assert decision_types == [
+        "success_criteria_set",
+        "task_frame_defined",
+        "clarification_resolved",
+        "constraint_adopted",
+    ]
+    clarification = next(
+        item for item in decisions if item.decision_type.value == "clarification_resolved"
+    )
+    assert clarification.outcome == "Focus on collector scheduling and evaluation gaps."
+    assert clarification.evidence_event_ids == ["evt_message_msg-user-clarify-followup"]
+    assert clarification.explanation.selection_reason
 
 
-def test_service_skips_false_clarify_on_wrapped_repeat_message(db_path) -> None:
+def test_service_skips_false_clarification_on_wrapped_repeat_message(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = (
         Path(__file__).parent
@@ -370,7 +379,10 @@ def test_service_skips_false_clarify_on_wrapped_repeat_message(db_path) -> None:
     assert len(result.imported_events) == 10
 
     decisions = service.extract_decisions("case_session_wrapped_clarify_false")
-    assert [item.decision_type.value for item in decisions] == ["plan", "select_tool"]
+    assert [item.decision_type.value for item in decisions] == [
+        "success_criteria_set",
+        "task_frame_defined",
+    ]
 
 
 def test_service_strips_openclaw_message_wrappers_before_import(db_path) -> None:
@@ -401,7 +413,10 @@ def test_service_strips_openclaw_message_wrappers_before_import(db_path) -> None
     ]
 
     decisions = service.extract_decisions("case_session_wrapped_messages")
-    assert [item.decision_type.value for item in decisions] == ["plan"]
+    assert [item.decision_type.value for item in decisions] == [
+        "success_criteria_set",
+        "task_frame_defined",
+    ]
 
 
 def test_service_imports_openclaw_file_operations(db_path) -> None:
@@ -427,7 +442,42 @@ def test_service_imports_openclaw_file_operations(db_path) -> None:
     assert file_writes[0].payload["path"] == "docs/architecture/openclaw-silent-collection.md"
 
     decisions = service.extract_decisions("case_session_file_ops")
-    assert any(item.decision_type.value == "apply_change" for item in decisions)
+    assert [item.decision_type.value for item in decisions] == ["task_frame_defined"]
+
+
+def test_service_extracts_authority_and_option_rejection_semantics(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    service.create_case(
+        CreateCaseInput(case_id="case_semantic_authority", title="Semantic authority test")
+    )
+
+    service.append_event(
+        "case_semantic_authority",
+        AppendEventInput(
+            event_type=EventType.MESSAGE_USER,
+            actor=EventActor.USER,
+            payload={"message": "Do not edit code. Provide a short written recommendation only."},
+        ),
+    )
+    service.append_event(
+        "case_semantic_authority",
+        AppendEventInput(
+            event_type=EventType.USER_CONFIRMED,
+            actor=EventActor.USER,
+            payload={"message": "Approved. Stay within docs-only scope."},
+        ),
+    )
+
+    decisions = service.extract_decisions("case_semantic_authority")
+    decision_types = [item.decision_type.value for item in decisions]
+    assert decision_types == [
+        "constraint_adopted",
+        "success_criteria_set",
+        "option_rejected",
+        "authority_confirmed",
+    ]
+    authority = next(item for item in decisions if item.decision_type.value == "authority_confirmed")
+    assert authority.requires_human_confirmation is True
 
 
 def test_service_imports_openclaw_view_image_as_file_read(db_path) -> None:
@@ -589,7 +639,9 @@ def test_service_evaluates_real_session_fixture_suite(db_path) -> None:
     assert report.failed_cases == 0
     assert report.passed_cases == 3
     clarify_result = next(item for item in report.results if item.case_id == "eval_real_clarify")
-    assert "clarify" in [decision_type.value for decision_type in clarify_result.actual_decision_types]
+    assert "clarification_resolved" in [
+        decision_type.value for decision_type in clarify_result.actual_decision_types
+    ]
 
 
 def test_service_fixture_evaluation_fails_fast_on_reused_database(db_path) -> None:
@@ -686,7 +738,7 @@ def test_service_evaluates_collected_openclaw_sessions(db_path, tmp_path: Path) 
     assert report.evaluated_cases == 3
     assert report.failed_cases == 0
     assert report.cases_with_precedents >= 1
-    assert "retry_or_recover" in report.decision_type_counts
+    assert "task_frame_defined" in report.decision_type_counts
     assert report.unsupported_record_type_counts == {"audit_marker": 1}
     assert {item.session_id for item in report.results} == {
         "sample-session",

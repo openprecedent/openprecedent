@@ -4,12 +4,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class DecisionType(StrEnum):
-    CLARIFY = "clarify"
-    PLAN = "plan"
-    SELECT_TOOL = "select_tool"
-    APPLY_CHANGE = "apply_change"
-    RETRY_OR_RECOVER = "retry_or_recover"
-    FINALIZE = "finalize"
+    TASK_FRAME_DEFINED = "task_frame_defined"
+    CONSTRAINT_ADOPTED = "constraint_adopted"
+    SUCCESS_CRITERIA_SET = "success_criteria_set"
+    CLARIFICATION_RESOLVED = "clarification_resolved"
+    OPTION_REJECTED = "option_rejected"
+    AUTHORITY_CONFIRMED = "authority_confirmed"
 
 
 class DecisionExplanation(BaseModel):
