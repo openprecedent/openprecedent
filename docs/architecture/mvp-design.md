@@ -1,36 +1,253 @@
-# OpenPrecedent MVP Design
+# OpenPrecedent MVP v1 Architecture
 
-## Design Principles
+## Purpose
 
-- event stream first
-- raw events and derived decisions are separate layers
-- explanations must bind to evidence
-- rule-based extraction comes before heavy model-driven extraction
-- MVP uses simple storage and indexing before graph-specific infrastructure
+This document describes the architecture that is actually shipped in MVP v1 as of 2026-03-10.
 
-## Core Objects
+It is intentionally implementation-grounded:
 
-### Case
+- local-first, single-agent workflow
+- OpenClaw as the first integrated runtime
+- SQLite-backed storage
+- Python service layer and CLI
+- replay, explanation, and precedent retrieval over captured case history
 
-A complete task lifecycle.
+This is not a future platform blueprint. It is the current MVP system boundary.
 
-### Event
+## What MVP v1 Does
 
-An atomic fact in time.
+OpenPrecedent MVP v1 can:
 
-### Decision
+1. capture a case and ordered event timeline
+2. import OpenClaw runtime traces and OpenClaw session transcripts
+3. collect unseen OpenClaw sessions from a local session directory
+4. extract structured decisions from stored events
+5. replay a case with raw events, decisions, artifacts, and summary
+6. retrieve similar prior cases as precedent
+7. evaluate curated fixtures and collected OpenClaw sessions
 
-A structured, high-value judgment derived from events.
+## What MVP v1 Is Not
 
-### Artifact
+MVP v1 does not include:
 
-An important file, output, or referenced object associated with the case.
+- a multi-tenant hosted service
+- a live runtime hook inside OpenClaw internals
+- a graph database
+- LLM-native decision extraction as the primary path
+- semantic vector retrieval as the primary precedent engine
+- a generalized adapter framework for many runtimes
 
-### Precedent
+## System Context
 
-A retrieval result linking current work to historically similar cases.
+The shipped system has four operational layers:
 
-## MVP Event Types
+1. runtime history source
+2. local import and collection interface
+3. normalization, extraction, replay, and retrieval service layer
+4. local SQLite persistence
+
+```plantuml
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+title OpenPrecedent MVP v1 System Context
+
+actor User
+node "OpenClaw Local Runtime" as OpenClaw
+folder "OpenClaw Session Directory\n~/.openclaw/agents/main/sessions/" as Sessions
+artifact "Trace JSONL / Session JSONL" as Jsonl
+artifact "sessions.json" as SessionsIndex
+
+component "openprecedent CLI" as CLI
+component "OpenPrecedentService" as Service
+component "SQLiteStore" as Store
+database "SQLite DB" as DB
+artifact "Collector State File" as State
+artifact "Evaluation Reports" as Reports
+
+User --> CLI : run local commands
+OpenClaw --> Sessions : writes transcripts
+Sessions --> Jsonl
+Sessions --> SessionsIndex
+
+CLI --> Service : case/event/runtime/eval commands
+Service --> Store : create/list/update
+Store --> DB : persist cases/events/decisions/artifacts
+
+CLI --> State : read/write cursor for collection
+Service --> Jsonl : import trace/session files
+Service --> SessionsIndex : discover sessions
+CLI --> Reports : render or write evaluation output
+@enduml
+```
+
+## End-to-End Flow
+
+The core MVP loop is import first, then derive, then replay and retrieve:
+
+```plantuml
+@startuml
+skinparam shadowing false
+title OpenPrecedent MVP v1 End-to-End Flow
+
+actor User
+participant "openprecedent CLI" as CLI
+participant "OpenPrecedentService" as Service
+participant "SQLiteStore" as Store
+database "SQLite DB" as DB
+
+User -> CLI : import-openclaw-session\nor collect-openclaw-sessions
+CLI -> Service : import transcript / collect unseen session
+Service -> Store : create case + append normalized events
+Store -> DB : persist cases and events
+
+User -> CLI : extract decisions <case_id>
+CLI -> Service : extract_decisions(case_id)
+Service -> Store : replace derived decisions
+Store -> DB : persist decisions
+
+User -> CLI : replay case <case_id>
+CLI -> Service : replay_case(case_id)
+Service -> Store : load case/events/decisions
+Service -> Service : derive artifacts + build summary
+CLI <-- Service : replay response
+
+User -> CLI : precedent find <case_id>
+CLI -> Service : find_precedents(case_id)
+Service -> Store : load current and historical cases
+Service -> Service : fingerprint + compare history
+CLI <-- Service : ranked precedents
+@enduml
+```
+
+## Capability Boundary
+
+This flowchart shows the exact MVP v1 capability boundary.
+
+```mermaid
+flowchart TD
+    A[OpenClaw local history] --> B[Import or collect]
+    B --> C[Normalize into case and events]
+    C --> D[Store in SQLite]
+    D --> E[Rule-based decision extraction]
+    D --> F[Replay with artifacts and summary]
+    D --> G[Fingerprint-based precedent retrieval]
+    D --> H[Fixture and collected-session evaluation]
+
+    X[Not in MVP v1] -.-> X1[Hosted multi-user platform]
+    X -.-> X2[Graph database backend]
+    X -.-> X3[Direct runtime hook]
+    X -.-> X4[Embedding-first retrieval]
+    X -.-> X5[Cross-runtime adapter framework]
+```
+
+## Core Data Model
+
+The MVP object model is deliberately small. Raw history and derived records stay separate.
+
+```plantuml
+@startuml
+skinparam shadowing false
+hide methods
+hide stereotypes
+title OpenPrecedent MVP v1 Core Objects
+
+class Case {
+  case_id
+  title
+  status
+  user_id
+  agent_id
+  started_at
+  ended_at
+  final_summary
+}
+
+class Event {
+  event_id
+  case_id
+  event_type
+  actor
+  timestamp
+  sequence_no
+  parent_event_id
+  payload
+}
+
+class Decision {
+  decision_id
+  case_id
+  decision_type
+  title
+  question
+  chosen_action
+  evidence_event_ids
+  outcome
+  confidence
+  sequence_no
+}
+
+class Artifact {
+  artifact_id
+  case_id
+  artifact_type
+  uri_or_path
+  summary
+}
+
+class Precedent {
+  case_id
+  title
+  summary
+  similarity_score
+  similarities
+  differences
+  reusable_takeaway
+  historical_outcome
+}
+
+Case "1" -- "*" Event
+Case "1" -- "*" Decision
+Case "1" -- "*" Artifact
+Decision ..> Event : evidence_event_ids
+Precedent ..> Case : references historical case
+@enduml
+```
+
+## Executable Interfaces
+
+The current MVP executable surface is the local CLI backed by a Python service layer.
+
+### Case and event operations
+
+- `openprecedent case create`
+- `openprecedent case list`
+- `openprecedent case show`
+- `openprecedent event append`
+- `openprecedent event import-jsonl`
+
+### Replay, decision, and precedent operations
+
+- `openprecedent replay case`
+- `openprecedent extract decisions`
+- `openprecedent decisions show`
+- `openprecedent precedent find`
+
+### OpenClaw runtime operations
+
+- `openprecedent runtime list-openclaw-sessions`
+- `openprecedent runtime import-openclaw`
+- `openprecedent runtime import-openclaw-session`
+- `openprecedent runtime collect-openclaw-sessions`
+
+### Evaluation operations
+
+- `openprecedent eval fixtures`
+- `openprecedent eval collected-openclaw-sessions`
+
+## Shipped MVP v1 Event Coverage
+
+Supported event types:
 
 - `case.started`
 - `checkpoint.saved`
@@ -48,7 +265,24 @@ A retrieval result linking current work to historically similar cases.
 - `case.completed`
 - `case.failed`
 
-## MVP Decision Types
+Current OpenClaw session mapping includes:
+
+- session lifecycle records
+- `checkpoint`
+- `model_change`
+- `thinking_level_change`
+- user and assistant messages
+- assistant tool calls
+- tool results
+- useful `custom` records when they carry replayable signal
+- file reads inferred from read-only shell commands and image views
+- file writes inferred from `apply_patch`
+
+## Shipped MVP v1 Decision Coverage
+
+The current extractor is rule-based and intentionally narrow.
+
+Supported decision types:
 
 - `clarify`
 - `plan`
@@ -57,18 +291,89 @@ A retrieval result linking current work to historically similar cases.
 - `retry_or_recover`
 - `finalize`
 
-## Replay Model
+Current extraction behavior:
 
-Replay has two layers:
+- later meaningful user follow-up messages can become `clarify`
+- the first substantive agent response becomes the initial `plan`
+- explicit tool selection becomes `select_tool`
+- file writes become `apply_change`
+- non-zero command exits can become `retry_or_recover`
+- completion and failure events become `finalize`
 
-- raw timeline: what happened
-- decision timeline: why key steps happened
+## Replay and Explanation Model
 
-## Retrieval Model
+Replay combines four views built from the same stored case:
 
-Precedent retrieval should mix:
+- case metadata
+- ordered raw events
+- derived decisions
+- derived artifacts and summary
 
-- structural similarity
-- semantic similarity
+The explanation contract is evidence-bound:
 
-The first implementation can keep this simple and case-oriented rather than graph-oriented.
+- decisions store `evidence_event_ids`
+- explanation text points back to event evidence
+- raw events remain the source of truth
+- derived decisions can be recomputed without rewriting the raw history
+
+## Precedent Retrieval Model
+
+MVP v1 precedent retrieval is case-oriented and lightweight.
+
+It currently compares cases using fingerprints built from:
+
+- case status
+- presence of file writes and recovery steps
+- tool-call count
+- tool names
+- file targets and read targets
+- extracted decision types
+- keywords derived from case content
+
+This means the current precedent engine is explainable and auditable, but not yet embedding-first.
+
+## Storage Model
+
+Persistence is a single local SQLite database with three durable record layers:
+
+- `cases`
+- `events`
+- `decisions`
+- `artifacts`
+
+Storage implications:
+
+- raw events are persisted in order with `sequence_no`
+- decisions are derived and replaceable per case
+- artifacts are derived from events during replay
+- there is no separate graph store or vector store in MVP v1
+
+## Operational Model
+
+The MVP runtime validation path is local and import-based.
+
+For OpenClaw this means:
+
+- the runtime writes session files under `~/.openclaw/agents/main/sessions/`
+- OpenPrecedent discovers sessions through `sessions.json`
+- a collector command imports the latest unseen session
+- a local state file prevents duplicate collection
+- cron and systemd assets exist for unattended local scheduling
+
+Related operational docs:
+
+- [openclaw-silent-collection.md](/workspace/02-projects/incubation/openprecedent/docs/architecture/openclaw-silent-collection.md)
+- [openclaw-collector-operations.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-operations.md)
+- [openclaw-collector-rollout-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-rollout-validation.md)
+
+## Accurate MVP v1 Capability Summary
+
+If you want the shortest possible summary of MVP v1, it is this:
+
+1. import or collect local OpenClaw task history
+2. normalize it into `case` and ordered `event` records
+3. derive a narrow set of auditable `decision` records
+4. replay the work with evidence and artifacts
+5. compare the case to prior history and return reusable precedent
+
+That is the shipped MVP.
