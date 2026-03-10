@@ -64,6 +64,7 @@ The repository now includes:
 
 - usage guide for humans and agents: [docs/engineering/using-openprecedent.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/using-openprecedent.md)
 - runtime decision-lineage validation baseline: [docs/engineering/openclaw-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-validation.md)
+- real OpenClaw runtime decision-lineage validation: [docs/engineering/openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
 
 ## License
 
