@@ -10,6 +10,7 @@ def test_preflight_script_fails_without_codex_review(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["OPENPRECEDENT_REVIEW_FILE"] = str(tmp_path / ".codex-review")
     env["OPENPRECEDENT_PYTHON_BIN"] = str(repo_root / ".venv" / "bin" / "python")
+    env["OPENPRECEDENT_PREFLIGHT_BASE_REF"] = "HEAD"
 
     result = subprocess.run(
         ["./scripts/run-agent-preflight.sh"],
@@ -36,6 +37,7 @@ def test_preflight_script_runs_and_skips_markdownlint_when_unavailable(tmp_path:
     env["OPENPRECEDENT_REVIEW_FILE"] = str(review_file)
     env["OPENPRECEDENT_PYTHON_BIN"] = str(repo_root / ".venv" / "bin" / "python")
     env["PATH"] = "/usr/bin:/bin"
+    env["OPENPRECEDENT_PREFLIGHT_BASE_REF"] = "HEAD"
 
     result = subprocess.run(
         ["./scripts/run-agent-preflight.sh"],

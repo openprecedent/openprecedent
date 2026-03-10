@@ -18,6 +18,7 @@ fi
 RUN_E2E="${OPENPRECEDENT_PREFLIGHT_RUN_E2E:-0}"
 REVIEW_FILE="${OPENPRECEDENT_REVIEW_FILE:-$ROOT_DIR/.codex-review}"
 PYTEST_ARGS="${OPENPRECEDENT_PREFLIGHT_PYTEST_ARGS:-tests --ignore=tests/test_preflight_script.py}"
+BASE_REF="${OPENPRECEDENT_PREFLIGHT_BASE_REF:-upstream/main}"
 
 check_review_note() {
   if [[ ! -f "$REVIEW_FILE" ]]; then
@@ -59,6 +60,15 @@ check_merged_branch_reuse() {
     echo "Preflight failed: current branch already has a merged PR in openprecedent/openprecedent"
     exit 1
   fi
+}
+
+check_branch_freshness() {
+  if [[ "${BYPASS_BRANCH_FRESHNESS_CHECK:-}" == "1" ]]; then
+    echo "Bypassing branch freshness check because BYPASS_BRANCH_FRESHNESS_CHECK=1"
+    return 0
+  fi
+
+  python3 "$ROOT_DIR/scripts/check_branch_freshness.py" --base-ref "$BASE_REF" --allow-missing-base-ref
 }
 
 run_markdownlint_if_available() {
@@ -113,6 +123,7 @@ run_local_pr_closure_check() {
 
 echo "Running agent preflight in $ROOT_DIR"
 
+check_branch_freshness
 check_review_note
 check_merged_branch_reuse
 
