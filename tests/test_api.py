@@ -313,6 +313,29 @@ def test_service_extracts_clarify_decision_from_follow_up_user_message(db_path) 
     assert clarify_decisions[0].explanation.selection_reason
 
 
+def test_service_skips_false_clarify_on_wrapped_repeat_message(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "openclaw_sessions"
+        / "wrapped-clarify-false-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_wrapped_clarify_false",
+        title="Imported OpenClaw wrapped false clarify session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_wrapped_clarify_false"
+    assert len(result.imported_events) == 10
+
+    decisions = service.extract_decisions("case_session_wrapped_clarify_false")
+    assert [item.decision_type.value for item in decisions] == ["plan", "select_tool"]
+
+
 def test_service_strips_openclaw_message_wrappers_before_import(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = (

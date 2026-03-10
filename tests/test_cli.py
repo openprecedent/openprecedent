@@ -414,6 +414,35 @@ def test_cli_extracts_clarify_decision_from_follow_up_user_message(capsys, db_pa
     assert clarify_decisions[0]["evidence_event_ids"] == ["evt_message_msg-user-clarify-followup"]
 
 
+def test_cli_skips_false_clarify_on_wrapped_repeat_message(capsys, db_path) -> None:
+    fixture_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "openclaw_sessions"
+        / "wrapped-clarify-false-session.jsonl"
+    )
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(fixture_path),
+            "--case-id",
+            "case_session_wrapped_clarify_false_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_session_wrapped_clarify_false_cli"
+    assert imported["imported_event_count"] == 10
+
+    result = main(["extract", "decisions", "case_session_wrapped_clarify_false_cli"])
+    assert result == 0
+    decisions = json.loads(capsys.readouterr().out)
+    assert [item["decision_type"] for item in decisions] == ["plan", "select_tool"]
+
+
 def test_cli_strips_openclaw_message_wrappers_before_import(capsys, db_path) -> None:
     fixture_path = (
         Path(__file__).parent / "fixtures" / "openclaw_sessions" / "wrapped-message-session.jsonl"
