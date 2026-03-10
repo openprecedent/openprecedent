@@ -27,6 +27,10 @@ The long-lived umbrella for this phase is GitHub issue `#100`, `Define the post-
 That issue should remain open as the parent framing artifact for later hypothesis-driven child issues.
 Repository docs should point to it, but should not duplicate the full research program each time.
 
+For repository-local execution of those child issues, use the project skill:
+
+- [.codex/skills/research-harness/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/research-harness/SKILL.md)
+
 ## Completed Core Loop
 
 The shipped MVP now covers:
