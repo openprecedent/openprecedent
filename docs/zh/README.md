@@ -6,6 +6,7 @@
 
 - `product/`: 产品战略与 MVP 需求
 - `architecture/`: MVP 设计文档
+- `engineering/`: 工程流程、验证与 harness 复用文档
 - `research/`: 竞品与赛道研究
 
 说明：
