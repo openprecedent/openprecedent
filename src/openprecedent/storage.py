@@ -153,6 +153,23 @@ class SQLiteStore:
             return None
         return self._row_to_case(row)
 
+    def find_case_id_by_openclaw_session_id(self, session_id: str) -> str | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT case_id
+                FROM events
+                WHERE event_type = ?
+                  AND json_extract(payload_json, '$.session_id') = ?
+                ORDER BY sequence_no ASC, event_id ASC
+                LIMIT 1
+                """,
+                (EventType.CASE_STARTED.value, session_id),
+            ).fetchone()
+        if row is None:
+            return None
+        return str(row["case_id"])
+
     def append_event(self, event: Event) -> Event:
         with self.connect() as connection:
             connection.execute(

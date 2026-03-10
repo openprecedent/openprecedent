@@ -626,6 +626,66 @@ def test_cli_collects_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None
     assert "sample-session" in collected_again["skipped_session_ids"]
 
 
+def test_cli_dedupes_openclaw_transcript_across_manual_import_and_collector(
+    capsys, db_path, tmp_path: Path
+) -> None:
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    transcript_path = sessions_dir / "sample-session.jsonl"
+    transcript_path.write_text(
+        (fixture_dir / "sample-session.jsonl").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (sessions_dir / "sessions.json").write_text(
+        (fixture_dir / "sessions.json").read_text(encoding="utf-8").replace(
+            "__FIXTURE_DIR__",
+            str(sessions_dir),
+        ),
+        encoding="utf-8",
+    )
+    state_path = tmp_path / "collector-state.json"
+
+    result = main(
+        [
+            "runtime",
+            "import-openclaw-session",
+            "--session-file",
+            str(transcript_path),
+            "--case-id",
+            "case_manual_sample_cli",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_manual_sample_cli"
+    assert imported["imported_event_count"] == 9
+
+    result = main(
+        [
+            "runtime",
+            "collect-openclaw-sessions",
+            "--sessions-root",
+            str(sessions_dir),
+            "--state-file",
+            str(state_path),
+            "--limit",
+            "1",
+        ]
+    )
+    assert result == 0
+    collected = json.loads(capsys.readouterr().out)
+    assert len(collected["imported"]) == 1
+    assert collected["imported"][0]["session_id"] == "sample-session"
+    assert collected["imported"][0]["case_id"] == "case_manual_sample_cli"
+    assert collected["imported"][0]["imported_event_count"] == 0
+
+    result = main(["case", "list"])
+    assert result == 0
+    cases = json.loads(capsys.readouterr().out)
+    assert [case["case_id"] for case in cases] == ["case_manual_sample_cli"]
+
+
 def test_run_collector_script_prefers_repo_venv_binary(tmp_path: Path) -> None:
     sessions_dir = tmp_path / "sessions"
     sessions_dir.mkdir()
