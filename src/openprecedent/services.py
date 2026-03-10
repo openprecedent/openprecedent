@@ -601,8 +601,10 @@ class OpenPrecedentService:
                     top_precedent_score=precedents[0].similarity_score if precedents else None,
                     has_file_write=any(event.event_type == EventType.FILE_WRITE for event in events),
                     has_recovery=any(
-                        decision.decision_type == DecisionType.RETRY_OR_RECOVER
-                        for decision in decisions
+                        event.event_type == EventType.COMMAND_COMPLETED
+                        and isinstance(event.payload.get("exit_code"), int)
+                        and int(event.payload.get("exit_code")) != 0
+                        for event in events
                     ),
                     final_summary=case.final_summary,
                     unsupported_record_type_counts=import_result.unsupported_record_type_counts,
@@ -644,13 +646,21 @@ class OpenPrecedentService:
     def extract_decisions(self, case_id: str) -> list[Decision]:
         events = self.list_events(case_id)
         extracted: list[Decision] = []
-        seen_plan = False
+        seen_task_frame = False
         prior_user_messages: list[str] = []
 
         for event in events:
             event_payload = event.payload
             if event.event_type == EventType.MESSAGE_USER:
                 message = _string_or_none(event_payload.get("message"))
+                is_new_user_intent = (
+                    message is not None
+                    and (
+                        not prior_user_messages
+                        or _normalize_message_intent(message)
+                        != _normalize_message_intent(prior_user_messages[-1])
+                    )
+                )
                 if message is not None and prior_user_messages and _is_meaningful_clarification(
                     message,
                     prior_user_messages[-1],
@@ -658,15 +668,60 @@ class OpenPrecedentService:
                     extracted.append(
                         self._build_decision(
                             case_id=case_id,
-                            decision_type=DecisionType.CLARIFY,
-                            title="User clarification received",
-                            question="Did the user refine the task or add a new constraint?",
-                            chosen_action="Incorporate the follow-up user guidance",
+                            decision_type=DecisionType.CLARIFICATION_RESOLVED,
+                            title="Task ambiguity resolved",
+                            question="How did follow-up guidance change the task understanding?",
+                            chosen_action=message,
                             evidence_event_ids=[event.event_id],
-                            constraints=["Later user messages can narrow scope or add constraints"],
-                            selection_reason="A follow-up user message during execution usually reflects clarified scope, constraints, or new instructions.",
+                            constraints=["Later user guidance can refine or narrow task understanding"],
+                            selection_reason="A meaningful follow-up user message changed the task framing compared with the earlier request.",
                             outcome=message,
                             confidence=0.85,
+                        )
+                    )
+                if message is not None and is_new_user_intent and _looks_like_constraint(message):
+                    extracted.append(
+                        self._build_decision(
+                            case_id=case_id,
+                            decision_type=DecisionType.CONSTRAINT_ADOPTED,
+                            title="Constraint adopted",
+                            question="What constraint or guardrail is now part of the task?",
+                            chosen_action=message,
+                            evidence_event_ids=[event.event_id],
+                            constraints=["User-stated constraints should shape subsequent execution"],
+                            selection_reason="The user message introduced or narrowed a concrete task constraint.",
+                            outcome=message,
+                            confidence=0.84,
+                        )
+                    )
+                if message is not None and is_new_user_intent and _looks_like_success_criteria(message):
+                    extracted.append(
+                        self._build_decision(
+                            case_id=case_id,
+                            decision_type=DecisionType.SUCCESS_CRITERIA_SET,
+                            title="Success criteria established",
+                            question="What explicit standard now defines done or acceptable output?",
+                            chosen_action=message,
+                            evidence_event_ids=[event.event_id],
+                            constraints=["The task should be evaluated against explicit success criteria"],
+                            selection_reason="The user message made the expected output shape or acceptance bar explicit.",
+                            outcome=message,
+                            confidence=0.83,
+                        )
+                    )
+                if message is not None and is_new_user_intent and _looks_like_option_rejection(message):
+                    extracted.append(
+                        self._build_decision(
+                            case_id=case_id,
+                            decision_type=DecisionType.OPTION_REJECTED,
+                            title="Option rejected",
+                            question="Which candidate path was explicitly ruled out?",
+                            chosen_action=message,
+                            evidence_event_ids=[event.event_id],
+                            constraints=["Rejected options should remain out of scope"],
+                            selection_reason="The message explicitly rejected one path in favor of a different direction.",
+                            outcome=message,
+                            confidence=0.82,
                         )
                     )
                 if message is not None:
@@ -675,112 +730,55 @@ class OpenPrecedentService:
                 extracted.append(
                     self._build_decision(
                         case_id=case_id,
-                        decision_type=DecisionType.CLARIFY,
-                        title="User confirmation recorded",
-                        question="Did the user confirm a constraint or proposed next step?",
-                        chosen_action="Continue with confirmed instruction",
+                        decision_type=DecisionType.AUTHORITY_CONFIRMED,
+                        title="Authority confirmed",
+                        question="What approval or decision authority was confirmed?",
+                        chosen_action=_string_or_default(
+                            event_payload.get("message"),
+                            "Continue within the approved boundary",
+                        ),
                         evidence_event_ids=[event.event_id],
-                        constraints=["User confirmation received"],
-                        selection_reason="The user explicitly confirmed the next step or constraint.",
+                        constraints=["Human confirmation established the allowed path forward"],
+                        selection_reason="A user confirmation event signals explicit approval or authority for the chosen direction.",
                         outcome=_string_or_none(event_payload.get("message")),
                         confidence=0.9,
-                    )
+                    ).model_copy(update={"requires_human_confirmation": True})
                 )
-            elif event.event_type == EventType.MESSAGE_AGENT and not seen_plan:
-                extracted.append(
-                    self._build_decision(
-                        case_id=case_id,
-                        decision_type=DecisionType.PLAN,
-                        title="Initial execution plan",
-                        question="What path should the agent take first?",
-                        chosen_action=_string_or_default(event_payload.get("message"), "Proceed with the first stated plan"),
-                        evidence_event_ids=[event.event_id],
-                        constraints=["Use the first explicit agent plan as the baseline path"],
-                        selection_reason="The first substantive agent response usually establishes the initial execution path.",
-                        outcome="Initial plan captured from agent response",
-                        confidence=0.7,
-                    )
-                )
-                seen_plan = True
-            elif event.event_type == EventType.TOOL_CALLED:
-                tool_name = _string_or_default(event_payload.get("tool_name"), "unknown_tool")
-                extracted.append(
-                    self._build_decision(
-                        case_id=case_id,
-                        decision_type=DecisionType.SELECT_TOOL,
-                        title=f"Selected tool: {tool_name}",
-                        question="Which tool should be used next?",
-                        chosen_action=f"Use {tool_name}",
-                        evidence_event_ids=[event.event_id],
-                        constraints=["Prefer the tool explicitly chosen by the runtime"],
-                        selection_reason=f"The runtime selected {tool_name} for the next operation.",
-                        outcome=_string_or_none(event_payload.get("reason")),
-                        confidence=0.8,
-                    )
-                )
-            elif event.event_type == EventType.FILE_WRITE:
-                file_path = _string_or_default(event_payload.get("path"), "unknown_path")
-                extracted.append(
-                    self._build_decision(
-                        case_id=case_id,
-                        decision_type=DecisionType.APPLY_CHANGE,
-                        title=f"Applied file change: {file_path}",
-                        question="Should the agent modify repository state?",
-                        chosen_action=f"Write {file_path}",
-                        evidence_event_ids=[event.event_id],
-                        constraints=["File write indicates a committed repository change"],
-                        selection_reason=f"The runtime wrote {file_path}, which marks an applied change decision.",
-                        outcome=_string_or_none(event_payload.get("summary")),
-                        confidence=0.85,
-                    )
-                )
-            elif event.event_type == EventType.COMMAND_COMPLETED:
-                exit_code = event_payload.get("exit_code")
-                if isinstance(exit_code, int) and exit_code != 0:
+            elif event.event_type == EventType.MESSAGE_AGENT:
+                message = _string_or_none(event_payload.get("message"))
+                if message is None:
+                    continue
+                if not seen_task_frame and _looks_like_task_frame(message):
                     extracted.append(
                         self._build_decision(
                             case_id=case_id,
-                            decision_type=DecisionType.RETRY_OR_RECOVER,
-                            title="Recovered from command failure",
-                            question="How should execution proceed after a failing command?",
-                            chosen_action="Inspect failure and choose a narrower recovery path",
+                            decision_type=DecisionType.TASK_FRAME_DEFINED,
+                            title="Task frame established",
+                            question="How is the task being framed for execution?",
+                            chosen_action=message,
                             evidence_event_ids=[event.event_id],
-                            constraints=["Non-zero command exit indicates recovery is required"],
-                            selection_reason="The command failed, so the next meaningful step is a recovery choice rather than normal continuation.",
-                            outcome=_string_or_none(event_payload.get("stderr")) or f"exit_code={exit_code}",
-                            confidence=0.9,
+                            constraints=["The first substantive agent framing sets the working interpretation of the task"],
+                            selection_reason="The agent explicitly restated how it understood the task and what boundary it would operate within.",
+                            outcome="Initial task frame captured from agent response",
+                            confidence=0.7,
                         )
                     )
-            elif event.event_type == EventType.CASE_COMPLETED:
-                extracted.append(
-                    self._build_decision(
-                        case_id=case_id,
-                        decision_type=DecisionType.FINALIZE,
-                        title="Case finalized successfully",
-                        question="Is the case ready to conclude?",
-                        chosen_action="Return the final result",
-                        evidence_event_ids=[event.event_id],
-                        constraints=["Case completion event closes execution"],
-                        selection_reason="The runtime emitted a completion event, so the case should be finalized successfully.",
-                        outcome=_string_or_none(event_payload.get("summary")) or "Case completed",
-                        confidence=0.95,
+                    seen_task_frame = True
+                if _looks_like_option_rejection(message):
+                    extracted.append(
+                        self._build_decision(
+                            case_id=case_id,
+                            decision_type=DecisionType.OPTION_REJECTED,
+                            title="Alternative path rejected",
+                            question="Which path did the agent explicitly decide not to pursue?",
+                            chosen_action=message,
+                            evidence_event_ids=[event.event_id],
+                            constraints=["Explicitly rejected paths should remain out of scope"],
+                            selection_reason="The agent message ruled out one approach while committing to another.",
+                            outcome=message,
+                            confidence=0.77,
+                        )
                     )
-                )
-            elif event.event_type == EventType.CASE_FAILED:
-                extracted.append(
-                    self._build_decision(
-                        case_id=case_id,
-                        decision_type=DecisionType.FINALIZE,
-                        title="Case finalized with failure",
-                        question="Should the case terminate with a failure outcome?",
-                        chosen_action="Stop execution and surface failure",
-                        evidence_event_ids=[event.event_id],
-                        constraints=["Case failure event closes execution with an error state"],
-                        selection_reason="The runtime emitted a failure event, so execution should stop and surface the failure.",
-                        outcome=_string_or_none(event_payload.get("summary")) or "Case failed",
-                        confidence=0.95,
-                    )
-                )
 
         numbered: list[Decision] = []
         for index, decision in enumerate(extracted, start=1):
@@ -921,7 +919,12 @@ class OpenPrecedentService:
         return {
             "status": case.status.value,
             "has_file_write": event_types[EventType.FILE_WRITE.value] > 0,
-            "has_recovery": decision_types[DecisionType.RETRY_OR_RECOVER.value] > 0,
+            "has_recovery": any(
+                event.event_type == EventType.COMMAND_COMPLETED
+                and isinstance(event.payload.get("exit_code"), int)
+                and int(event.payload.get("exit_code")) != 0
+                for event in events
+            ),
             "tool_count": event_types[EventType.TOOL_CALLED.value],
             "tool_names": tool_names,
             "file_paths": file_paths,
@@ -1004,8 +1007,10 @@ class OpenPrecedentService:
 
         current_decision_keys = set(current["decision_types"])
         other_decision_keys = set(other["decision_types"])
-        clarify_mismatch = DecisionType.CLARIFY.value in (current_decision_keys ^ other_decision_keys)
-        if clarify_mismatch:
+        clarification_mismatch = DecisionType.CLARIFICATION_RESOLVED.value in (
+            current_decision_keys ^ other_decision_keys
+        )
+        if clarification_mismatch:
             score -= 1
             differences.append("different clarification pattern")
 
@@ -1600,6 +1605,66 @@ def _is_meaningful_clarification(message: str, prior_message: str) -> bool:
 
 def _normalize_message_intent(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip().lower())
+
+
+_TASK_FRAME_PREFIXES = (
+    "i will ",
+    "i'll ",
+    "i can ",
+    "i found ",
+    "i am going to ",
+    "i'm going to ",
+    "let me ",
+)
+_CONSTRAINT_MARKERS = (
+    "focus on",
+    "only ",
+    "do not",
+    "don't",
+    "without ",
+    "must ",
+    "need to",
+    "avoid ",
+    "instead of",
+)
+_SUCCESS_CRITERIA_MARKERS = (
+    "done when",
+    "success means",
+    "return ",
+    "provide ",
+    "give me",
+    "output ",
+    "summary ",
+    "summarize ",
+    "nothing else",
+)
+_OPTION_REJECTION_MARKERS = (
+    "do not",
+    "don't",
+    "instead of",
+    "rather than",
+    "skip ",
+)
+
+
+def _looks_like_task_frame(message: str) -> bool:
+    normalized = _normalize_message_intent(message)
+    return normalized.startswith(_TASK_FRAME_PREFIXES) or " i will " in normalized
+
+
+def _looks_like_constraint(message: str) -> bool:
+    normalized = _normalize_message_intent(message)
+    return any(marker in normalized for marker in _CONSTRAINT_MARKERS)
+
+
+def _looks_like_success_criteria(message: str) -> bool:
+    normalized = _normalize_message_intent(message)
+    return any(marker in normalized for marker in _SUCCESS_CRITERIA_MARKERS)
+
+
+def _looks_like_option_rejection(message: str) -> bool:
+    normalized = _normalize_message_intent(message)
+    return any(marker in normalized for marker in _OPTION_REJECTION_MARKERS)
 
 
 def _normalize_openclaw_tool_call_events(

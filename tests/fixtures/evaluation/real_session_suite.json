@@ -5,7 +5,7 @@
       "title": "Anonymized real session file ops",
       "trace_path": "../openclaw_sessions/file-ops-session.jsonl",
       "source_format": "openclaw_session",
-      "expected_decision_types": ["plan", "select_tool", "apply_change"],
+      "expected_decision_types": ["task_frame_defined"],
       "expected_precedent_case_ids": ["eval_real_search_read"]
     },
     {
@@ -13,7 +13,7 @@
       "title": "Anonymized real session search read",
       "trace_path": "../openclaw_sessions/search-read-session.jsonl",
       "source_format": "openclaw_session",
-      "expected_decision_types": ["plan", "select_tool"],
+      "expected_decision_types": ["task_frame_defined"],
       "expected_precedent_case_ids": ["eval_real_file_ops"]
     },
     {
@@ -21,7 +21,7 @@
       "title": "Anonymized real session clarify",
       "trace_path": "../openclaw_sessions/clarify-session.jsonl",
       "source_format": "openclaw_session",
-      "expected_decision_types": ["plan", "clarify", "select_tool"],
+      "expected_decision_types": ["success_criteria_set", "task_frame_defined", "clarification_resolved", "constraint_adopted"],
       "expected_precedent_case_ids": ["eval_real_search_read"]
     }
   ]
