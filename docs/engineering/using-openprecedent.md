@@ -313,9 +313,15 @@ That document defines which trigger points are currently recommended:
 - `before_file_write`
 - `after_failure` only when the failure is semantic rather than merely operational
 
+It also now treats prompts like "keep it consistent with earlier repository decisions" as implicit `initial_planning` lineage triggers, even when the user does not explicitly mention OpenPrecedent.
+
 The first live isolated-profile runtime findings are documented here:
 
 - [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
+
+A follow-up live rerun after shared-path wiring is documented here:
+
+- [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md)
 
 That live validation records three important realities:
 

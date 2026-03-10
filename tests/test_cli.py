@@ -911,6 +911,7 @@ def test_cli_runtime_decision_lineage_validation_baseline_exists() -> None:
     assert "initial_planning" in content
     assert "before_file_write" in content
     assert "after_failure" in content
+    assert "keep it consistent with earlier repository decisions" in content
 
 
 def test_openclaw_skill_bundle_exists() -> None:
@@ -927,6 +928,23 @@ def test_openclaw_skill_bundle_exists() -> None:
     assert 'name: openprecedent-decision-lineage' in content
     assert '"bins":["openprecedent"]' in content
     assert "openprecedent runtime decision-lineage-brief" in content
+    assert "Do not wait for the user to explicitly say \"use OpenPrecedent\"." in content
+    assert "keep it consistent with earlier repository decisions if relevant" in content
+
+
+def test_openclaw_runtime_trigger_rerun_doc_exists() -> None:
+    path = (
+        Path(__file__).parent.parent
+        / "docs"
+        / "engineering"
+        / "openclaw-runtime-decision-lineage-trigger-rerun.md"
+    )
+
+    content = path.read_text(encoding="utf-8")
+
+    assert "matched_case_ids = [\"case_opv80_prior_readme\"]" in content
+    assert "Prompt Under Test: Implicit Prior-Decision Consistency" in content
+    assert "This validation closes the trigger-policy change tracked in `#94`." in content
 
 
 def test_cli_runtime_brief_uses_configured_openprecedent_home(

@@ -55,6 +55,16 @@ Expected benefit:
 - earlier visibility into accepted constraints
 - earlier visibility into rejected options
 
+Also keep this trigger for prompts like:
+
+- "keep it consistent with earlier repository decisions if relevant"
+- "follow prior decisions if there is precedent"
+
+Why this matters:
+
+- these prompts are implicit lineage requests even when they do not explicitly mention OpenPrecedent
+- waiting for a literal "use OpenPrecedent" instruction leaves too much real runtime value unused
+
 ### Keep: `before_file_write`
 
 Use when:
@@ -142,8 +152,9 @@ When used at the recommended trigger points, the brief can improve:
 The current best policy is:
 
 1. call the skill at `initial_planning` when semantic ambiguity or strong constraints exist
-2. call the skill again at `before_file_write` for high-risk state changes
-3. use `after_failure` only for failures that require semantic re-interpretation, not routine operational retries
+2. also call it at `initial_planning` when the user asks for consistency with earlier decisions, prior repository direction, or historical constraints, even if they do not explicitly name OpenPrecedent
+3. call the skill again at `before_file_write` for high-risk state changes
+4. use `after_failure` only for failures that require semantic re-interpretation, not routine operational retries
 
 This is enough to support the next stage of runtime experimentation without pretending that the product has already proven online accuracy gains.
 
