@@ -6,9 +6,19 @@
 - 主题：以本机 OpenClaw 为锚点的 case 轨迹、决策与回放设计
 - 版本：v1
 - 日期：2026-03-09
-- 状态：Draft
+- 状态：Historical draft（已被当前 OpenPrecedent MVP 架构文档取代）
 - 关联需求：[2026-03-context-graph-mvp-prd-v1.md](/workspace/01-product/04-requirements/2026-03-context-graph-mvp-prd-v1.md)
 - 关联战略：[2026-03-context-graph-product-strategy.md](/workspace/01-product/01-strategy/2026-03-context-graph-product-strategy.md)
+
+## 当前状态说明
+
+这份文档保留的是 `2026-03-09` 的早期中文设计草案，记录的是从 Context Graph 概念向当前 OpenPrecedent MVP 收敛前的方案。
+
+当前已交付系统边界请改看：
+
+- [MVP 状态说明](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
+- [MVP 路线图](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-roadmap.md)
+- [当前 MVP 架构文档](/workspace/02-projects/incubation/openprecedent/docs/zh/architecture/mvp-design.md)
 
 ## 1. 设计目标
 

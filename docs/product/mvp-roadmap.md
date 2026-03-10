@@ -4,6 +4,10 @@
 
 As of 2026-03-10, MVP v1 is complete: the core loop is implemented, validated in a real local target environment, and brought through the first round of real-session quality fixes.
 
+Primary summary:
+
+- [MVP status note](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
+
 Completed:
 
 - repository foundation, governance, CI, and review workflow
@@ -254,6 +258,9 @@ Completed work:
 - precedent ranking tuned and regression-tested against anonymized real-session cases
 - validated cron-based rollout in the real target environment
 - first live collected session replayed and evaluated end-to-end
+- stable shared runtime home for OpenClaw-facing decision-lineage retrieval and invocation logging
+- live runtime decision-lineage retrieval validated against shared prior history
+- OpenClaw skill trigger guidance updated so prior-decision consistency prompts can trigger lineage retrieval during initial planning
 - rollout findings and caveats documented in `docs/engineering/openclaw-collector-rollout-validation.md`
 
 Remaining gaps:

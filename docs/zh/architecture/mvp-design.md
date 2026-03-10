@@ -1,5 +1,7 @@
 # OpenPrecedent MVP v1 架构文档
 
+状态摘要：[MVP 状态说明](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
+
 ## 文档目的
 
 本文描述的是截至 2026-03-10 实际已经交付的 OpenPrecedent MVP v1 架构。
@@ -63,6 +65,7 @@ OpenPrecedent MVP v1 目前可以：
 5. 回放一个 case，并展示原始事件、决策、artifact 与 summary
 6. 检索相似历史 case 作为 precedent
 7. 评估 curated fixtures 与 collected OpenClaw sessions
+8. 基于共享历史为 OpenClaw 任务规划返回 runtime decision-lineage brief
 
 ## MVP v1 目前不包含什么
 
@@ -277,6 +280,7 @@ Precedent ..> Case : 引用历史 case
 - `openprecedent runtime import-openclaw`
 - `openprecedent runtime import-openclaw-session`
 - `openprecedent runtime collect-openclaw-sessions`
+- `openprecedent runtime decision-lineage-brief`
 
 ### Evaluation 操作
 
@@ -387,12 +391,16 @@ MVP 的运行时验证路径是本地、导入式的。
 - collector 命令导入最新未见过的 session
 - 本地 state file 用来避免重复收集
 - 已提供 cron 与 systemd 资产用于无人值守本地调度
+- runtime lineage 检索应使用稳定共享的 OpenPrecedent home，而不是意外落到 workspace-local 路径
+- 当前已交付的 OpenClaw skill 指导允许“与先前决策保持一致”这类提示在 initial planning 阶段触发 lineage retrieval
 
 相关运行文档：
 
 - [openclaw-silent-collection.md](/workspace/02-projects/incubation/openprecedent/docs/architecture/openclaw-silent-collection.md)
 - [openclaw-collector-operations.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-operations.md)
 - [openclaw-collector-rollout-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-rollout-validation.md)
+- [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
+- [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md)
 
 ## 对 MVP v1 最准确的能力总结
 

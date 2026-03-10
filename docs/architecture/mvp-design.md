@@ -1,6 +1,7 @@
 # OpenPrecedent MVP v1 Architecture
 
 Chinese version: [中文版本 / MVP v1 架构文档](/workspace/02-projects/incubation/openprecedent/docs/zh/architecture/mvp-design.md)
+Status summary: [MVP status note](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
 
 ## Purpose
 
@@ -64,6 +65,7 @@ OpenPrecedent MVP v1 can:
 5. replay a case with raw events, decisions, artifacts, and summary
 6. retrieve similar prior cases as precedent
 7. evaluate curated fixtures and collected OpenClaw sessions
+8. surface runtime decision-lineage briefs for OpenClaw task planning against shared prior history
 
 ## What MVP v1 Is Not
 
@@ -389,12 +391,16 @@ For OpenClaw this means:
 - a collector command imports the latest unseen session
 - a local state file prevents duplicate collection
 - cron and systemd assets exist for unattended local scheduling
+- runtime lineage retrieval should use a stable shared OpenPrecedent home rather than workspace-local accidental persistence
+- the shipped OpenClaw skill guidance allows prior-decision consistency prompts to trigger lineage retrieval during initial planning
 
 Related operational docs:
 
 - [openclaw-silent-collection.md](/workspace/02-projects/incubation/openprecedent/docs/architecture/openclaw-silent-collection.md)
 - [openclaw-collector-operations.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-operations.md)
 - [openclaw-collector-rollout-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-rollout-validation.md)
+- [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
+- [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md)
 
 ## Accurate MVP v1 Capability Summary
 
