@@ -750,6 +750,62 @@ def test_cli_evaluates_fixture_suite(capsys, db_path) -> None:
     assert operational_only["extra_decision_types"] == []
 
 
+def test_cli_builds_decision_lineage_brief(capsys, db_path) -> None:
+    for case_id, title, events in (
+        (
+            "case_cli_brief_guidance",
+            "Docs-only recommendation",
+            [
+                ["event", "append", "case_cli_brief_guidance", "message.user", "user", "--payload", '{"message":"Do not edit code. Provide a short written recommendation only."}'],
+                ["event", "append", "case_cli_brief_guidance", "message.agent", "agent", "--payload", '{"message":"I will stay within docs-only scope and provide a short recommendation."}'],
+                ["event", "append", "case_cli_brief_guidance", "user.confirmed", "user", "--payload", '{"message":"Approved. Stay within docs-only scope."}'],
+            ],
+        ),
+    ):
+        result = main(["case", "create", "--case-id", case_id, "--title", title])
+        assert result == 0
+        capsys.readouterr()
+        for command in events:
+            result = main(command)
+            assert result == 0
+            capsys.readouterr()
+        result = main(["extract", "decisions", case_id])
+        assert result == 0
+        capsys.readouterr()
+
+    result = main(
+        [
+            "runtime",
+            "decision-lineage-brief",
+            "--query-reason",
+            "initial_planning",
+            "--task-summary",
+            "Do not edit code. Provide a short written recommendation only.",
+        ]
+    )
+    assert result == 0
+    brief = json.loads(capsys.readouterr().out)
+    assert brief["matched_cases"][0]["case_id"] == "case_cli_brief_guidance"
+    assert brief["accepted_constraints"]
+    assert brief["authority_signals"]
+
+
+def test_openclaw_skill_bundle_exists() -> None:
+    skill_path = (
+        Path(__file__).parent.parent
+        / "skills"
+        / "openprecedent-decision-lineage"
+        / "SKILL.md"
+    )
+
+    content = skill_path.read_text(encoding="utf-8")
+
+    assert content.startswith("---\n")
+    assert 'name: openprecedent-decision-lineage' in content
+    assert '"bins":["openprecedent"]' in content
+    assert "openprecedent runtime decision-lineage-brief" in content
+
+
 def test_cli_evaluates_real_session_fixture_suite(capsys, db_path) -> None:
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
 

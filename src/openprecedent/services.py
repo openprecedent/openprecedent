@@ -7,6 +7,7 @@ import statistics
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import StrEnum
 from pathlib import Path
 import re
 from uuid import uuid4
@@ -187,6 +188,58 @@ class CollectedSessionEvaluationReport(BaseModel):
     unsupported_record_type_counts: dict[str, int] = Field(default_factory=dict)
     missing_session_ids: list[str] = Field(default_factory=list)
     results: list[CollectedSessionEvaluationResult]
+
+
+class DecisionLineageQueryReason(StrEnum):
+    INITIAL_PLANNING = "initial_planning"
+    BEFORE_FILE_WRITE = "before_file_write"
+    AFTER_FAILURE = "after_failure"
+    MANUAL = "manual"
+
+
+class DecisionLineageBriefInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query_reason: DecisionLineageQueryReason
+    task_summary: str
+    current_plan: str | None = None
+    candidate_action: str | None = None
+    known_files: list[str] = Field(default_factory=list)
+    limit: int = 3
+
+
+class DecisionLineageMatchedCase(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str
+    title: str
+    similarity_score: int
+    summary: str
+
+
+class DecisionLineageRelevantDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str
+    decision_type: DecisionType
+    title: str
+    chosen_action: str
+    outcome: str | None = None
+
+
+class DecisionLineageBrief(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query_reason: DecisionLineageQueryReason
+    task_summary: str
+    suggested_focus: str | None = None
+    matched_cases: list[DecisionLineageMatchedCase]
+    task_frame: str | None = None
+    accepted_constraints: list[str] = Field(default_factory=list)
+    success_criteria: list[str] = Field(default_factory=list)
+    rejected_options: list[str] = Field(default_factory=list)
+    authority_signals: list[str] = Field(default_factory=list)
+    cautions: list[str] = Field(default_factory=list)
 
 
 @dataclass
@@ -844,6 +897,85 @@ class OpenPrecedentService:
         candidates.sort(key=lambda item: (-item[0], item[1].case_id))
         return [precedent for _, precedent in candidates[:limit]]
 
+    def build_decision_lineage_brief(
+        self,
+        input_data: DecisionLineageBriefInput,
+    ) -> DecisionLineageBrief:
+        query_tokens = self._decision_lineage_query_tokens(input_data)
+        if not query_tokens:
+            raise ValueError("decision-lineage brief requires non-empty task context")
+
+        ranked_cases: list[tuple[int, Case, list[Event], list[Decision]]] = []
+        for case in self.store.list_cases():
+            events = self.store.list_events(case.case_id)
+            decisions = self.store.list_decisions(case.case_id)
+            if not decisions:
+                continue
+
+            case_keywords = self._case_keywords(case, events, decisions)
+            decision_keywords = self._decision_keywords(decisions)
+            semantic_overlap = query_tokens & decision_keywords
+            contextual_overlap = query_tokens & case_keywords
+            score = len(semantic_overlap) * 3 + len(contextual_overlap)
+            if score <= 0:
+                continue
+            ranked_cases.append((score, case, events, decisions))
+
+        ranked_cases.sort(key=lambda item: (-item[0], item[1].case_id))
+        selected = ranked_cases[: max(1, input_data.limit)]
+
+        matched_cases: list[DecisionLineageMatchedCase] = []
+        relevant_decisions: list[DecisionLineageRelevantDecision] = []
+        for score, case, events, decisions in selected:
+            matched_cases.append(
+                DecisionLineageMatchedCase(
+                    case_id=case.case_id,
+                    title=case.title,
+                    similarity_score=score,
+                    summary=self._build_case_summary(case, events, decisions),
+                )
+            )
+            for decision in decisions:
+                relevant_decisions.append(
+                    DecisionLineageRelevantDecision(
+                        case_id=case.case_id,
+                        decision_type=decision.decision_type,
+                        title=decision.title,
+                        chosen_action=decision.chosen_action,
+                        outcome=decision.outcome,
+                    )
+                )
+
+        task_frame = _first_decision_text(relevant_decisions, DecisionType.TASK_FRAME_DEFINED)
+        accepted_constraints = _decision_texts(relevant_decisions, DecisionType.CONSTRAINT_ADOPTED)
+        success_criteria = _decision_texts(relevant_decisions, DecisionType.SUCCESS_CRITERIA_SET)
+        rejected_options = _decision_texts(relevant_decisions, DecisionType.OPTION_REJECTED)
+        authority_signals = _decision_texts(relevant_decisions, DecisionType.AUTHORITY_CONFIRMED)
+
+        suggested_focus = (
+            task_frame
+            or (accepted_constraints[0] if accepted_constraints else None)
+            or (success_criteria[0] if success_criteria else None)
+        )
+        cautions = [
+            text
+            for text in rejected_options + accepted_constraints
+            if any(marker in _normalize_message_intent(text) for marker in ("do not", "don't", "instead of"))
+        ][:3]
+
+        return DecisionLineageBrief(
+            query_reason=input_data.query_reason,
+            task_summary=input_data.task_summary,
+            suggested_focus=suggested_focus,
+            matched_cases=matched_cases,
+            task_frame=task_frame,
+            accepted_constraints=accepted_constraints[:5],
+            success_criteria=success_criteria[:5],
+            rejected_options=rejected_options[:5],
+            authority_signals=authority_signals[:5],
+            cautions=cautions,
+        )
+
     def _build_decision(
         self,
         *,
@@ -1058,6 +1190,22 @@ class OpenPrecedentService:
             if decision.outcome:
                 keywords.update(_tokenize_keywords(decision.outcome))
         return keywords
+
+    def _decision_lineage_query_tokens(
+        self,
+        input_data: DecisionLineageBriefInput,
+    ) -> set[str]:
+        texts = [input_data.task_summary]
+        if input_data.current_plan:
+            texts.append(input_data.current_plan)
+        if input_data.candidate_action:
+            texts.append(input_data.candidate_action)
+        texts.extend(input_data.known_files)
+
+        tokens: set[str] = set()
+        for text in texts:
+            tokens.update(_tokenize_keywords(text))
+        return tokens
 
     def _build_reusable_takeaway(self, case: Case, decisions: list[Decision]) -> str | None:
         if decisions:
@@ -1686,6 +1834,32 @@ def _looks_like_success_criteria(message: str) -> bool:
 def _looks_like_option_rejection(message: str) -> bool:
     normalized = _normalize_message_intent(message)
     return any(marker in normalized for marker in _OPTION_REJECTION_MARKERS)
+
+
+def _decision_texts(
+    decisions: list[DecisionLineageRelevantDecision],
+    decision_type: DecisionType,
+) -> list[str]:
+    values: list[str] = []
+    seen: set[str] = set()
+    for decision in decisions:
+        if decision.decision_type != decision_type:
+            continue
+        text = decision.outcome or decision.chosen_action
+        normalized = _normalize_message_intent(text)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        values.append(text)
+    return values
+
+
+def _first_decision_text(
+    decisions: list[DecisionLineageRelevantDecision],
+    decision_type: DecisionType,
+) -> str | None:
+    values = _decision_texts(decisions, decision_type)
+    return values[0] if values else None
 
 
 def _normalize_openclaw_tool_call_events(

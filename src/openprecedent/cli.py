@@ -7,7 +7,13 @@ from pathlib import Path
 
 from openprecedent.config import get_collector_state_path, get_db_path
 from openprecedent.schemas import EventActor, EventType
-from openprecedent.services import AppendEventInput, CreateCaseInput, OpenPrecedentService
+from openprecedent.services import (
+    AppendEventInput,
+    CreateCaseInput,
+    DecisionLineageBriefInput,
+    DecisionLineageQueryReason,
+    OpenPrecedentService,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -86,6 +92,13 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_collect.add_argument("--limit", type=int, default=1)
     runtime_collect.add_argument("--user-id")
     runtime_collect.add_argument("--agent-id", default="openclaw")
+    runtime_brief = runtime_subparsers.add_parser("decision-lineage-brief")
+    runtime_brief.add_argument("--query-reason", choices=[item.value for item in DecisionLineageQueryReason], required=True)
+    runtime_brief.add_argument("--task-summary", required=True)
+    runtime_brief.add_argument("--current-plan")
+    runtime_brief.add_argument("--candidate-action")
+    runtime_brief.add_argument("--known-file", action="append", dest="known_files", default=[])
+    runtime_brief.add_argument("--limit", type=int, default=3)
 
     eval_parser = subparsers.add_parser("eval")
     eval_subparsers = eval_parser.add_subparsers(dest="action", required=True)
@@ -300,6 +313,19 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
             agent_id=args.agent_id,
         )
         _print_json(result.model_dump(mode="json"))
+        return 0
+    if args.action == "decision-lineage-brief":
+        brief = service.build_decision_lineage_brief(
+            DecisionLineageBriefInput(
+                query_reason=DecisionLineageQueryReason(args.query_reason),
+                task_summary=args.task_summary,
+                current_plan=args.current_plan,
+                candidate_action=args.candidate_action,
+                known_files=args.known_files,
+                limit=args.limit,
+            )
+        )
+        _print_json(brief.model_dump(mode="json"))
         return 0
     return 2
 
