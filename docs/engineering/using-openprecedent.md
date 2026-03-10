@@ -187,6 +187,9 @@ Use these when you want to check whether replay, extraction, and precedent behav
 An agent should not think of OpenPrecedent as a chat surface.
 It is better thought of as a local evidence and precedent layer.
 
+As of 2026-03-10, the intended long-term value is semantic decision lineage, not operational imitation.
+In other words, OpenPrecedent should help later agents inherit task framing, constraints, approvals, and success criteria from earlier work, not blindly reuse old tool choices or file-write patterns.
+
 The current MVP supports two agent-facing integration patterns.
 
 ### Pattern 1: Let OpenClaw produce history, then import it
@@ -278,6 +281,12 @@ For the current MVP, the practical answers are:
 - direct event emission is available for structured runtimes
 - decisions are derived after event ingestion
 - precedents are available after a case and its decisions are stored
+
+The decision-model direction is also important:
+
+- raw events should retain operational evidence such as tool calls and file activity
+- decision records should converge on reusable judgment rather than operational moves
+- future runtime retrieval should return semantic decision-lineage context, not operational instructions
 
 ## Current Limitations You Should Design Around
 

@@ -25,6 +25,8 @@ The first implementation target is a local single-agent workflow. The current go
 - Prefer small, auditable changes over broad scaffolding.
 - Preserve a clear separation between raw events and derived decision records.
 - Prefer simple local-first development flows.
+- During discussion, planning, or taxonomy exploration, do not edit implementation code speculatively.
+- Any implementation change to `src/`, `tests/`, or other product behavior must be tied to one explicit GitHub issue and completed only on that issue's dedicated branch.
 - Once a PR branch has been merged, do not add new commits to that branch. Start a fresh branch from `upstream/main` for all follow-up work.
 - Track agent development as GitHub issues broken down to the smallest deliverable unit that can be completed and reviewed independently.
 - When an agent starts work on one issue, create a fresh branch from the latest `upstream/main` for that issue only.
