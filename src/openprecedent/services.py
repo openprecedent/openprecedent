@@ -618,13 +618,16 @@ class OpenPrecedentService:
         events = self.list_events(case_id)
         extracted: list[Decision] = []
         seen_plan = False
-        seen_user_message = False
+        prior_user_messages: list[str] = []
 
         for event in events:
             event_payload = event.payload
             if event.event_type == EventType.MESSAGE_USER:
                 message = _string_or_none(event_payload.get("message"))
-                if seen_user_message and message is not None:
+                if message is not None and prior_user_messages and _is_meaningful_clarification(
+                    message,
+                    prior_user_messages[-1],
+                ):
                     extracted.append(
                         self._build_decision(
                             case_id=case_id,
@@ -639,7 +642,8 @@ class OpenPrecedentService:
                             confidence=0.85,
                         )
                     )
-                seen_user_message = True
+                if message is not None:
+                    prior_user_messages.append(message)
             elif event.event_type == EventType.USER_CONFIRMED:
                 extracted.append(
                     self._build_decision(
@@ -1516,6 +1520,30 @@ def _sanitize_openclaw_message_text(text: str) -> str | None:
 
     sanitized = "\n".join(kept_lines).strip()
     return sanitized or None
+
+
+def _is_meaningful_clarification(message: str, prior_message: str) -> bool:
+    current = _normalize_message_intent(message)
+    previous = _normalize_message_intent(prior_message)
+    if not current or not previous:
+        return current != previous
+    if current == previous:
+        return False
+
+    current_tokens = _tokenize_keywords(current)
+    previous_tokens = _tokenize_keywords(previous)
+    if not current_tokens or not previous_tokens:
+        return current != previous
+
+    shared = current_tokens & previous_tokens
+    overlap_ratio = len(shared) / min(len(current_tokens), len(previous_tokens))
+    if overlap_ratio >= 0.8:
+        return False
+    return True
+
+
+def _normalize_message_intent(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip().lower())
 
 
 def _normalize_openclaw_tool_call_events(
