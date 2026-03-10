@@ -25,9 +25,13 @@ Prefer calling this skill only when at least one of these is true:
 
 - the user introduced a meaningful constraint
 - the user clarified or narrowed the task
+- the user asked for consistency with earlier decisions, prior repository choices, or previous constraints
 - a human approval or authority boundary matters
 - you are about to commit a high-risk write
 - the task resembles a previously solved problem and you need the prior judgment, not just the prior mechanics
+
+Do not wait for the user to explicitly say "use OpenPrecedent".
+If the prompt asks to stay consistent with earlier decisions or prior repository direction, that is already enough reason to call this skill during initial planning.
 
 Avoid calling it for every turn.
 If the task is already straightforward and no semantic ambiguity exists, continue normally.
@@ -63,6 +67,16 @@ export OPENPRECEDENT_RUNTIME_INVOCATION_LOG="$HOME/.openprecedent/runtime/openpr
 openprecedent runtime decision-lineage-brief \
   --query-reason initial_planning \
   --task-summary "<current task summary>"
+```
+
+Use this even for no-code recommendation tasks when the user asks for consistency with prior decisions.
+
+Example:
+
+```bash
+openprecedent runtime decision-lineage-brief \
+  --query-reason initial_planning \
+  --task-summary "Do not edit code. Provide a short written recommendation only for improving repository navigation, and keep it consistent with earlier repository decisions if relevant."
 ```
 
 ### Before a risky write
