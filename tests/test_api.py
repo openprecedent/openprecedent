@@ -592,6 +592,24 @@ def test_service_evaluates_real_session_fixture_suite(db_path) -> None:
     assert "clarify" in [decision_type.value for decision_type in clarify_result.actual_decision_types]
 
 
+def test_service_fixture_evaluation_fails_fast_on_reused_database(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
+
+    first = service.evaluate_openclaw_fixture_suite(suite_path)
+    assert first.passed_cases == 3
+
+    with pytest.raises(ValueError, match="fixture evaluation requires an isolated database"):
+        service.evaluate_openclaw_fixture_suite(suite_path)
+
+    cases = service.list_cases()
+    assert sorted(case.case_id for case in cases) == [
+        "eval_real_clarify",
+        "eval_real_file_ops",
+        "eval_real_search_read",
+    ]
+
+
 def test_service_precedent_prefers_shared_read_targets_for_real_session_search(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"

@@ -463,6 +463,15 @@ class OpenPrecedentService:
     def evaluate_openclaw_fixture_suite(self, suite_path: Path) -> EvaluationReport:
         suite = EvaluationSuiteSpec.model_validate_json(suite_path.read_text(encoding="utf-8"))
         base_dir = suite_path.parent
+        existing_case_ids = [
+            case_spec.case_id for case_spec in suite.cases if self.store.get_case(case_spec.case_id) is not None
+        ]
+        if existing_case_ids:
+            duplicated = ", ".join(sorted(existing_case_ids))
+            raise ValueError(
+                "fixture evaluation requires an isolated database; "
+                f"existing evaluation case ids found: {duplicated}"
+            )
 
         imported_case_ids: list[str] = []
         for case_spec in suite.cases:
