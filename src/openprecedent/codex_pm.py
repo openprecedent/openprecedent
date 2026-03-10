@@ -11,6 +11,7 @@ from pathlib import Path
 
 PM_ROOT = Path(".codex/pm")
 VALID_STATUSES = ("backlog", "in_progress", "blocked", "done")
+VALID_TASK_TYPES = ("implementation", "docs", "research", "umbrella")
 CLOSING_ISSUE_PATTERN = re.compile(
     r"\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)\b",
     re.IGNORECASE,
@@ -46,6 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     task_new.add_argument("--issue")
     task_new.add_argument("--labels", default="")
     task_new.add_argument("--status", default="backlog", choices=VALID_STATUSES)
+    task_new.add_argument("--task-type", default="implementation", choices=VALID_TASK_TYPES)
     task_new.add_argument("--depends-on", default="")
 
     tasks = subparsers.add_parser("tasks")
@@ -148,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
             "slug": args.slug,
             "title": args.title,
             "status": args.status,
+            "task_type": args.task_type,
             "labels": args.labels,
             "depends_on": args.depends_on,
         }
@@ -352,6 +355,7 @@ def _doc_to_dict(document: PMDocument) -> dict[str, object]:
         "status": document.metadata.get("status", ""),
         "epic": document.metadata.get("epic", ""),
         "issue": document.metadata.get("issue"),
+        "task_type": document.metadata.get("task_type", "implementation"),
         "labels": [item for item in document.metadata.get("labels", "").split(",") if item],
     }
 
@@ -373,6 +377,7 @@ def _render_issue_body(document: PMDocument) -> str:
     deliverable = document.sections.get("Deliverable", "")
     scope = document.sections.get("Scope", "")
     acceptance = document.sections.get("Acceptance Criteria", "")
+    task_type = document.metadata.get("task_type", "")
 
     if context:
         lines.extend(["## Context", context, ""])
@@ -382,6 +387,8 @@ def _render_issue_body(document: PMDocument) -> str:
         lines.extend(["## Scope", scope, ""])
     if acceptance:
         lines.extend(["## Acceptance Criteria", acceptance, ""])
+    if task_type:
+        lines.extend(["## Task Type", task_type, ""])
     labels = document.metadata.get("labels", "")
     if labels:
         lines.extend(["## Labels", labels, ""])
@@ -391,7 +398,8 @@ def _render_issue_body(document: PMDocument) -> str:
 def _render_pr_body(document: PMDocument, *, issue: int | None, tests: list[str]) -> str:
     lines: list[str] = []
     closing_issue = issue or _parse_issue_number(document.metadata.get("issue", ""))
-    if closing_issue is not None:
+    task_type = document.metadata.get("task_type", "implementation")
+    if closing_issue is not None and task_type != "umbrella":
         lines.extend([f"Closes #{closing_issue}", ""])
     deliverable = document.sections.get("Deliverable", "")
     implementation_notes = document.sections.get("Implementation Notes", "")
@@ -465,6 +473,16 @@ def _verify_pr_closure_sync(pr_body: str, changed_files: list[str]) -> list[str]
         if not matching_documents:
             errors.append(
                 f"PR closes #{issue} but does not update the matching local task file under .codex/pm/tasks/."
+            )
+            continue
+        umbrella_paths = ", ".join(
+            str(document.path)
+            for document in matching_documents
+            if document.metadata.get("task_type", "implementation") == "umbrella"
+        )
+        if umbrella_paths:
+            errors.append(
+                f"PR closes #{issue} but matching task file is task_type=umbrella and must remain open: {umbrella_paths}"
             )
             continue
         if not any(document.metadata.get("status") == "done" for document in matching_documents):

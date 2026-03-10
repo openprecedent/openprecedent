@@ -4,6 +4,7 @@ epic: real-history-quality
 slug: define-post-mvp-research-evolution-framework
 title: Define the post-MVP research evolution framework for OpenPrecedent
 status: backlog
+task_type: umbrella
 labels: docs
 issue: 100
 ---
