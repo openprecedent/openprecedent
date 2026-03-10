@@ -737,6 +737,28 @@ def test_cli_evaluates_real_session_fixture_suite(capsys, db_path) -> None:
     assert report["passed_cases"] == 3
 
 
+def test_cli_fixture_evaluation_fails_fast_on_reused_database(capsys, db_path) -> None:
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
+
+    first = main(["eval", "fixtures", str(suite_path), "--json"])
+    assert first == 0
+    capsys.readouterr()
+
+    second = main(["eval", "fixtures", str(suite_path), "--json"])
+    assert second == 1
+    stderr = capsys.readouterr().err
+    assert "fixture evaluation requires an isolated database" in stderr
+
+    result = main(["case", "list"])
+    assert result == 0
+    cases = json.loads(capsys.readouterr().out)
+    assert sorted(case["case_id"] for case in cases) == [
+        "eval_real_clarify",
+        "eval_real_file_ops",
+        "eval_real_search_read",
+    ]
+
+
 def test_cli_evaluates_collected_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
