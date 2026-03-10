@@ -36,6 +36,27 @@ If the task is already straightforward and no semantic ambiguity exists, continu
 
 Run the OpenPrecedent CLI and ask for a decision-lineage brief.
 
+### Stable shared runtime paths
+
+When OpenClaw runs this skill from an isolated workspace, do not rely on the current working directory for persistence.
+Point the skill at an intentionally shared OpenPrecedent runtime home first:
+
+```bash
+export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"
+```
+
+This shared home becomes the default location for:
+
+- `openprecedent.db`
+- `openprecedent-runtime-invocations.jsonl`
+
+If your deployment needs separate locations, set these explicitly instead:
+
+```bash
+export OPENPRECEDENT_DB="$HOME/.openprecedent/runtime/openprecedent.db"
+export OPENPRECEDENT_RUNTIME_INVOCATION_LOG="$HOME/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl"
+```
+
 ### Initial planning
 
 ```bash
