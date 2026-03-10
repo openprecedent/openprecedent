@@ -6,6 +6,20 @@ As of `2026-03-10`, OpenPrecedent `MVP v1` is complete.
 
 The core loop is no longer just specified in design docs. It is implemented and validated in the repository's local OpenClaw-first runtime path.
 
+## Current Phase
+
+OpenPrecedent is now in a post-MVP research validation phase.
+
+At this stage, the repository should be read as a local-first validation platform for the product's core hypotheses around:
+
+- decision-lineage usefulness
+- precedent reuse in real agent workflows
+- retrieval and extraction quality on growing real history
+- downstream task impact when lineage is actually surfaced at runtime
+
+This is no longer primarily a core-loop plumbing effort.
+The current platform role is to make those hypotheses fast to test against a real OpenClaw-first environment without reopening MVP foundation work each time.
+
 ## Completed Core Loop
 
 The shipped MVP now covers:
