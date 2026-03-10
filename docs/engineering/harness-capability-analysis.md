@@ -4,6 +4,10 @@
 
 Record a repository-grounded analysis of the current OpenPrecedent development harness so future harness work can build from actual MVP development experience rather than memory or generic agent-tooling advice.
 
+For the current harness inventory and reuse/export path, see:
+
+- [harness-reuse-guide.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/harness-reuse-guide.md)
+
 This document focuses on one question:
 
 - what kind of harness does OpenPrecedent already have

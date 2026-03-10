@@ -987,6 +987,17 @@ def test_tooling_setup_mentions_live_validation_skill() -> None:
     assert ".codex/skills/openclaw-live-validation/SKILL.md" in content
 
 
+def test_harness_reuse_guide_exists() -> None:
+    path = Path(__file__).parent.parent / "docs" / "engineering" / "harness-reuse-guide.md"
+
+    content = path.read_text(encoding="utf-8")
+
+    assert "Current Harness Inventory" in content
+    assert "Export Strategy" in content
+    assert "existing repository" in content
+    assert "brand new repository" in content
+
+
 def test_openclaw_runtime_trigger_rerun_doc_exists() -> None:
     path = (
         Path(__file__).parent.parent
