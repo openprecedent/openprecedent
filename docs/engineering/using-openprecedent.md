@@ -267,6 +267,13 @@ If you want to inspect those records directly:
 openprecedent runtime list-decision-lineage-invocations
 ```
 
+If you want to inspect one invocation together with its recorded brief summary and the nearby downstream case signals:
+
+```bash
+openprecedent runtime inspect-decision-lineage-invocation \
+  --invocation-id <invocation_id>
+```
+
 An installable OpenClaw skill is also included in this repository:
 
 - [SKILL.md](/workspace/02-projects/incubation/openprecedent/skills/openprecedent-decision-lineage/SKILL.md)

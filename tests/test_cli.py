@@ -793,6 +793,49 @@ def test_cli_builds_decision_lineage_brief(capsys, db_path) -> None:
 def test_cli_records_runtime_decision_lineage_invocation(capsys, db_path, tmp_path: Path) -> None:
     log_path = tmp_path / "runtime-invocations.jsonl"
 
+    result = main(["case", "create", "--case-id", "case_cli_brief_guidance", "--title", "Docs-only recommendation"])
+    assert result == 0
+    capsys.readouterr()
+    for command in (
+        [
+            "event",
+            "append",
+            "case_cli_brief_guidance",
+            "message.user",
+            "user",
+            "--payload",
+            '{"message":"Do not edit code. Provide a short written recommendation only."}',
+        ],
+        [
+            "event",
+            "append",
+            "case_cli_brief_guidance",
+            "message.agent",
+            "agent",
+            "--payload",
+            '{"message":"I will stay within docs-only scope and provide a short recommendation."}',
+        ],
+        [
+            "event",
+            "append",
+            "case_cli_brief_guidance",
+            "user.confirmed",
+            "user",
+            "--payload",
+            '{"message":"Approved. Stay within docs-only scope."}',
+        ],
+    ):
+        result = main(command)
+        assert result == 0
+        capsys.readouterr()
+    result = main(["extract", "decisions", "case_cli_brief_guidance"])
+    assert result == 0
+    capsys.readouterr()
+
+    result = main(["case", "create", "--case-id", "case_runtime_scope", "--title", "Runtime scope case"])
+    assert result == 0
+    capsys.readouterr()
+
     result = main(
         [
             "runtime",
@@ -819,6 +862,40 @@ def test_cli_records_runtime_decision_lineage_invocation(capsys, db_path, tmp_pa
     assert invocations[0]["query_reason"] == "initial_planning"
     assert invocations[0]["case_id"] == "case_runtime_scope"
     assert invocations[0]["session_id"] == "session_runtime_scope"
+    assert invocations[0]["matched_case_ids"] == ["case_cli_brief_guidance"]
+
+    result = main(
+        [
+            "event",
+            "append",
+            "case_runtime_scope",
+            "message.agent",
+            "agent",
+            "--payload",
+            '{"message":"I will keep this docs-only and avoid code edits."}',
+        ]
+    )
+    assert result == 0
+    capsys.readouterr()
+    result = main(["extract", "decisions", "case_runtime_scope"])
+    assert result == 0
+    capsys.readouterr()
+
+    result = main(
+        [
+            "runtime",
+            "inspect-decision-lineage-invocation",
+            "--invocation-id",
+            invocations[0]["invocation_id"],
+            "--log-file",
+            str(log_path),
+        ]
+    )
+    assert result == 0
+    inspection = json.loads(capsys.readouterr().out)
+    assert inspection["invocation"]["matched_case_ids"] == ["case_cli_brief_guidance"]
+    assert inspection["downstream_events"]
+    assert inspection["downstream_decisions"]
 
 
 def test_cli_runtime_decision_lineage_validation_baseline_exists() -> None:
