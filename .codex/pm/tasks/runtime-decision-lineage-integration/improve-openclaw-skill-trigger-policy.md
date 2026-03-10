@@ -13,11 +13,9 @@ issue: 94
 A fresh rerun of the issue #80 live validation on March 10, 2026 showed that shared-path wiring now works and OpenClaw can retrieve a non-empty decision-lineage brief in a real runtime loop.
 The remaining product gap is trigger behavior: OpenClaw still tends to call the lineage skill only when the prompt explicitly says to use OpenPrecedent, rather than for implicit but eligible constrained-task moments.
 
-
 ## Deliverable
 
 Strengthen the OpenClaw-facing decision-lineage skill and its invocation guidance so lineage retrieval is more likely to trigger for the right constrained tasks without requiring an explicit user instruction.
-
 
 ## Scope
 
