@@ -3,7 +3,7 @@ type: task
 epic: semantic-decision-foundation
 slug: refactor-semantic-decision-schema-and-extraction
 title: Refactor decision schema and extraction around semantic decision lineage
-status: in_progress
+status: done
 labels: feature,test
 depends_on: 68
 issue: 69

@@ -3,7 +3,7 @@ type: task
 epic: local-runtime-validation
 slug: isolate-fixture-eval-from-used-db
 title: Isolate fixture evaluation from reused working databases
-status: in_progress
+status: done
 labels: bug,test
 issue: 63
 ---

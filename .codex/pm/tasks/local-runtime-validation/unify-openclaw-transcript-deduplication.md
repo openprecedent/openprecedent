@@ -3,7 +3,7 @@ type: task
 epic: local-runtime-validation
 slug: unify-openclaw-transcript-deduplication
 title: Unify OpenClaw transcript deduplication across manual import and collector
-status: in_progress
+status: done
 labels: bug,test
 issue: 64
 ---

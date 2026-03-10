@@ -3,7 +3,7 @@ type: task
 epic: semantic-decision-foundation
 slug: define-semantic-decision-taxonomy
 title: Define semantic decision taxonomy and product principles
-status: in_progress
+status: done
 labels: feature,docs
 issue: 68
 ---

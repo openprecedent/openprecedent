@@ -3,7 +3,7 @@ type: task
 epic: local-runtime-validation
 slug: openclaw-full-user-journey-validation
 title: Validate the full OpenClaw user journey end to end on the latest MVP
-status: in_progress
+status: done
 labels: feature,test
 issue: 61
 ---

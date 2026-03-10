@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: refresh-mvp-roadmap
 title: Refresh MVP roadmap after closing current implementation issues
-status: in_progress
+status: done
 labels: feature,docs
 issue: 52
 ---

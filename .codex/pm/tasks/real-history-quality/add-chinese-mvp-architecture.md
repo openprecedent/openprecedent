@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: add-chinese-mvp-architecture
 title: Add Chinese MVP architecture document matching the English version
-status: in_progress
+status: done
 labels: feature,docs
 issue: 56
 ---

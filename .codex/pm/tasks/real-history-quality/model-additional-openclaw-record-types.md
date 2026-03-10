@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: model-additional-openclaw-record-types
 title: Model additional real-session OpenClaw record types from live collection
-status: in_progress
+status: done
 labels: feature,test
 issue: 46
 ---

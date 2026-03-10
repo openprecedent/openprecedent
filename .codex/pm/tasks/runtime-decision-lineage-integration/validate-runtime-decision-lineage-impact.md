@@ -3,7 +3,7 @@ type: task
 epic: runtime-decision-lineage-integration
 slug: validate-runtime-decision-lineage-impact
 title: Validate OpenClaw runtime triggers and impact for decision-lineage retrieval
-status: completed
+status: done
 labels: feature,test,docs
 depends_on: 72
 issue: 73
