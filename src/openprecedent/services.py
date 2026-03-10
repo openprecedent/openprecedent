@@ -242,6 +242,20 @@ class DecisionLineageBrief(BaseModel):
     cautions: list[str] = Field(default_factory=list)
 
 
+class RuntimeDecisionLineageInvocation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    invocation_id: str
+    recorded_at: datetime
+    query_reason: DecisionLineageQueryReason
+    task_summary: str
+    current_plan: str | None = None
+    candidate_action: str | None = None
+    known_files: list[str] = Field(default_factory=list)
+    case_id: str | None = None
+    session_id: str | None = None
+
+
 @dataclass
 class OpenPrecedentService:
     store: SQLiteStore
@@ -975,6 +989,52 @@ class OpenPrecedentService:
             authority_signals=authority_signals[:5],
             cautions=cautions,
         )
+
+    def record_runtime_decision_lineage_invocation(
+        self,
+        input_data: DecisionLineageBriefInput,
+        *,
+        log_path: Path,
+        case_id: str | None = None,
+        session_id: str | None = None,
+    ) -> RuntimeDecisionLineageInvocation:
+        invocation = RuntimeDecisionLineageInvocation(
+            invocation_id=f"rtinv_{uuid4().hex[:12]}",
+            recorded_at=datetime.now(UTC),
+            query_reason=input_data.query_reason,
+            task_summary=input_data.task_summary,
+            current_plan=input_data.current_plan,
+            candidate_action=input_data.candidate_action,
+            known_files=input_data.known_files,
+            case_id=case_id,
+            session_id=session_id,
+        )
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(invocation.model_dump_json())
+            handle.write("\n")
+        return invocation
+
+    def list_runtime_decision_lineage_invocations(
+        self,
+        log_path: Path,
+    ) -> list[RuntimeDecisionLineageInvocation]:
+        if not log_path.exists():
+            return []
+
+        invocations: list[RuntimeDecisionLineageInvocation] = []
+        with log_path.open("r", encoding="utf-8") as handle:
+            for line_no, line in enumerate(handle, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    invocations.append(RuntimeDecisionLineageInvocation.model_validate_json(stripped))
+                except ValueError as error:
+                    raise ValueError(
+                        f"invalid runtime decision-lineage invocation log at line {line_no}"
+                    ) from error
+        return invocations
 
     def _build_decision(
         self,

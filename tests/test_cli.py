@@ -790,6 +790,37 @@ def test_cli_builds_decision_lineage_brief(capsys, db_path) -> None:
     assert brief["authority_signals"]
 
 
+def test_cli_records_runtime_decision_lineage_invocation(capsys, db_path, tmp_path: Path) -> None:
+    log_path = tmp_path / "runtime-invocations.jsonl"
+
+    result = main(
+        [
+            "runtime",
+            "decision-lineage-brief",
+            "--query-reason",
+            "initial_planning",
+            "--task-summary",
+            "Do not edit code. Provide a short written recommendation only.",
+            "--case-id",
+            "case_runtime_scope",
+            "--session-id",
+            "session_runtime_scope",
+            "--log-file",
+            str(log_path),
+        ]
+    )
+    assert result == 0
+    capsys.readouterr()
+
+    result = main(["runtime", "list-decision-lineage-invocations", "--log-file", str(log_path)])
+    assert result == 0
+    invocations = json.loads(capsys.readouterr().out)
+    assert len(invocations) == 1
+    assert invocations[0]["query_reason"] == "initial_planning"
+    assert invocations[0]["case_id"] == "case_runtime_scope"
+    assert invocations[0]["session_id"] == "session_runtime_scope"
+
+
 def test_cli_runtime_decision_lineage_validation_baseline_exists() -> None:
     path = (
         Path(__file__).parent.parent

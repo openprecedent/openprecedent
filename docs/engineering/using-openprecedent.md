@@ -259,6 +259,13 @@ openprecedent runtime decision-lineage-brief \
 This command is intentionally narrow.
 It returns a semantic brief built from prior cases, including task framing, accepted constraints, success criteria, rejected options, and authority signals.
 It does not prescribe tools, commands, or file writes directly.
+Each successful call also appends a runtime invocation record to the local decision-lineage invocation log so later validation can inspect when the brief was requested and with what semantic context.
+
+If you want to inspect those records directly:
+
+```bash
+openprecedent runtime list-decision-lineage-invocations
+```
 
 An installable OpenClaw skill is also included in this repository:
 

@@ -5,7 +5,11 @@ import json
 import sys
 from pathlib import Path
 
-from openprecedent.config import get_collector_state_path, get_db_path
+from openprecedent.config import (
+    get_collector_state_path,
+    get_db_path,
+    get_runtime_invocation_log_path,
+)
 from openprecedent.schemas import EventActor, EventType
 from openprecedent.services import (
     AppendEventInput,
@@ -98,7 +102,12 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_brief.add_argument("--current-plan")
     runtime_brief.add_argument("--candidate-action")
     runtime_brief.add_argument("--known-file", action="append", dest="known_files", default=[])
+    runtime_brief.add_argument("--case-id")
+    runtime_brief.add_argument("--session-id")
+    runtime_brief.add_argument("--log-file")
     runtime_brief.add_argument("--limit", type=int, default=3)
+    runtime_list_invocations = runtime_subparsers.add_parser("list-decision-lineage-invocations")
+    runtime_list_invocations.add_argument("--log-file")
 
     eval_parser = subparsers.add_parser("eval")
     eval_subparsers = eval_parser.add_subparsers(dest="action", required=True)
@@ -315,17 +324,28 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
         _print_json(result.model_dump(mode="json"))
         return 0
     if args.action == "decision-lineage-brief":
-        brief = service.build_decision_lineage_brief(
-            DecisionLineageBriefInput(
-                query_reason=DecisionLineageQueryReason(args.query_reason),
-                task_summary=args.task_summary,
-                current_plan=args.current_plan,
-                candidate_action=args.candidate_action,
-                known_files=args.known_files,
-                limit=args.limit,
-            )
+        input_data = DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason(args.query_reason),
+            task_summary=args.task_summary,
+            current_plan=args.current_plan,
+            candidate_action=args.candidate_action,
+            known_files=args.known_files,
+            limit=args.limit,
+        )
+        brief = service.build_decision_lineage_brief(input_data)
+        service.record_runtime_decision_lineage_invocation(
+            input_data,
+            log_path=_resolve_runtime_invocation_log_path(args.log_file),
+            case_id=args.case_id,
+            session_id=args.session_id,
         )
         _print_json(brief.model_dump(mode="json"))
+        return 0
+    if args.action == "list-decision-lineage-invocations":
+        invocations = service.list_runtime_decision_lineage_invocations(
+            _resolve_runtime_invocation_log_path(args.log_file)
+        )
+        _print_json([item.model_dump(mode="json") for item in invocations])
         return 0
     return 2
 
@@ -448,6 +468,12 @@ def _resolve_collector_state_path(value: str | None) -> Path:
     if value:
         return Path(value)
     return get_collector_state_path()
+
+
+def _resolve_runtime_invocation_log_path(value: str | None) -> Path:
+    if value:
+        return Path(value)
+    return get_runtime_invocation_log_path()
 
 
 def _resolve_openclaw_session_target(
