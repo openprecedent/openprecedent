@@ -731,9 +731,23 @@ def test_cli_evaluates_fixture_suite(capsys, db_path) -> None:
     result = main(["eval", "fixtures", str(suite_path), "--json"])
     assert result == 0
     report = json.loads(capsys.readouterr().out)
-    assert report["total_cases"] == 3
+    assert report["total_cases"] == 5
     assert report["failed_cases"] == 0
-    assert report["passed_cases"] == 3
+    assert report["passed_cases"] == 5
+    assert all(not item["extra_decision_types"] for item in report["results"])
+
+    authority_result = next(item for item in report["results"] if item["case_id"] == "eval_authority_scope")
+    assert authority_result["actual_decision_types"] == [
+        "constraint_adopted",
+        "success_criteria_set",
+        "option_rejected",
+        "task_frame_defined",
+        "authority_confirmed",
+    ]
+
+    operational_only = next(item for item in report["results"] if item["case_id"] == "eval_operational_only")
+    assert operational_only["actual_decision_types"] == []
+    assert operational_only["extra_decision_types"] == []
 
 
 def test_cli_evaluates_real_session_fixture_suite(capsys, db_path) -> None:
@@ -745,6 +759,7 @@ def test_cli_evaluates_real_session_fixture_suite(capsys, db_path) -> None:
     assert report["total_cases"] == 3
     assert report["failed_cases"] == 0
     assert report["passed_cases"] == 3
+    assert all(not item["extra_decision_types"] for item in report["results"])
 
 
 def test_cli_fixture_evaluation_fails_fast_on_reused_database(capsys, db_path) -> None:

@@ -1,0 +1,4 @@
+{"timestamp":"2026-03-10T10:00:00Z","kind":"user_message","content":"Do not edit code. Provide a short written recommendation only."}
+{"timestamp":"2026-03-10T10:00:02Z","kind":"agent_message","content":"I will stay within docs-only scope and provide a short recommendation."}
+{"timestamp":"2026-03-10T10:00:04Z","kind":"confirmation","content":"Approved. Stay within docs-only scope."}
+{"timestamp":"2026-03-10T10:00:06Z","kind":"completed","summary":"Provided a short recommendation without editing code."}

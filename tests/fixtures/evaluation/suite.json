@@ -20,6 +20,20 @@
       "trace_path": "openclaw_recovery.jsonl",
       "expected_decision_types": ["task_frame_defined"],
       "expected_precedent_case_ids": []
+    },
+    {
+      "case_id": "eval_authority_scope",
+      "title": "Evaluation authority and scope case",
+      "trace_path": "openclaw_authority_scope.jsonl",
+      "expected_decision_types": ["constraint_adopted", "success_criteria_set", "option_rejected", "task_frame_defined", "authority_confirmed"],
+      "expected_precedent_case_ids": []
+    },
+    {
+      "case_id": "eval_operational_only",
+      "title": "Evaluation operational-only case",
+      "trace_path": "openclaw_operational_only.jsonl",
+      "expected_decision_types": [],
+      "expected_precedent_case_ids": []
     }
   ]
 }

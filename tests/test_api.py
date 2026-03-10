@@ -624,9 +624,23 @@ def test_service_evaluates_fixture_suite(db_path) -> None:
 
     report = service.evaluate_openclaw_fixture_suite(suite_path)
 
-    assert report.total_cases == 3
+    assert report.total_cases == 5
     assert report.failed_cases == 0
-    assert report.passed_cases == 3
+    assert report.passed_cases == 5
+    assert all(not item.extra_decision_types for item in report.results)
+
+    authority_result = next(item for item in report.results if item.case_id == "eval_authority_scope")
+    assert [decision_type.value for decision_type in authority_result.actual_decision_types] == [
+        "constraint_adopted",
+        "success_criteria_set",
+        "option_rejected",
+        "task_frame_defined",
+        "authority_confirmed",
+    ]
+
+    operational_only = next(item for item in report.results if item.case_id == "eval_operational_only")
+    assert operational_only.actual_decision_types == []
+    assert operational_only.extra_decision_types == []
 
 
 def test_service_evaluates_real_session_fixture_suite(db_path) -> None:
@@ -638,6 +652,7 @@ def test_service_evaluates_real_session_fixture_suite(db_path) -> None:
     assert report.total_cases == 3
     assert report.failed_cases == 0
     assert report.passed_cases == 3
+    assert all(not item.extra_decision_types for item in report.results)
     clarify_result = next(item for item in report.results if item.case_id == "eval_real_clarify")
     assert "clarification_resolved" in [
         decision_type.value for decision_type in clarify_result.actual_decision_types
@@ -808,3 +823,16 @@ def test_service_precedent_prefers_semantically_related_case(db_path) -> None:
     assert len(precedents) == 2
     assert precedents[0].case_id == "case_semantic_related"
     assert precedents[0].similarity_score > precedents[1].similarity_score
+
+
+def test_service_fixture_suite_includes_operational_negative_case(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "suite.json"
+
+    report = service.evaluate_openclaw_fixture_suite(suite_path)
+
+    operational_only = next(item for item in report.results if item.case_id == "eval_operational_only")
+    assert operational_only.expected_decision_types == []
+    assert operational_only.actual_decision_types == []
+    assert operational_only.missing_decision_types == []
+    assert operational_only.extra_decision_types == []
