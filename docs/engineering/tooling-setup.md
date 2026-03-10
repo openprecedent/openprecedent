@@ -12,6 +12,7 @@ The repository already includes:
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
+- `scripts/run-openclaw-live-validation.sh` for preparing a reusable live OpenClaw validation workspace and summarizing runtime evidence
 - `python3 -m openprecedent.codex_pm issue-state-init <task-path>` for preserving issue-scoped working state across longer agent work
 
 To enable the local hook:
@@ -87,6 +88,27 @@ or run the E2E script directly:
 
 The detailed merge checklist lives in
 [`docs/engineering/merge-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md).
+
+## Live OpenClaw Validation Harness
+
+For runtime integration work that must exercise the real OpenClaw loop rather than fixture-only replay, use:
+
+```bash
+./scripts/run-openclaw-live-validation.sh
+```
+
+The harness prepares a stable local workspace, shared `OPENPRECEDENT_HOME`, prompt file, gateway launcher, and structured artifact directory under `/tmp/openprecedent-openclaw-live` by default.
+
+To seed shared prior history before a live run, point it at an existing OpenClaw session transcript:
+
+```bash
+OPENPRECEDENT_LIVE_SEED_SESSION_FILE=/path/to/session.jsonl \
+OPENPRECEDENT_LIVE_SEED_SESSION_ID=my-session \
+OPENPRECEDENT_LIVE_SEED_CASE_ID=case_live_seed \
+./scripts/run-openclaw-live-validation.sh
+```
+
+After the live OpenClaw turn, re-run the harness to refresh `output/03-invocation-summary.json` from the shared runtime invocation log.
 
 ## CI Failure Triage
 
