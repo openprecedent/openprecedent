@@ -21,6 +21,21 @@ jobs:
       pull-requests: read
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify issue-linked task closure sync
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          PYTHONPATH=src python3 -m openprecedent.codex_pm verify-pr-closure-sync \
+            --event-path "$GITHUB_EVENT_PATH" \
+            --base-sha "$BASE_SHA" \
+            --head-sha "$HEAD_SHA"
+
       - name: Evaluate PR review gate
         uses: actions/github-script@v7
         with:
