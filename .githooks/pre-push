@@ -5,6 +5,7 @@ repo_root="$(git rev-parse --show-toplevel)"
 review_file="$repo_root/.codex-review"
 current_branch="$(git branch --show-current)"
 origin_url="$(git remote get-url origin 2>/dev/null || true)"
+base_ref="${OPENPRECEDENT_BASE_REF:-upstream/main}"
 
 extract_owner() {
   local remote_url="$1"
@@ -18,6 +19,12 @@ extract_owner() {
 if [[ "${BYPASS_CODEX_REVIEW:-}" == "1" ]]; then
   echo "Bypassing Codex review hook because BYPASS_CODEX_REVIEW=1"
   exit 0
+fi
+
+if [[ "${BYPASS_BRANCH_FRESHNESS_CHECK:-}" != "1" ]]; then
+  python3 "$repo_root/scripts/check_branch_freshness.py" --base-ref "$base_ref" --allow-missing-base-ref
+else
+  echo "Bypassing branch freshness check because BYPASS_BRANCH_FRESHNESS_CHECK=1"
 fi
 
 if [[ ! -f "$review_file" ]]; then
