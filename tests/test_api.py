@@ -520,6 +520,54 @@ def test_service_collects_latest_unseen_openclaw_session(db_path, tmp_path: Path
     assert "sample-session" in second.skipped_session_ids
 
 
+def test_service_dedupes_openclaw_transcript_across_manual_import_and_collector(
+    db_path, tmp_path: Path
+) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
+    sessions_dir = tmp_path / "sessions"
+    sessions_dir.mkdir()
+    transcript_name = "sample-session.jsonl"
+    transcript_path = sessions_dir / transcript_name
+    transcript_path.write_text(
+        (fixture_dir / transcript_name).read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (sessions_dir / "sessions.json").write_text(
+        (fixture_dir / "sessions.json").read_text(encoding="utf-8").replace(
+            "__FIXTURE_DIR__",
+            str(sessions_dir),
+        ),
+        encoding="utf-8",
+    )
+    state_path = tmp_path / "collector-state.json"
+
+    manual = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_manual_sample",
+        title="Manual sample import",
+        user_id="u1",
+    )
+    assert manual.case.case_id == "case_manual_sample"
+    assert len(manual.imported_events) == 9
+
+    collected = service.collect_openclaw_sessions(
+        sessions_dir,
+        state_path=state_path,
+        limit=1,
+        user_id="u1",
+    )
+    assert len(collected.imported) == 1
+    assert collected.imported[0].session_id == "sample-session"
+    assert collected.imported[0].case_id == "case_manual_sample"
+    assert collected.imported[0].imported_event_count == 0
+
+    cases = service.list_cases()
+    assert [case.case_id for case in cases] == ["case_manual_sample"]
+    replay = service.replay_case("case_manual_sample")
+    assert len(replay.events) == 9
+
+
 def test_service_evaluates_fixture_suite(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "suite.json"

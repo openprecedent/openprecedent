@@ -358,18 +358,7 @@ class OpenPrecedentService:
         user_id: str | None = None,
         agent_id: str = "openclaw",
     ) -> RuntimeTraceImportResult:
-        case = self.store.get_case(case_id)
-        if case is None:
-            case = self.create_case(
-                CreateCaseInput(
-                    case_id=case_id,
-                    title=title,
-                    user_id=user_id,
-                    agent_id=agent_id,
-                )
-            )
-
-        imported: list[Event] = []
+        normalized_imports: list[AppendEventInput] = []
         unsupported_record_type_counts: Counter[str] = Counter()
         with transcript_path.open("r", encoding="utf-8") as handle:
             for line_no, line in enumerate(handle, start=1):
@@ -384,8 +373,37 @@ class OpenPrecedentService:
                 )
                 if unsupported_record_type is not None:
                     unsupported_record_type_counts[unsupported_record_type] += 1
-                for normalized in normalized_events:
-                    imported.append(self.append_event(case_id, normalized))
+                normalized_imports.extend(normalized_events)
+
+        session_id = _openclaw_session_id_from_import(
+            normalized_imports,
+            default=transcript_path.stem,
+        )
+        existing_case_id = self.store.find_case_id_by_openclaw_session_id(session_id)
+        if existing_case_id is not None:
+            existing_case = self.store.get_case(existing_case_id)
+            if existing_case is None:
+                raise KeyError(existing_case_id)
+            return RuntimeTraceImportResult(
+                case=existing_case,
+                imported_events=[],
+                unsupported_record_type_counts=dict(sorted(unsupported_record_type_counts.items())),
+            )
+
+        case = self.store.get_case(case_id)
+        if case is None:
+            case = self.create_case(
+                CreateCaseInput(
+                    case_id=case_id,
+                    title=title,
+                    user_id=user_id,
+                    agent_id=agent_id,
+                )
+            )
+
+        imported: list[Event] = []
+        for normalized in normalized_imports:
+            imported.append(self.append_event(case_id, normalized))
 
         return RuntimeTraceImportResult(
             case=case,
@@ -1773,6 +1791,16 @@ _STOP_WORDS = {
 def _case_id_for_openclaw_session(session_id: str) -> str:
     normalized = "".join(ch for ch in session_id.lower() if ch.isalnum())
     return f"openclaw_{normalized[:24]}"
+
+
+def _openclaw_session_id_from_import(events: list[AppendEventInput], *, default: str) -> str:
+    for event in events:
+        if event.event_type != EventType.CASE_STARTED:
+            continue
+        session_id = _string_or_none(event.payload.get("session_id"))
+        if session_id is not None:
+            return session_id
+    return default
 
 
 def _extract_file_reads_from_command(command: str) -> list[str]:
