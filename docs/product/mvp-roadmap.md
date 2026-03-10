@@ -34,6 +34,7 @@ Current MVP v1 status:
 - no open implementation issues remain in the current MVP v1 scope
 - the shipped loop now covers collection, replay, explanation, precedent retrieval, and the first real-session quality pass
 - follow-up work should be treated as post-MVP expansion rather than MVP-blocking scope
+- the repository is now best understood as a local-first research validation platform for decision-lineage and precedent reuse hypotheses
 
 ## Objective
 
