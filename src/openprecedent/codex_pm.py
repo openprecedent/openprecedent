@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 PM_ROOT = Path(".codex/pm")
+ISSUE_STATE_ROOT = PM_ROOT / "issue-state"
 VALID_STATUSES = ("backlog", "in_progress", "blocked", "done")
 VALID_TASK_TYPES = ("implementation", "docs", "research", "umbrella")
 CLOSING_ISSUE_PATTERN = re.compile(
@@ -67,6 +68,15 @@ def build_parser() -> argparse.ArgumentParser:
     blocked = subparsers.add_parser("blocked")
     blocked.add_argument("path")
     blocked.add_argument("--reason", required=True)
+
+    issue_state_init = subparsers.add_parser("issue-state-init")
+    issue_state_init.add_argument("path")
+
+    issue_state_show = subparsers.add_parser("issue-state-show")
+    issue_state_show.add_argument("path")
+
+    issue_state_check = subparsers.add_parser("issue-state-check")
+    issue_state_check.add_argument("--branch")
 
     subparsers.add_parser("standup").add_argument("--json", action="store_true", dest="as_json")
 
@@ -203,6 +213,31 @@ def main(argv: list[str] | None = None) -> int:
         _persist_document(document)
         print(document.path)
         return 0
+    if args.action == "issue-state-init":
+        document = _read_document(Path(args.path))
+        state_document = _init_issue_state(document)
+        print(state_document.path)
+        return 0
+    if args.action == "issue-state-show":
+        document = _read_document(Path(args.path))
+        state_document = _load_issue_state(document)
+        if state_document is None:
+            print("No issue state document found for task.", file=sys.stderr)
+            return 1
+        print(state_document.path)
+        print()
+        print(state_document.path.read_text(encoding="utf-8").rstrip())
+        return 0
+    if args.action == "issue-state-check":
+        branch = args.branch or _current_branch()
+        result = _check_issue_state(branch)
+        if result is None:
+            print("Issue state check skipped: current branch is not issue-scoped.")
+            return 0
+        ok, message = result
+        stream = sys.stdout if ok else sys.stderr
+        print(message, file=stream)
+        return 0 if ok else 1
     if args.action == "standup":
         documents = _load_tasks()
         summary = {
@@ -253,7 +288,7 @@ def run() -> None:
 
 
 def _init_pm() -> None:
-    for name in ("prds", "epics", "tasks", "context", "updates"):
+    for name in ("prds", "epics", "tasks", "context", "updates", "issue-state"):
         (PM_ROOT / name).mkdir(parents=True, exist_ok=True)
 
 
@@ -355,9 +390,99 @@ def _doc_to_dict(document: PMDocument) -> dict[str, object]:
         "status": document.metadata.get("status", ""),
         "epic": document.metadata.get("epic", ""),
         "issue": document.metadata.get("issue"),
+        "state_path": document.metadata.get("state_path"),
         "task_type": document.metadata.get("task_type", "implementation"),
         "labels": [item for item in document.metadata.get("labels", "").split(",") if item],
     }
+
+
+def _current_branch() -> str:
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def _parse_issue_from_branch(branch: str) -> int | None:
+    match = re.search(r"\bissue-(\d+)\b", branch)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def _find_task_by_issue(issue: int) -> PMDocument | None:
+    for document in _load_tasks():
+        if _parse_issue_number(document.metadata.get("issue", "")) == issue:
+            return document
+    return None
+
+
+def _issue_state_path(document: PMDocument) -> Path:
+    issue = _parse_issue_number(document.metadata.get("issue", ""))
+    if issue is None:
+        raise ValueError(f"task has no numeric issue reference: {document.path}")
+    slug = document.metadata.get("slug") or document.path.stem
+    return ISSUE_STATE_ROOT / f"{issue}-{slug}.md"
+
+
+def _init_issue_state(document: PMDocument) -> PMDocument:
+    path = _issue_state_path(document)
+    if not path.exists():
+        _write_document(
+            path,
+            metadata={
+                "type": "issue_state",
+                "issue": document.metadata.get("issue", ""),
+                "task": str(document.path),
+                "title": document.metadata.get("title", ""),
+                "status": document.metadata.get("status", ""),
+            },
+            sections={
+                "Summary": "Record the current working state for this issue so later sessions do not have to rediscover it.",
+                "Validated Facts": "- ",
+                "Open Questions": "- ",
+                "Next Steps": "- ",
+                "Artifacts": "- ",
+            },
+        )
+    document.metadata["state_path"] = str(path)
+    _persist_document(document)
+    return _read_document(path)
+
+
+def _load_issue_state(document: PMDocument) -> PMDocument | None:
+    state_path_value = document.metadata.get("state_path")
+    candidate_paths: list[Path] = []
+    if state_path_value:
+        candidate_paths.append(Path(state_path_value))
+    if document.metadata.get("issue", "").isdigit():
+        candidate_paths.append(_issue_state_path(document))
+    for path in candidate_paths:
+        if path.exists():
+            return _read_document(path)
+    return None
+
+
+def _check_issue_state(branch: str) -> tuple[bool, str] | None:
+    issue = _parse_issue_from_branch(branch)
+    if issue is None:
+        return None
+    task = _find_task_by_issue(issue)
+    if task is None:
+        return False, f"Issue state check failed: no task twin found for issue #{issue}."
+    if task.metadata.get("status") != "in_progress":
+        return True, f"Issue state check skipped: task for issue #{issue} is not in progress."
+    state_document = _load_issue_state(task)
+    if state_document is None:
+        return (
+            False,
+            "Issue state check failed: in-progress issue has no state document. "
+            f"Run `python3 -m openprecedent.codex_pm issue-state-init {task.path}`.",
+        )
+    return True, f"Issue state check passed: {state_document.path}"
 
 
 def _print_tasks(documents: list[PMDocument], as_json: bool) -> int:

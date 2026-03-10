@@ -12,6 +12,7 @@ The repository already includes:
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
+- `python3 -m openprecedent.codex_pm issue-state-init <task-path>` for preserving issue-scoped working state across longer agent work
 
 To enable the local hook:
 
@@ -56,8 +57,21 @@ For a normal local readiness pass before push, run:
 
 This checks the local review note, blocks reused merged branches, runs `pytest`, runs `markdownlint` when available locally, and performs a local PR closure sync check when a PR body is available through `gh`.
 It also checks that your branch contains the configured base ref, which defaults to `upstream/main`.
+For issue-scoped branches, it also runs a lightweight issue-state check. By default this only warns if an `in_progress` issue is missing a state document.
 
 Set `OPENPRECEDENT_PREFLIGHT_RUN_E2E=1` if you also want the standard E2E path included in the same pass.
+Set `OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE=1` if you want preflight to fail until the issue state document exists.
+
+## Issue-Scoped Development State
+
+For longer-running issues, initialize a local state document from the matching task twin:
+
+```bash
+python3 -m openprecedent.codex_pm issue-state-init .codex/pm/tasks/<epic>/<task>.md
+```
+
+This creates a repository-local issue state document under `.codex/pm/issue-state/` and records its path back into the task metadata.
+Use it to keep validated facts, open questions, next steps, and key artifacts in one stable place as the work evolves across sessions.
 
 For runtime-affecting pull requests, run:
 

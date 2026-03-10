@@ -19,6 +19,7 @@ RUN_E2E="${OPENPRECEDENT_PREFLIGHT_RUN_E2E:-0}"
 REVIEW_FILE="${OPENPRECEDENT_REVIEW_FILE:-$ROOT_DIR/.codex-review}"
 PYTEST_ARGS="${OPENPRECEDENT_PREFLIGHT_PYTEST_ARGS:-tests --ignore=tests/test_preflight_script.py}"
 BASE_REF="${OPENPRECEDENT_PREFLIGHT_BASE_REF:-upstream/main}"
+ENFORCE_ISSUE_STATE="${OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE:-0}"
 
 check_review_note() {
   if [[ ! -f "$REVIEW_FILE" ]]; then
@@ -123,10 +124,35 @@ run_local_pr_closure_check() {
   PYTHONPATH=src "$PYTHON_BIN" -m openprecedent.codex_pm verify-pr-closure-sync "${body_input[@]}"
 }
 
+check_issue_state() {
+  local output
+  local status
+
+  set +e
+  output="$(
+    PYTHONPATH=src "$PYTHON_BIN" -m openprecedent.codex_pm issue-state-check 2>&1
+  )"
+  status=$?
+  set -e
+  if [[ $status -eq 0 ]]; then
+    echo "$output"
+    return 0
+  fi
+
+  if [[ "$ENFORCE_ISSUE_STATE" == "1" ]]; then
+    echo "$output"
+    exit 1
+  fi
+
+  echo "$output"
+  echo "Continuing without enforced issue-state check. Set OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE=1 to require it."
+}
+
 echo "Running agent preflight in $ROOT_DIR"
 
 check_branch_freshness
 check_review_note
+check_issue_state
 check_merged_branch_reuse
 
 echo "Running pytest"
