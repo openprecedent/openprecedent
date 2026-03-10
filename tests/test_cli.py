@@ -961,6 +961,32 @@ def test_mvp_status_mentions_research_harness_skill() -> None:
     assert ".codex/skills/research-harness/SKILL.md" in content
 
 
+def test_openclaw_live_validation_skill_exists() -> None:
+    skill_path = (
+        Path(__file__).parent.parent
+        / ".codex"
+        / "skills"
+        / "openclaw-live-validation"
+        / "SKILL.md"
+    )
+
+    content = skill_path.read_text(encoding="utf-8")
+
+    assert content.startswith("---\n")
+    assert "name: openclaw-live-validation" in content
+    assert "./scripts/run-openclaw-live-validation.sh" in content
+    assert "not triggered" in content
+    assert "triggered with non-empty brief" in content
+
+
+def test_tooling_setup_mentions_live_validation_skill() -> None:
+    path = Path(__file__).parent.parent / "docs" / "engineering" / "tooling-setup.md"
+
+    content = path.read_text(encoding="utf-8")
+
+    assert ".codex/skills/openclaw-live-validation/SKILL.md" in content
+
+
 def test_openclaw_runtime_trigger_rerun_doc_exists() -> None:
     path = (
         Path(__file__).parent.parent
