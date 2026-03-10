@@ -293,6 +293,16 @@ That document defines which trigger points are currently recommended:
 - `before_file_write`
 - `after_failure` only when the failure is semantic rather than merely operational
 
+The first live isolated-profile runtime findings are documented here:
+
+- [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
+
+That live validation records three important realities:
+
+- a discoverable skill is not automatically used for every constrained task
+- OpenClaw may prefer built-in memory before OpenPrecedent unless the prompt or future policy pushes lineage retrieval more explicitly
+- the current runtime path needs explicit shared DB wiring if the skill should see repository-captured history instead of an empty workspace-local database
+
 ## What Humans Usually Need
 
 Human users usually care about:
