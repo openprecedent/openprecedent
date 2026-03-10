@@ -16,6 +16,43 @@ It is intentionally implementation-grounded:
 
 This is not a future platform blueprint. It is the current MVP system boundary.
 
+## Decision-Lineage Direction
+
+As of 2026-03-10, OpenPrecedent has a shipped MVP extractor, but the product direction for `decision` is now explicitly narrower than the current implementation.
+
+The normative rule is:
+
+- `event` records process evidence
+- `decision` records reusable judgment
+
+That means the decision taxonomy must not include operational actions such as:
+
+- tool choice
+- file writes
+- command execution
+- retry mechanics
+- generic finalize mechanics
+
+Those remain useful event evidence, but they are not precedent-worthy decisions.
+
+The first semantic decision taxonomy is:
+
+- `task_frame_defined`
+  the task boundary or problem framing was made explicit
+- `constraint_adopted`
+  a requirement, guardrail, or operating constraint was accepted
+- `success_criteria_set`
+  the standard for done or acceptable outcome was made explicit
+- `clarification_resolved`
+  a meaningful ambiguity was resolved and changed the task understanding
+- `option_rejected`
+  a candidate path was explicitly ruled out
+- `authority_confirmed`
+  a human approval, ownership boundary, or decision authority signal was confirmed
+
+This taxonomy is the contract for follow-on implementation work.
+If the shipped extractor still exposes older operational labels, treat that as transitional implementation behavior rather than the target decision model.
+
 ## What MVP v1 Does
 
 OpenPrecedent MVP v1 can:
@@ -280,27 +317,14 @@ Current OpenClaw session mapping includes:
 - file reads inferred from read-only shell commands and image views
 - file writes inferred from `apply_patch`
 
-## Shipped MVP v1 Decision Coverage
+## Current Extractor Behavior and Decision Refocus
 
-The current extractor is rule-based and intentionally narrow.
+The shipped MVP extractor is still rule-based and currently emits an older operationally biased decision set.
 
-Supported decision types:
+That current implementation behavior should be read as transitional, not normative.
+The semantic decision-lineage taxonomy defined earlier in this document is the product contract going forward.
 
-- `clarify`
-- `plan`
-- `select_tool`
-- `apply_change`
-- `retry_or_recover`
-- `finalize`
-
-Current extraction behavior:
-
-- later meaningful user follow-up messages can become `clarify`
-- the first substantive agent response becomes the initial `plan`
-- explicit tool selection becomes `select_tool`
-- file writes become `apply_change`
-- non-zero command exits can become `retry_or_recover`
-- completion and failure events become `finalize`
+Operational outputs such as tool choice, file writes, retries, and finalize markers should be treated as event evidence until the extractor is refit to the semantic taxonomy.
 
 ## Replay and Explanation Model
 
@@ -333,6 +357,9 @@ It currently compares cases using fingerprints built from:
 - keywords derived from case content
 
 This means the current precedent engine is explainable and auditable, but not yet embedding-first.
+
+The current fingerprint still contains operational signals.
+That is also transitional: future precedent behavior should prioritize semantic judgment lineage over operational similarity.
 
 ## Storage Model
 

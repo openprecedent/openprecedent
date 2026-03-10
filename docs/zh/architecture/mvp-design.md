@@ -15,6 +15,43 @@
 
 这不是未来平台架构草图，而是当前 MVP 的真实系统边界。
 
+## Decision-Lineage 方向约束
+
+截至 2026-03-10，OpenPrecedent 已经有一个可运行的 MVP extractor，但产品层面对 `decision` 的定义现在已经明确收窄，不再等同于当前实现里出现过的全部 decision 标签。
+
+规范性原则是：
+
+- `event` 记录过程证据
+- `decision` 记录可复用的判断
+
+这意味着 decision taxonomy 中不应包含以下执行层动作：
+
+- 工具选择
+- 文件写入
+- 命令执行
+- 重试或恢复动作本身
+- 泛化的 finalize 动作
+
+这些内容仍然可以作为 event evidence 被保留，但不应被视为 precedent-worthy decision。
+
+第一版 semantic decision taxonomy 定义为：
+
+- `task_frame_defined`
+  任务边界或问题 framing 被明确下来
+- `constraint_adopted`
+  某个要求、约束、护栏或工作边界被接受
+- `success_criteria_set`
+  完成标准或可接受结果标准被明确下来
+- `clarification_resolved`
+  一个真正影响任务理解的歧义被澄清并收敛
+- `option_rejected`
+  某条候选路径被明确排除
+- `authority_confirmed`
+  人类批准、责任边界或裁决 authority 信号被确认
+
+这组 taxonomy 是后续实现工作的规范合同。
+如果当前已交付 extractor 还暴露旧的执行层 decision 标签，应将其视为过渡性实现现象，而不是目标模型。
+
 ## MVP v1 已具备的能力
 
 OpenPrecedent MVP v1 目前可以：
@@ -279,27 +316,14 @@ Precedent ..> Case : 引用历史 case
 - 从只读 shell 命令和图片查看中推断出的 `file.read`
 - 从 `apply_patch` 推断出的 `file.write`
 
-## 已交付的 MVP v1 Decision 覆盖范围
+## 当前 Extractor 行为与 Decision 重心调整
 
-当前 extractor 是基于规则的，且有意保持收敛。
+当前已交付的 MVP extractor 仍然是基于规则的，并且还会产出一组带有执行层偏向的旧 decision 标签。
 
-当前支持的 decision types：
+这些当前实现行为应被理解为过渡状态，而不是规范定义。
+本文件前面定义的 semantic decision-lineage taxonomy 才是后续产品与实现对齐的目标合同。
 
-- `clarify`
-- `plan`
-- `select_tool`
-- `apply_change`
-- `retry_or_recover`
-- `finalize`
-
-当前提取行为包括：
-
-- 有意义的后续用户补充消息可以形成 `clarify`
-- 第一条实质性的 agent 回复会成为初始 `plan`
-- 明确的工具选择会形成 `select_tool`
-- 文件写入会形成 `apply_change`
-- 非零命令退出码可能形成 `retry_or_recover`
-- 完成与失败事件会形成 `finalize`
+像工具选择、文件写入、重试恢复、finalize 这类输出，后续都应回到 event evidence 层来理解，而不是继续作为 decision taxonomy 的组成部分。
 
 ## Replay 与 Explanation 模型
 
@@ -332,6 +356,9 @@ MVP v1 的 precedent 检索是 case-oriented 且 lightweight 的。
 - 从 case 内容中派生的关键词
 
 因此，当前 precedent 引擎是可解释、可审计的，但还不是 embedding-first。
+
+当前 fingerprint 仍然包含不少执行层信号。
+这同样属于过渡状态，后续 precedent 应逐步以 semantic judgment lineage 为主，而不是以操作相似性为主。
 
 ## 存储模型
 
