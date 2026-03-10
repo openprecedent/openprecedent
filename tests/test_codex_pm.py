@@ -268,3 +268,116 @@ def test_codex_pm_lists_backfilled_tasks(tmp_path: Path, monkeypatch, capsys) ->
     assert main(["next", "--json"]) == 0
     next_task = json.loads(capsys.readouterr().out)
     assert next_task["issue"] == "23"
+
+
+def test_codex_pm_verify_pr_closure_sync_passes_when_matching_task_is_done(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "closure-sync",
+                "--title",
+                "Enforce task closure sync",
+                "--issue",
+                "90",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "closure-sync.md"
+    assert main(["set-status", str(task_path), "done"]) == 0
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "verify-pr-closure-sync",
+                "--pr-body",
+                "Closes #90",
+                "--changed-file",
+                str(task_path.relative_to(tmp_path)),
+            ]
+        )
+        == 0
+    )
+    assert "PR task closure sync passed." in capsys.readouterr().out
+
+
+def test_codex_pm_verify_pr_closure_sync_fails_when_matching_task_is_missing(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "verify-pr-closure-sync",
+                "--pr-body",
+                "Closes #90",
+                "--changed-file",
+                "README.md",
+            ]
+        )
+        == 1
+    )
+    assert (
+        "PR closes #90 but does not update the matching local task file"
+        in capsys.readouterr().err
+    )
+
+
+def test_codex_pm_verify_pr_closure_sync_fails_when_matching_task_is_not_done(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "closure-sync",
+                "--title",
+                "Enforce task closure sync",
+                "--issue",
+                "90",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "closure-sync.md"
+    assert (
+        main(
+            [
+                "verify-pr-closure-sync",
+                "--pr-body",
+                "Closes #90",
+                "--changed-file",
+                str(task_path.relative_to(tmp_path)),
+            ]
+        )
+        == 1
+    )
+    assert "matching task file is not marked done" in capsys.readouterr().err

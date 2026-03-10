@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 
 PM_ROOT = Path(".codex/pm")
 VALID_STATUSES = ("backlog", "in_progress", "blocked", "done")
+CLOSING_ISSUE_PATTERN = re.compile(
+    r"\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -68,6 +75,13 @@ def build_parser() -> argparse.ArgumentParser:
     pr_body.add_argument("path")
     pr_body.add_argument("--issue", type=int)
     pr_body.add_argument("--tests", action="append", default=[])
+
+    verify_pr_closure = subparsers.add_parser("verify-pr-closure-sync")
+    verify_pr_closure.add_argument("--pr-body")
+    verify_pr_closure.add_argument("--event-path")
+    verify_pr_closure.add_argument("--changed-file", action="append", default=[])
+    verify_pr_closure.add_argument("--base-sha")
+    verify_pr_closure.add_argument("--head-sha")
 
     return parser
 
@@ -211,6 +225,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.action == "pr-body":
         document = _read_document(Path(args.path))
         print(_render_pr_body(document, issue=args.issue, tests=args.tests))
+        return 0
+    if args.action == "verify-pr-closure-sync":
+        pr_body = _resolve_pr_body(args.pr_body, args.event_path)
+        changed_files = _resolve_changed_files(
+            changed_files=args.changed_file,
+            base_sha=args.base_sha,
+            head_sha=args.head_sha,
+        )
+        errors = _verify_pr_closure_sync(pr_body, changed_files)
+        if errors:
+            for error in errors:
+                print(error, file=sys.stderr)
+            return 1
+        print("PR task closure sync passed.")
         return 0
 
     parser.error("unknown action")
@@ -385,6 +413,66 @@ def _parse_issue_number(value: str) -> int | None:
     if value.isdigit():
         return int(value)
     return None
+
+
+def _resolve_pr_body(pr_body: str | None, event_path: str | None) -> str:
+    if pr_body is not None:
+        return pr_body
+    if event_path is not None:
+        event = json.loads(Path(event_path).read_text(encoding="utf-8"))
+        return event.get("pull_request", {}).get("body") or ""
+    raise ValueError("either --pr-body or --event-path is required")
+
+
+def _resolve_changed_files(
+    *,
+    changed_files: list[str],
+    base_sha: str | None,
+    head_sha: str | None,
+) -> list[str]:
+    if changed_files:
+        return changed_files
+    if base_sha and head_sha:
+        result = subprocess.run(
+            ["git", "diff", "--name-only", base_sha, head_sha],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return [line for line in result.stdout.splitlines() if line]
+    raise ValueError("either --changed-file or both --base-sha and --head-sha are required")
+
+
+def _verify_pr_closure_sync(pr_body: str, changed_files: list[str]) -> list[str]:
+    closing_issues = sorted({int(match) for match in CLOSING_ISSUE_PATTERN.findall(pr_body)})
+    if not closing_issues:
+        return []
+
+    changed_task_paths = [
+        Path(path)
+        for path in changed_files
+        if path.startswith(".codex/pm/tasks/") and path.endswith(".md") and Path(path).exists()
+    ]
+    changed_task_documents = [_read_document(path) for path in changed_task_paths]
+
+    errors: list[str] = []
+    for issue in closing_issues:
+        matching_documents = [
+            document
+            for document in changed_task_documents
+            if _parse_issue_number(document.metadata.get("issue", "")) == issue
+        ]
+        if not matching_documents:
+            errors.append(
+                f"PR closes #{issue} but does not update the matching local task file under .codex/pm/tasks/."
+            )
+            continue
+        if not any(document.metadata.get("status") == "done" for document in matching_documents):
+            matching_paths = ", ".join(str(document.path) for document in matching_documents)
+            errors.append(
+                f"PR closes #{issue} but matching task file is not marked done: {matching_paths}"
+            )
+    return errors
 
 
 if __name__ == "__main__":
