@@ -8,6 +8,7 @@ The repository already includes:
 - `python-ci` GitHub Actions workflow for dependency install and tests
 - `feishu-pr-notify` GitHub Actions workflow for pull request review notifications
 - a local Git pre-push hook that requires a Codex review note
+- `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
 
 To enable the local hook:
 
@@ -30,6 +31,17 @@ remaining risks: dependencies not installed locally, tests not executed
 ```
 
 This hook does not replace human judgment. It creates a minimal review checkpoint before code leaves the local branch.
+
+## Merge Validation
+
+For runtime-affecting pull requests, run:
+
+```bash
+./scripts/run-e2e.sh
+```
+
+The detailed merge checklist lives in
+[`docs/engineering/merge-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md).
 
 ## GitHub App Recommendations
 
