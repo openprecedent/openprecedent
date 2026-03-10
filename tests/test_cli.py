@@ -929,6 +929,161 @@ def test_openclaw_skill_bundle_exists() -> None:
     assert "openprecedent runtime decision-lineage-brief" in content
 
 
+def test_cli_runtime_brief_uses_configured_openprecedent_home(
+    capsys,
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    shared_home = tmp_path / "shared-openprecedent"
+    workspace = tmp_path / "openclaw-workspace"
+    shared_db = shared_home / "openprecedent.db"
+    shared_log = shared_home / "openprecedent-runtime-invocations.jsonl"
+
+    workspace.mkdir()
+    monkeypatch.chdir(workspace)
+    monkeypatch.setenv("OPENPRECEDENT_HOME", str(shared_home))
+    monkeypatch.delenv("OPENPRECEDENT_DB", raising=False)
+    monkeypatch.delenv("OPENPRECEDENT_RUNTIME_INVOCATION_LOG", raising=False)
+
+    result = main(["case", "create", "--case-id", "case_shared_guidance", "--title", "Shared DB guidance"])
+    assert result == 0
+    capsys.readouterr()
+    for command in (
+        [
+            "event",
+            "append",
+            "case_shared_guidance",
+            "message.user",
+            "user",
+            "--payload",
+            '{"message":"Do not edit code. Provide a short written recommendation only."}',
+        ],
+        [
+            "event",
+            "append",
+            "case_shared_guidance",
+            "message.agent",
+            "agent",
+            "--payload",
+            '{"message":"I will stay within docs-only scope and provide a short recommendation."}',
+        ],
+        [
+            "event",
+            "append",
+            "case_shared_guidance",
+            "user.confirmed",
+            "user",
+            "--payload",
+            '{"message":"Approved. Stay within docs-only scope."}',
+        ],
+    ):
+        result = main(command)
+        assert result == 0
+        capsys.readouterr()
+    result = main(["extract", "decisions", "case_shared_guidance"])
+    assert result == 0
+    capsys.readouterr()
+
+    result = main(
+        [
+            "runtime",
+            "decision-lineage-brief",
+            "--query-reason",
+            "initial_planning",
+            "--task-summary",
+            "Do not edit code. Provide a short written recommendation only.",
+        ]
+    )
+    assert result == 0
+    brief = json.loads(capsys.readouterr().out)
+
+    assert brief["matched_cases"][0]["case_id"] == "case_shared_guidance"
+    assert shared_db.exists()
+    assert shared_log.exists()
+    assert not (workspace / "openprecedent.db").exists()
+    assert not (workspace / "openprecedent-runtime-invocations.jsonl").exists()
+
+    result = main(["runtime", "list-decision-lineage-invocations"])
+    assert result == 0
+    invocations = json.loads(capsys.readouterr().out)
+    assert len(invocations) == 1
+    assert invocations[0]["matched_case_ids"] == ["case_shared_guidance"]
+
+
+def test_cli_runtime_paths_explicit_env_vars_override_openprecedent_home(
+    capsys,
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    shared_home = tmp_path / "shared-openprecedent"
+    explicit_db = tmp_path / "custom" / "runtime.db"
+    explicit_log = tmp_path / "custom" / "runtime-log.jsonl"
+    workspace = tmp_path / "openclaw-workspace"
+
+    workspace.mkdir()
+    monkeypatch.chdir(workspace)
+    monkeypatch.setenv("OPENPRECEDENT_HOME", str(shared_home))
+    monkeypatch.setenv("OPENPRECEDENT_DB", str(explicit_db))
+    monkeypatch.setenv("OPENPRECEDENT_RUNTIME_INVOCATION_LOG", str(explicit_log))
+
+    result = main(["case", "create", "--case-id", "case_override_guidance", "--title", "Override guidance"])
+    assert result == 0
+    capsys.readouterr()
+    for command in (
+        [
+            "event",
+            "append",
+            "case_override_guidance",
+            "message.user",
+            "user",
+            "--payload",
+            '{"message":"Do not edit code. Provide a short written recommendation only."}',
+        ],
+        [
+            "event",
+            "append",
+            "case_override_guidance",
+            "message.agent",
+            "agent",
+            "--payload",
+            '{"message":"I will stay within docs-only scope and provide a short recommendation."}',
+        ],
+        [
+            "event",
+            "append",
+            "case_override_guidance",
+            "user.confirmed",
+            "user",
+            "--payload",
+            '{"message":"Approved. Stay within docs-only scope."}',
+        ],
+    ):
+        result = main(command)
+        assert result == 0
+        capsys.readouterr()
+    result = main(["extract", "decisions", "case_override_guidance"])
+    assert result == 0
+    capsys.readouterr()
+
+    result = main(
+        [
+            "runtime",
+            "decision-lineage-brief",
+            "--query-reason",
+            "initial_planning",
+            "--task-summary",
+            "Do not edit code. Provide a short written recommendation only.",
+        ]
+    )
+    assert result == 0
+    capsys.readouterr()
+
+    assert explicit_db.exists()
+    assert explicit_log.exists()
+    assert not (shared_home / "openprecedent.db").exists()
+    assert not (shared_home / "openprecedent-runtime-invocations.jsonl").exists()
+
+
 def test_cli_evaluates_real_session_fixture_suite(capsys, db_path) -> None:
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "real_session_suite.json"
 

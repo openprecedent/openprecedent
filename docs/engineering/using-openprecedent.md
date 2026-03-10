@@ -261,6 +261,26 @@ It returns a semantic brief built from prior cases, including task framing, acce
 It does not prescribe tools, commands, or file writes directly.
 Each successful call also appends a runtime invocation record to the local decision-lineage invocation log so later validation can inspect when the brief was requested and with what semantic context.
 
+For live OpenClaw integrations, configure a stable shared runtime home instead of letting the current workspace choose the database and log paths implicitly:
+
+```bash
+export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"
+```
+
+With that single setting, runtime commands will read and write:
+
+- `$OPENPRECEDENT_HOME/openprecedent.db`
+- `$OPENPRECEDENT_HOME/openprecedent-runtime-invocations.jsonl`
+
+If you need independent locations, override them explicitly:
+
+```bash
+export OPENPRECEDENT_DB="$HOME/.openprecedent/runtime/openprecedent.db"
+export OPENPRECEDENT_RUNTIME_INVOCATION_LOG="$HOME/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl"
+```
+
+This is the supported way to make an OpenClaw-installed skill use the same persisted decision lineage and runtime log across isolated workspaces.
+
 If you want to inspect those records directly:
 
 ```bash
