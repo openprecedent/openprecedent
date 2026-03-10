@@ -267,6 +267,18 @@ An installable OpenClaw skill is also included in this repository:
 That skill is designed for progressive disclosure.
 It teaches OpenClaw when to call `openprecedent runtime decision-lineage-brief`, how to choose `query_reason`, and how to use the returned brief as judgment context rather than operational instructions.
 
+### Runtime decision-lineage validation baseline
+
+The current trigger-policy baseline for the OpenClaw-facing decision-lineage skill is documented here:
+
+- [openclaw-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-validation.md)
+
+That document defines which trigger points are currently recommended:
+
+- `initial_planning`
+- `before_file_write`
+- `after_failure` only when the failure is semantic rather than merely operational
+
 ## What Humans Usually Need
 
 Human users usually care about:

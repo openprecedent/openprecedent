@@ -941,6 +941,82 @@ def test_service_builds_decision_lineage_brief(db_path) -> None:
     assert "tool" not in json.dumps(brief.model_dump(mode="json"))
 
 
+def test_service_runtime_decision_lineage_trigger_baseline(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+
+    service.create_case(CreateCaseInput(case_id="case_runtime_scope", title="Runtime scope case"))
+    for index, (event_type, actor, payload) in enumerate(
+        [
+            ("message.user", "user", {"message": "Do not edit code. Provide a short written recommendation only."}),
+            ("message.agent", "agent", {"message": "I will stay within docs-only scope and provide a short recommendation."}),
+            ("user.confirmed", "user", {"message": "Approved. Stay within docs-only scope."}),
+        ],
+        start=1,
+    ):
+        service.append_event(
+            "case_runtime_scope",
+            AppendEventInput(
+                event_type=EventType(event_type),
+                actor=EventActor(actor),
+                payload=payload,
+                sequence_no=index,
+            ),
+        )
+    service.extract_decisions("case_runtime_scope")
+
+    planning_brief = service.build_decision_lineage_brief(
+        DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason.INITIAL_PLANNING,
+            task_summary="Do not edit code. Provide a short written recommendation only.",
+        )
+    )
+    write_brief = service.build_decision_lineage_brief(
+        DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason.BEFORE_FILE_WRITE,
+            task_summary="Do not edit code. Provide a short written recommendation only.",
+            candidate_action="Edit src/openprecedent/services.py",
+            known_files=["src/openprecedent/services.py"],
+        )
+    )
+
+    assert planning_brief.accepted_constraints
+    assert planning_brief.authority_signals
+    assert write_brief.cautions
+    assert write_brief.accepted_constraints
+
+    service.create_case(CreateCaseInput(case_id="case_runtime_failure", title="Runtime failure case"))
+    for index, (event_type, actor, payload) in enumerate(
+        [
+            ("message.user", "user", {"message": "Run the tests."}),
+            ("message.agent", "agent", {"message": "I will run the test suite."}),
+            ("command.completed", "system", {"command": "pytest", "exit_code": 1, "stderr": "AssertionError"}),
+        ],
+        start=1,
+    ):
+        service.append_event(
+            "case_runtime_failure",
+            AppendEventInput(
+                event_type=EventType(event_type),
+                actor=EventActor(actor),
+                payload=payload,
+                sequence_no=index,
+            ),
+        )
+    service.extract_decisions("case_runtime_failure")
+
+    failure_brief = service.build_decision_lineage_brief(
+        DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason.AFTER_FAILURE,
+            task_summary="Run the tests.",
+            current_plan="Run the test suite.",
+            candidate_action="Retry the same command",
+        )
+    )
+
+    assert failure_brief.query_reason.value == "after_failure"
+    assert failure_brief.matched_cases
+
+
 def test_service_fixture_suite_includes_operational_negative_case(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "suite.json"

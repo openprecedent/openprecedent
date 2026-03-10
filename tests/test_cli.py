@@ -790,6 +790,21 @@ def test_cli_builds_decision_lineage_brief(capsys, db_path) -> None:
     assert brief["authority_signals"]
 
 
+def test_cli_runtime_decision_lineage_validation_baseline_exists() -> None:
+    path = (
+        Path(__file__).parent.parent
+        / "docs"
+        / "engineering"
+        / "openclaw-runtime-decision-lineage-validation.md"
+    )
+
+    content = path.read_text(encoding="utf-8")
+
+    assert "initial_planning" in content
+    assert "before_file_write" in content
+    assert "after_failure" in content
+
+
 def test_openclaw_skill_bundle_exists() -> None:
     skill_path = (
         Path(__file__).parent.parent
