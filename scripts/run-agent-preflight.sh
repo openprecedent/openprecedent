@@ -23,11 +23,13 @@ BASE_REF="${OPENPRECEDENT_PREFLIGHT_BASE_REF:-upstream/main}"
 check_review_note() {
   if [[ ! -f "$REVIEW_FILE" ]]; then
     echo "Preflight failed: missing .codex-review"
+    echo "Run ./scripts/run-codex-review-checkpoint.sh, then use native Codex /review and update the note."
     exit 1
   fi
 
   if ! grep -Eq 'scope reviewed|no findings|remaining risks' "$REVIEW_FILE"; then
     echo "Preflight failed: .codex-review exists but is incomplete"
+    echo "Rerun ./scripts/run-codex-review-checkpoint.sh if you need a fresh template."
     exit 1
   fi
 }
