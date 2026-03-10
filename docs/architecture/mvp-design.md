@@ -278,6 +278,7 @@ The current MVP executable surface is the local CLI backed by a Python service l
 - `openprecedent runtime import-openclaw`
 - `openprecedent runtime import-openclaw-session`
 - `openprecedent runtime collect-openclaw-sessions`
+- `openprecedent runtime decision-lineage-brief`
 
 ### Evaluation operations
 

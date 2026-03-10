@@ -5,7 +5,12 @@ from pathlib import Path
 
 from openprecedent.api import app
 from openprecedent.services import OpenPrecedentService
-from openprecedent.services import AppendEventInput, CreateCaseInput
+from openprecedent.services import (
+    AppendEventInput,
+    CreateCaseInput,
+    DecisionLineageBriefInput,
+    DecisionLineageQueryReason,
+)
 from openprecedent.config import get_db_path
 from openprecedent.schemas import EventActor, EventType
 
@@ -883,6 +888,57 @@ def test_service_precedent_prefers_semantic_similarity_over_operational_overlap(
     assert len(precedents) == 2
     assert precedents[0].case_id == "case_precedent_semantic_match"
     assert precedents[0].similarity_score > precedents[1].similarity_score
+
+
+def test_service_builds_decision_lineage_brief(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+
+    for case_id, title, events in (
+        (
+            "case_brief_guidance",
+            "Docs-only recommendation",
+            [
+                ("message.user", "user", {"message": "Do not edit code. Provide a short written recommendation only."}),
+                ("message.agent", "agent", {"message": "I will stay within docs-only scope and provide a short recommendation."}),
+                ("user.confirmed", "user", {"message": "Approved. Stay within docs-only scope."}),
+            ],
+        ),
+        (
+            "case_brief_summary",
+            "Architecture summary",
+            [
+                ("message.user", "user", {"message": "Summarize the architecture document."}),
+                ("message.agent", "agent", {"message": "I will inspect the architecture docs and summarize them."}),
+            ],
+        ),
+    ):
+        service.create_case(CreateCaseInput(case_id=case_id, title=title))
+        for index, (event_type, actor, payload) in enumerate(events, start=1):
+            service.append_event(
+                case_id,
+                AppendEventInput(
+                    event_type=EventType(event_type),
+                    actor=EventActor(actor),
+                    payload=payload,
+                    sequence_no=index,
+                ),
+            )
+        service.extract_decisions(case_id)
+
+    brief = service.build_decision_lineage_brief(
+        DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason.INITIAL_PLANNING,
+            task_summary="Do not edit code. Provide a short written recommendation only.",
+            limit=2,
+        )
+    )
+
+    assert brief.query_reason.value == "initial_planning"
+    assert brief.matched_cases[0].case_id == "case_brief_guidance"
+    assert brief.accepted_constraints
+    assert brief.authority_signals
+    assert brief.rejected_options
+    assert "tool" not in json.dumps(brief.model_dump(mode="json"))
 
 
 def test_service_fixture_suite_includes_operational_negative_case(db_path) -> None:

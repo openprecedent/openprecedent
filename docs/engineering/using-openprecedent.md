@@ -246,6 +246,20 @@ Python service-layer pattern:
 
 Use this path when your runtime already knows its own events and does not need transcript import.
 
+### Runtime decision-lineage brief
+
+For OpenClaw-facing runtime use, OpenPrecedent now exposes a dedicated semantic briefing surface:
+
+```bash
+openprecedent runtime decision-lineage-brief \
+  --query-reason initial_planning \
+  --task-summary "Do not edit code. Provide a short written recommendation only."
+```
+
+This command is intentionally narrow.
+It returns a semantic brief built from prior cases, including task framing, accepted constraints, success criteria, rejected options, and authority signals.
+It does not prescribe tools, commands, or file writes directly.
+
 ## What Humans Usually Need
 
 Human users usually care about:
