@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def test_preflight_script_fails_without_codex_review(tmp_path: Path) -> None:
-    repo_root = Path("/workspace/02-projects/incubation/openprecedent")
+    repo_root = Path(__file__).parent.parent
     env = os.environ.copy()
     env["OPENPRECEDENT_REVIEW_FILE"] = str(tmp_path / ".codex-review")
     env["OPENPRECEDENT_PYTHON_BIN"] = str(repo_root / ".venv" / "bin" / "python")
@@ -25,7 +25,7 @@ def test_preflight_script_fails_without_codex_review(tmp_path: Path) -> None:
 
 
 def test_preflight_script_runs_and_skips_markdownlint_when_unavailable(tmp_path: Path) -> None:
-    repo_root = Path("/workspace/02-projects/incubation/openprecedent")
+    repo_root = Path(__file__).parent.parent
     review_file = tmp_path / ".codex-review"
     review_file.write_text(
         "scope reviewed: preflight script\nfindings: no findings\nremaining risks: markdownlint unavailable locally\n",
