@@ -31,7 +31,10 @@ if [[ ! -f "$review_file" ]]; then
   cat <<'EOF'
 Push blocked: missing .codex-review
 
-Before pushing, run a Codex review for your staged or branch changes and write a short note to:
+Before pushing, run:
+  ./scripts/run-codex-review-checkpoint.sh
+
+Then use the native Codex /review command for your staged or branch changes and write a short note to:
   .codex-review
 
 Minimum content:
@@ -53,6 +56,9 @@ Include at least:
   - scope reviewed
   - findings or "no findings"
   - remaining risks
+
+If needed, rerun:
+  ./scripts/run-codex-review-checkpoint.sh
 EOF
   exit 1
 fi

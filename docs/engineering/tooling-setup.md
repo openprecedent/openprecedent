@@ -8,6 +8,7 @@ The repository already includes:
 - `python-ci` GitHub Actions workflow for dependency install and tests
 - `feishu-pr-notify` GitHub Actions workflow for pull request review notifications
 - a local Git pre-push hook that requires a Codex review note
+- `scripts/run-codex-review-checkpoint.sh` as the preferred local checkpoint for invoking native Codex `/review`
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
@@ -23,7 +24,16 @@ The local hook also expects your branch to contain the latest `upstream/main` by
 
 ## Codex Review Hook
 
-Before pushing, create a short review note in `.codex-review`.
+Before pushing, run:
+
+```bash
+./scripts/run-codex-review-checkpoint.sh
+```
+
+This is the preferred local checkpoint for invoking native Codex `/review`.
+The script creates a `.codex-review` template if one does not exist and reminds you to run `/review` before push.
+
+Then update `.codex-review` with a short review note.
 
 Recommended format:
 
