@@ -60,6 +60,10 @@ The repository now includes:
 - collected-session evaluation/reporting
 - operational `systemd` and `cron` templates plus installer script for collector scheduling
 
+## How To Use It
+
+- usage guide for humans and agents: [docs/engineering/using-openprecedent.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/using-openprecedent.md)
+
 ## License
 
 Apache-2.0

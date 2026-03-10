@@ -1,0 +1,305 @@
+# Using OpenPrecedent
+
+## Purpose
+
+This guide explains how to use the current OpenPrecedent MVP in practice.
+
+It is written for two audiences:
+
+- humans who want to run the current local workflow themselves
+- agent developers who want to connect a local agent workflow to OpenPrecedent
+
+This is a usage guide for the shipped MVP, not a future platform manual.
+
+## What OpenPrecedent Is Today
+
+OpenPrecedent is currently a local-first decision replay and precedent layer with:
+
+- a Python service layer
+- a local CLI
+- SQLite persistence
+- OpenClaw transcript import and collection
+- rule-based decision extraction
+- replay, explanation, and precedent lookup over stored case history
+
+The current MVP is strongest in one environment:
+
+- a local single-agent workflow
+- OpenClaw as the first integrated runtime
+- import-based capture rather than live runtime hooks
+
+## Before You Start
+
+Use a local Python 3.12 environment and install the package in editable mode.
+
+Example:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e .
+```
+
+After that, the main entry point is:
+
+```bash
+openprecedent --help
+```
+
+If you prefer not to activate the environment, use:
+
+```bash
+.venv/bin/openprecedent --help
+```
+
+## The Two Practical Usage Modes
+
+There are currently two good ways to use OpenPrecedent:
+
+1. import or collect OpenClaw history
+2. write cases and events explicitly through the CLI or Python service layer
+
+Choose the first mode if your runtime is already OpenClaw.
+Choose the second mode if you are prototyping another local agent flow and want to emit structured events directly.
+
+## For Humans
+
+### 1. Inspect available OpenClaw sessions
+
+If you are using the OpenClaw-first workflow, start by listing sessions:
+
+```bash
+openprecedent runtime list-openclaw-sessions
+```
+
+This reads `~/.openclaw/agents/main/sessions/sessions.json` and shows the latest discoverable sessions.
+
+### 2. Import one session into OpenPrecedent
+
+Import the latest session:
+
+```bash
+openprecedent runtime import-openclaw-session --latest --case-id case_openclaw_latest
+```
+
+Or import a specific session by id:
+
+```bash
+openprecedent runtime import-openclaw-session \
+  --session-id <session_id> \
+  --case-id case_openclaw_target
+```
+
+Or import a specific transcript file directly:
+
+```bash
+openprecedent runtime import-openclaw-session \
+  --session-file /path/to/session.jsonl \
+  --case-id case_openclaw_file
+```
+
+### 3. Extract decisions
+
+After import, derive the current rule-based decisions:
+
+```bash
+openprecedent extract decisions case_openclaw_latest
+```
+
+### 4. Replay the case
+
+Use replay when you want to understand what happened and why:
+
+```bash
+openprecedent replay case case_openclaw_latest
+```
+
+This returns:
+
+- case metadata
+- ordered events
+- extracted decisions
+- derived artifacts
+- a short summary
+
+### 5. Inspect stored decisions
+
+If you care more about the key decision points than the whole timeline:
+
+```bash
+openprecedent decisions show case_openclaw_latest
+```
+
+### 6. Look up precedent
+
+Once you have more than one stored case, look for similar history:
+
+```bash
+openprecedent precedent find case_openclaw_latest --limit 3
+```
+
+This is useful when you want to answer questions like:
+
+- have we seen a similar task before
+- did a similar case involve file changes
+- did a similar case require recovery
+- what historical pattern looks reusable
+
+### 7. Run unattended collection
+
+If you want OpenPrecedent to keep importing new OpenClaw sessions over time:
+
+```bash
+openprecedent runtime collect-openclaw-sessions --limit 1
+```
+
+This command:
+
+- discovers sessions from `sessions.json`
+- imports only unseen sessions
+- writes a local collector state file
+- avoids duplicate imports
+
+For scheduled local collection, see:
+
+- [openclaw-collector-operations.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-operations.md)
+
+### 8. Evaluate quality
+
+There are two practical evaluation paths.
+
+Curated fixture evaluation:
+
+```bash
+openprecedent eval fixtures tests/fixtures/evaluation/suite.json
+```
+
+Collected-session evaluation:
+
+```bash
+openprecedent eval collected-openclaw-sessions
+```
+
+Use these when you want to check whether replay, extraction, and precedent behavior still look correct.
+
+## For Agents
+
+An agent should not think of OpenPrecedent as a chat surface.
+It is better thought of as a local evidence and precedent layer.
+
+The current MVP supports two agent-facing integration patterns.
+
+### Pattern 1: Let OpenClaw produce history, then import it
+
+This is the default and most validated path today.
+
+Use this pattern when:
+
+- the runtime is already OpenClaw
+- you want minimal workflow disruption
+- import after the task is acceptable
+
+The agent workflow is:
+
+1. OpenClaw runs normally and writes session history
+2. OpenPrecedent imports that history later
+3. decisions, replay, and precedent are derived from the imported case
+
+Why this is the preferred MVP path:
+
+- it requires no internal OpenClaw hook
+- it preserves structured message and tool activity
+- it is already validated in real local collection
+
+### Pattern 2: Emit cases and events directly
+
+This is the better pattern for another local agent runtime or an orchestrator that already has structured event data.
+
+You can:
+
+- create a case
+- append events
+- extract decisions
+- replay the case
+- look up precedent
+
+CLI example:
+
+```bash
+openprecedent case create --case-id case_manual_1 --title "Manual agent task"
+openprecedent event append case_manual_1 case.started system --payload '{}'
+openprecedent event append case_manual_1 message.user user --payload '{"message":"Summarize the rollout doc"}'
+openprecedent event append case_manual_1 message.agent agent --payload '{"message":"I will inspect the rollout documentation."}'
+openprecedent extract decisions case_manual_1
+openprecedent replay case case_manual_1
+```
+
+Python service-layer pattern:
+
+- instantiate `OpenPrecedentService`
+- create a case with `CreateCaseInput`
+- append ordered `AppendEventInput` events
+- call `extract_decisions`, `replay_case`, or `find_precedents`
+
+Use this path when your runtime already knows its own events and does not need transcript import.
+
+## What Humans Usually Need
+
+Human users usually care about:
+
+- how to capture a real task without changing workflow too much
+- how to replay and understand a task after the fact
+- how to see the important decisions instead of only raw logs
+- how to compare the current case to prior work
+- how to monitor collection quality over time
+
+That is why the human workflow above centers on:
+
+- import or collect
+- extract
+- replay
+- precedent find
+- evaluate
+
+## What Agents Usually Need
+
+Agent developers usually care about:
+
+- where OpenPrecedent fits in the execution loop
+- whether integration is online or offline
+- what minimal data contract they must provide
+- when decisions and precedents are available
+- what the current system does not support yet
+
+For the current MVP, the practical answers are:
+
+- integration is local-first
+- the best-supported path is offline import from OpenClaw session history
+- direct event emission is available for structured runtimes
+- decisions are derived after event ingestion
+- precedents are available after a case and its decisions are stored
+
+## Current Limitations You Should Design Around
+
+When using OpenPrecedent today, assume the following constraints:
+
+- OpenClaw integration is import-based, not a live runtime callback path
+- decision extraction is intentionally narrow and rule-based
+- precedent retrieval is fingerprint-based, not embedding-first
+- the current system is local and single-operator oriented
+- there is no hosted API or multi-user coordination layer in the current MVP
+
+If you design around those constraints, the current MVP is predictable and easy to audit.
+
+## Recommended MVP Usage Pattern
+
+If you only want one recommended pattern, use this:
+
+1. let OpenClaw run normally
+2. collect or import sessions into OpenPrecedent
+3. extract decisions
+4. replay important cases
+5. query precedent against the growing local history
+6. run evaluation periodically to catch quality regressions
+
+That is the cleanest way to use the system today.
