@@ -916,6 +916,7 @@ class OpenPrecedentService:
             }
         )
         keywords = sorted(self._case_keywords(case, events, decisions))
+        decision_keywords = sorted(self._decision_keywords(decisions))
         return {
             "status": case.status.value,
             "has_file_write": event_types[EventType.FILE_WRITE.value] > 0,
@@ -930,6 +931,7 @@ class OpenPrecedentService:
             "file_paths": file_paths,
             "file_read_paths": file_read_paths,
             "keywords": keywords,
+            "decision_keywords": decision_keywords,
             "decision_types": dict(decision_types),
         }
 
@@ -943,7 +945,7 @@ class OpenPrecedentService:
         differences: list[str] = []
 
         if current["status"] == other["status"]:
-            score += 2
+            score += 1
             similarities.append("same status")
         else:
             differences.append("different status")
@@ -951,7 +953,7 @@ class OpenPrecedentService:
         for key in ("has_file_write", "has_recovery"):
             if current[key] == other[key]:
                 if current[key]:
-                    score += 2
+                    score += 1
                     similarities.append(f"same {key}")
             else:
                 differences.append(f"different {key}")
@@ -959,43 +961,53 @@ class OpenPrecedentService:
         current_decisions = current["decision_types"]
         other_decisions = other["decision_types"]
         if current_decisions == other_decisions:
-            score += 3
+            score += 6
             similarities.append("same decision shape")
         else:
             current_decision_keys = set(current_decisions)
             other_decision_keys = set(other_decisions)
             shared_decisions = sorted(current_decision_keys & other_decision_keys)
             if shared_decisions:
-                score += min(len(shared_decisions), 3)
+                score += min(len(shared_decisions) * 2, 6)
                 similarities.append("shared decision types: " + ",".join(shared_decisions))
             else:
                 differences.append("different decision shape")
 
+        shared_decision_keywords = sorted(
+            set(current["decision_keywords"]) & set(other["decision_keywords"])
+        )
+        if shared_decision_keywords:
+            score += min(len(shared_decision_keywords) * 2, 8)
+            similarities.append(
+                "shared decision language: " + ",".join(shared_decision_keywords[:4])
+            )
+        else:
+            differences.append("different decision language")
+
         tool_delta = abs(int(current["tool_count"]) - int(other["tool_count"]))
         if tool_delta == 0:
-            score += 2
+            score += 1
             similarities.append("same tool call count")
         elif tool_delta == 1:
-            score += 1
             similarities.append("nearby tool call count")
         else:
             differences.append("different tool call count")
 
         shared_tools = sorted(set(current["tool_names"]) & set(other["tool_names"]))
         if shared_tools:
-            score += min(len(shared_tools), 2)
+            score += 1
             similarities.append("shared tools: " + ",".join(shared_tools[:3]))
         else:
             differences.append("different tools")
 
         shared_paths = sorted(set(current["file_paths"]) & set(other["file_paths"]))
         if shared_paths:
-            score += min(len(shared_paths), 2)
+            score += 1
             similarities.append("shared file targets: " + ",".join(shared_paths[:3]))
 
         shared_read_paths = sorted(set(current["file_read_paths"]) & set(other["file_read_paths"]))
         if shared_read_paths:
-            score += min(len(shared_read_paths) * 2, 4)
+            score += min(len(shared_read_paths), 2)
             similarities.append("shared read targets: " + ",".join(shared_read_paths[:3]))
 
         shared_keywords = sorted(set(current["keywords"]) & set(other["keywords"]))
@@ -1036,6 +1048,15 @@ class OpenPrecedentService:
         keywords: set[str] = set()
         for text in texts:
             keywords.update(_tokenize_keywords(text))
+        return keywords
+
+    def _decision_keywords(self, decisions: list[Decision]) -> set[str]:
+        keywords: set[str] = set()
+        for decision in decisions:
+            keywords.update(_tokenize_keywords(decision.title))
+            keywords.update(_tokenize_keywords(decision.chosen_action))
+            if decision.outcome:
+                keywords.update(_tokenize_keywords(decision.outcome))
         return keywords
 
     def _build_reusable_takeaway(self, case: Case, decisions: list[Decision]) -> str | None:

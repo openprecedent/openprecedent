@@ -825,6 +825,66 @@ def test_service_precedent_prefers_semantically_related_case(db_path) -> None:
     assert precedents[0].similarity_score > precedents[1].similarity_score
 
 
+def test_service_precedent_prefers_semantic_similarity_over_operational_overlap(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+
+    cases = [
+        (
+            "case_precedent_current",
+            "Constrained recommendation",
+            [
+                ("message.user", "user", {"message": "Do not edit code. Provide a short written recommendation only."}),
+                ("message.agent", "agent", {"message": "I will stay within docs-only scope and provide a short recommendation."}),
+                ("tool.called", "agent", {"tool_name": "rg", "reason": "inspect docs"}),
+                ("file.write", "agent", {"path": "notes/recommendation.txt", "summary": "temporary scratch note"}),
+                ("case.completed", "system", {"summary": "recommendation delivered"}),
+            ],
+        ),
+        (
+            "case_precedent_semantic_match",
+            "Constrained guidance",
+            [
+                ("message.user", "user", {"message": "Do not edit code. Give me a brief guidance note only."}),
+                ("message.agent", "agent", {"message": "I will stay within docs-only scope and provide a brief guidance note."}),
+                ("tool.called", "agent", {"tool_name": "rg", "reason": "inspect docs"}),
+                ("file.write", "agent", {"path": "notes/guidance.txt", "summary": "temporary scratch note"}),
+                ("case.completed", "system", {"summary": "guidance delivered"}),
+            ],
+        ),
+        (
+            "case_precedent_operational_match",
+            "Same tools different goal",
+            [
+                ("message.user", "user", {"message": "Summarize the architecture document for me."}),
+                ("message.agent", "agent", {"message": "I will inspect the architecture docs and summarize them."}),
+                ("tool.called", "agent", {"tool_name": "rg", "reason": "inspect docs"}),
+                ("file.write", "agent", {"path": "notes/summary.txt", "summary": "temporary scratch note"}),
+                ("case.completed", "system", {"summary": "summary delivered"}),
+            ],
+        ),
+    ]
+
+    for case_id, title, events in cases:
+        service.create_case(CreateCaseInput(case_id=case_id, title=title))
+        for index, (event_type, actor, payload) in enumerate(events, start=1):
+            service.append_event(
+                case_id,
+                AppendEventInput(
+                    event_type=EventType(event_type),
+                    actor=EventActor(actor),
+                    payload=payload,
+                    sequence_no=index,
+                ),
+            )
+        service.extract_decisions(case_id)
+
+    precedents = service.find_precedents("case_precedent_current", limit=2)
+
+    assert len(precedents) == 2
+    assert precedents[0].case_id == "case_precedent_semantic_match"
+    assert precedents[0].similarity_score > precedents[1].similarity_score
+
+
 def test_service_fixture_suite_includes_operational_negative_case(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     suite_path = Path(__file__).parent / "fixtures" / "evaluation" / "suite.json"
