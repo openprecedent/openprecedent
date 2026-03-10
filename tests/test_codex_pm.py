@@ -94,6 +94,7 @@ def test_codex_pm_scaffolds_and_selects_next_task(tmp_path: Path, monkeypatch, c
     next_task = json.loads(capsys.readouterr().out)
     assert next_task["title"] == "Roll out collector"
     assert next_task["issue"] == "23"
+    assert next_task["task_type"] == "implementation"
 
     assert main(["tasks", "--json"]) == 0
     tasks = json.loads(capsys.readouterr().out)
@@ -152,6 +153,8 @@ def test_codex_pm_updates_status_and_renders_issue_and_pr_body(tmp_path: Path, m
     assert "## Context" in issue_body
     assert "Collector rollout still needs a real target host." in issue_body
     assert "## Acceptance Criteria" in issue_body
+    assert "## Task Type" in issue_body
+    assert "implementation" in issue_body
 
     assert (
         main(
@@ -170,6 +173,33 @@ def test_codex_pm_updates_status_and_renders_issue_and_pr_body(tmp_path: Path, m
     assert "Closes #23" in pr_body
     assert "Run the collector on a real schedule." in pr_body
     assert "Validation:" in pr_body
+
+
+def test_codex_pm_task_new_supports_explicit_task_type(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "research-framework",
+                "--title",
+                "Define research framework",
+                "--issue",
+                "100",
+                "--task-type",
+                "umbrella",
+            ]
+        )
+        == 0
+    )
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "research-framework.md"
+    document = task_path.read_text(encoding="utf-8")
+
+    assert "task_type: umbrella" in document
 
 
 def test_codex_pm_lists_backfilled_tasks(tmp_path: Path, monkeypatch, capsys) -> None:
@@ -381,3 +411,76 @@ def test_codex_pm_verify_pr_closure_sync_fails_when_matching_task_is_not_done(
         == 1
     )
     assert "matching task file is not marked done" in capsys.readouterr().err
+
+
+def test_codex_pm_verify_pr_closure_sync_fails_for_umbrella_task_type(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "research-framework",
+                "--title",
+                "Define research framework",
+                "--issue",
+                "100",
+                "--task-type",
+                "umbrella",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "research-framework.md"
+    assert (
+        main(
+            [
+                "verify-pr-closure-sync",
+                "--pr-body",
+                "Closes #100",
+                "--changed-file",
+                str(task_path.relative_to(tmp_path)),
+            ]
+        )
+        == 1
+    )
+    assert "task_type=umbrella and must remain open" in capsys.readouterr().err
+
+
+def test_codex_pm_pr_body_omits_closing_clause_for_umbrella_task(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "research-framework",
+                "--title",
+                "Define research framework",
+                "--issue",
+                "100",
+                "--task-type",
+                "umbrella",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "research-framework.md"
+    assert main(["pr-body", str(task_path)]) == 0
+    pr_body = capsys.readouterr().out
+
+    assert "Closes #100" not in pr_body
