@@ -14,6 +14,9 @@ fi
 LIVE_ROOT="${OPENPRECEDENT_LIVE_ROOT:-/tmp/openprecedent-openclaw-live}"
 PROFILE="${OPENPRECEDENT_LIVE_PROFILE:-opv80}"
 RUNTIME_HOME="${OPENPRECEDENT_LIVE_RUNTIME_HOME:-$LIVE_ROOT/runtime-home}"
+PROFILE_STATE_DIR="${OPENPRECEDENT_LIVE_PROFILE_STATE_DIR:-$HOME/.openclaw-$PROFILE}"
+PROFILE_CONFIG_PATH="${OPENPRECEDENT_LIVE_PROFILE_CONFIG_PATH:-$PROFILE_STATE_DIR/openclaw.json}"
+PROFILE_WORKSPACE="${OPENPRECEDENT_LIVE_PROFILE_WORKSPACE:-}"
 OUTPUT_ROOT="$LIVE_ROOT/output"
 SEED_ROOT="$LIVE_ROOT/seed-sessions"
 DB_PATH="$RUNTIME_HOME/openprecedent.db"
@@ -37,6 +40,28 @@ mkdir -p "$RUNTIME_HOME" "$OUTPUT_ROOT" "$SEED_ROOT"
 if [[ ! -f "$PROMPT_FILE" ]]; then
   printf '%s\n' "$PROMPT_TEXT" > "$PROMPT_FILE"
 fi
+
+resolve_profile_workspace() {
+  if [[ -n "$PROFILE_WORKSPACE" ]]; then
+    echo "$PROFILE_WORKSPACE"
+    return 0
+  fi
+
+  if [[ -f "$PROFILE_CONFIG_PATH" ]]; then
+    python3 - "$PROFILE_CONFIG_PATH" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+config_path = Path(sys.argv[1])
+config = json.loads(config_path.read_text(encoding="utf-8"))
+print(config.get("agents", {}).get("defaults", {}).get("workspace", ""))
+PY
+    return 0
+  fi
+
+  echo "$PROFILE_STATE_DIR/workspace"
+}
 
 run_openprecedent() {
   OPENPRECEDENT_HOME="$RUNTIME_HOME" \
@@ -118,6 +143,40 @@ Live OpenClaw validation workspace: $LIVE_ROOT
 EOF
 }
 
+sync_installed_skill_bundle() {
+  local workspace skill_root nested_root source_skill skill_copy nested_skill
+  workspace="$(resolve_profile_workspace)"
+  [[ -n "$workspace" ]] || return 0
+
+  skill_root="$workspace/skills/openprecedent-decision-lineage"
+  nested_root="$skill_root/openprecedent-decision-lineage"
+  source_skill="$ROOT_DIR/skills/openprecedent-decision-lineage/SKILL.md"
+  skill_copy="$skill_root/SKILL.md"
+  nested_skill="$nested_root/SKILL.md"
+
+  mkdir -p "$nested_root"
+  cp "$source_skill" "$skill_copy"
+  cp "$source_skill" "$nested_skill"
+
+  python3 - "$skill_copy" "$nested_skill" "$RUNTIME_HOME" <<'PY'
+import sys
+from pathlib import Path
+
+paths = [Path(sys.argv[1]), Path(sys.argv[2])]
+runtime_home = sys.argv[3]
+needle = 'export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"'
+replacement = f'export OPENPRECEDENT_HOME="{runtime_home}"'
+
+for path in paths:
+    content = path.read_text(encoding="utf-8")
+    if needle not in content:
+        raise SystemExit(f"expected runtime-home export line not found in {path}")
+    path.write_text(content.replace(needle, replacement), encoding="utf-8")
+PY
+
+  printf '%s\n' "$workspace" > "$OUTPUT_ROOT/00-profile-workspace.txt"
+}
+
 write_manifest() {
   python3 - "$OUTPUT_ROOT/manifest.json" <<'PY'
 import json
@@ -191,6 +250,7 @@ export PROFILE LIVE_ROOT RUNTIME_HOME DB_PATH INVOCATION_LOG PROMPT_FILE
 export SEED_SESSION_FILE SEED_SESSION_ID SEED_CASE_ID
 
 seed_prior_history
+sync_installed_skill_bundle
 write_gateway_launcher
 write_next_steps
 write_manifest
@@ -201,6 +261,9 @@ echo "Workspace: $LIVE_ROOT"
 echo "Prompt: $PROMPT_FILE"
 echo "Launcher: $LIVE_ROOT/launch-openclaw-gateway.sh"
 echo "Artifacts:"
+if [[ -f "$OUTPUT_ROOT/00-profile-workspace.txt" ]]; then
+  echo "  $OUTPUT_ROOT/00-profile-workspace.txt"
+fi
 echo "  $OUTPUT_ROOT/manifest.json"
 if [[ -f "$OUTPUT_ROOT/01-seed-import.json" ]]; then
   echo "  $OUTPUT_ROOT/01-seed-import.json"

@@ -18,6 +18,7 @@ Run:
 By default this prepares a workspace under `/tmp/openprecedent-openclaw-live` with:
 
 - `runtime-home/` for the shared `OPENPRECEDENT_HOME`
+- a synchronized installed OpenClaw skill bundle under the target profile workspace that points at that same runtime home
 - `output/manifest.json` for the validation manifest
 - `output/03-invocation-summary.json` for the latest runtime invocation summary
 - `prompt.txt` for the current prompt under test
@@ -40,6 +41,7 @@ It will:
 - create a minimal temporary `sessions.json`
 - import the named session into the shared runtime home
 - extract decisions for the seeded case
+- synchronize the installed `openprecedent-decision-lineage` skill bundle so its `OPENPRECEDENT_HOME` matches the harness runtime home
 - write the import and extract results into `output/01-seed-import.json` and `output/02-seed-extract.json`
 
 The harness preserves seeded state across reruns unless `OPENPRECEDENT_LIVE_RESET=1` is set.
@@ -70,5 +72,5 @@ This keeps the most important runtime evidence in one stable local location even
 ## Notes
 
 - This harness does not try to drive the OpenClaw UI or gateway automatically.
-- It standardizes the workspace, shared runtime home, and artifact capture around the live validation.
+- It standardizes the workspace, shared runtime home, installed skill bundle, and artifact capture around the live validation.
 - It is meant for runtime integration debugging and later research validation, not for merge-gating CI.

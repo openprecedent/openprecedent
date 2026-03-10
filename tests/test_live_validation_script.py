@@ -8,8 +8,10 @@ from pathlib import Path
 
 def test_live_validation_script_prepares_workspace_and_summary(tmp_path: Path) -> None:
     repo_root = Path(__file__).parent.parent
+    profile_workspace = tmp_path / "profile-workspace"
     env = os.environ.copy()
     env["OPENPRECEDENT_LIVE_ROOT"] = str(tmp_path / "live")
+    env["OPENPRECEDENT_LIVE_PROFILE_WORKSPACE"] = str(profile_workspace)
     env["PYTHONPATH"] = str(repo_root / "src")
 
     result = subprocess.run(
@@ -32,14 +34,20 @@ def test_live_validation_script_prepares_workspace_and_summary(tmp_path: Path) -
     assert (live_root / "launch-openclaw-gateway.sh").exists()
     assert (live_root / "next-steps.txt").exists()
     assert (live_root / "prompt.txt").exists()
+    assert (output_root / "00-profile-workspace.txt").read_text(encoding="utf-8").strip() == str(profile_workspace)
+    skill_bundle = profile_workspace / "skills" / "openprecedent-decision-lineage" / "openprecedent-decision-lineage" / "SKILL.md"
+    skill_content = skill_bundle.read_text(encoding="utf-8")
+    assert f'export OPENPRECEDENT_HOME="{live_root / "runtime-home"}"' in skill_content
     assert summary["invocation_count"] == 0
 
 
 def test_live_validation_script_seeds_history_and_summarizes_invocations(tmp_path: Path) -> None:
     repo_root = Path(__file__).parent.parent
+    profile_workspace = tmp_path / "profile-workspace"
     env = os.environ.copy()
     env["OPENPRECEDENT_LIVE_ROOT"] = str(tmp_path / "live")
     env["OPENPRECEDENT_LIVE_RESET"] = "1"
+    env["OPENPRECEDENT_LIVE_PROFILE_WORKSPACE"] = str(profile_workspace)
     env["OPENPRECEDENT_LIVE_SEED_SESSION_FILE"] = str(
         repo_root / "tests" / "fixtures" / "openclaw_sessions" / "search-read-session.jsonl"
     )
@@ -98,3 +106,4 @@ def test_tooling_doc_references_live_validation_harness() -> None:
 
     assert "./scripts/run-openclaw-live-validation.sh" in content
     assert "Issue-Scoped Development State" in content
+    assert "shared runtime home" in content
