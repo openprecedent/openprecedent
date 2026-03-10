@@ -8,6 +8,7 @@ The repository already includes:
 - `python-ci` GitHub Actions workflow for dependency install and tests
 - `feishu-pr-notify` GitHub Actions workflow for pull request review notifications
 - a local Git pre-push hook that requires a Codex review note
+- `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
 
 To enable the local hook:
@@ -34,7 +35,23 @@ This hook does not replace human judgment. It creates a minimal review checkpoin
 
 ## Merge Validation
 
+For a normal local readiness pass before push, run:
+
+```bash
+./scripts/run-agent-preflight.sh
+```
+
+This checks the local review note, blocks reused merged branches, runs `pytest`, runs `markdownlint` when available locally, and performs a local PR closure sync check when a PR body is available through `gh`.
+
+Set `OPENPRECEDENT_PREFLIGHT_RUN_E2E=1` if you also want the standard E2E path included in the same pass.
+
 For runtime-affecting pull requests, run:
+
+```bash
+OPENPRECEDENT_PREFLIGHT_RUN_E2E=1 ./scripts/run-agent-preflight.sh
+```
+
+or run the E2E script directly:
 
 ```bash
 ./scripts/run-e2e.sh
