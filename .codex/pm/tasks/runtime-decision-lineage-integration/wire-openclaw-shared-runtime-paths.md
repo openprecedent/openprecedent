@@ -13,15 +13,12 @@ issue: 85
 Live validation in issue #80 proved that OpenClaw can discover and invoke the OpenPrecedent decision-lineage skill, but the runtime command defaulted to workspace-local persistence.
 That split prior decision lineage across accidental current-working-directory databases and made invocation logs land in ad hoc workspace paths.
 
-
 ## Deliverable
 
 Define and implement a stable runtime configuration path that lets OpenClaw point the decision-lineage skill at an intended shared OpenPrecedent database and invocation log.
 
-
 ## Scope
 
--
 - add a supported shared runtime home configuration for live OpenClaw use
 - keep explicit DB and invocation-log overrides working
 - document the supported wiring for operators and skill installers
@@ -29,7 +26,6 @@ Define and implement a stable runtime configuration path that lets OpenClaw poin
 
 ## Acceptance Criteria
 
--
 - a runtime decision-lineage brief can read prior lineage from a configured shared database instead of a workspace-local default
 - invocation logging can write to the configured shared path during runtime use
 - human-facing and skill-facing docs explain the supported configuration clearly
@@ -37,7 +33,6 @@ Define and implement a stable runtime configuration path that lets OpenClaw poin
 
 ## Validation
 
--
 - run the runtime CLI tests that cover shared home and explicit override path resolution
 - verify the runtime brief and invocation list commands read and write the configured shared paths
 
