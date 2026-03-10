@@ -932,6 +932,35 @@ def test_openclaw_skill_bundle_exists() -> None:
     assert "keep it consistent with earlier repository decisions if relevant" in content
 
 
+def test_research_harness_skill_exists() -> None:
+    skill_path = (
+        Path(__file__).parent.parent
+        / ".codex"
+        / "skills"
+        / "research-harness"
+        / "SKILL.md"
+    )
+    template_root = skill_path.parent / "templates"
+
+    content = skill_path.read_text(encoding="utf-8")
+
+    assert content.startswith("---\n")
+    assert "name: research-harness" in content
+    assert "Parent framework: #100" in content
+    assert "issue-state-init" in content
+    assert (template_root / "research-experiment-template.md").exists()
+    assert (template_root / "research-issue-template.md").exists()
+    assert (template_root / "research-result-template.md").exists()
+
+
+def test_mvp_status_mentions_research_harness_skill() -> None:
+    path = Path(__file__).parent.parent / "docs" / "product" / "mvp-status.md"
+
+    content = path.read_text(encoding="utf-8")
+
+    assert ".codex/skills/research-harness/SKILL.md" in content
+
+
 def test_openclaw_runtime_trigger_rerun_doc_exists() -> None:
     path = (
         Path(__file__).parent.parent
