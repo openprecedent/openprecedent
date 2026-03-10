@@ -100,6 +100,10 @@ For runtime integration work that must exercise the real OpenClaw loop rather th
 The harness prepares a stable local workspace, shared `OPENPRECEDENT_HOME`, prompt file, gateway launcher, and structured artifact directory under `/tmp/openprecedent-openclaw-live` by default.
 It also synchronizes the installed OpenClaw skill bundle in the target profile workspace so the skill points at that same shared runtime home instead of falling back to a different default path.
 
+For issue-driven runtime integration work, pair that script with the local workflow skill:
+
+- [.codex/skills/openclaw-live-validation/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/openclaw-live-validation/SKILL.md)
+
 To seed shared prior history before a live run, point it at an existing OpenClaw session transcript:
 
 ```bash
