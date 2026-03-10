@@ -9,6 +9,7 @@ The repository already includes:
 - `feishu-pr-notify` GitHub Actions workflow for pull request review notifications
 - a local Git pre-push hook that requires a Codex review note
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
+- `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
 
 To enable the local hook:
@@ -59,6 +60,25 @@ or run the E2E script directly:
 
 The detailed merge checklist lives in
 [`docs/engineering/merge-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md).
+
+## CI Failure Triage
+
+When a PR check fails and you want a faster local summary than manually opening each run, use:
+
+```bash
+python3 ./scripts/triage_pr_checks.py --pr <number>
+```
+
+If you are already on the PR branch, you can usually omit `--pr` and let `gh` resolve the current PR.
+
+The script classifies the repository's current checks into a few higher-level categories such as:
+
+- test regression
+- docs lint
+- workflow policy
+- notification-only
+
+It is intended as a diagnosis helper, not an auto-fix tool.
 
 ## GitHub App Recommendations
 
