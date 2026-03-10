@@ -323,6 +323,10 @@ A follow-up live rerun after shared-path wiring is documented here:
 
 - [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md)
 
+The reusable harness entrypoint for repeating this style of live validation is documented here:
+
+- [openclaw-live-validation-harness.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-live-validation-harness.md)
+
 That live validation records three important realities:
 
 - a discoverable skill is not automatically used for every constrained task
