@@ -289,6 +289,43 @@ def test_service_imports_openclaw_checkpoint_record_as_event(db_path) -> None:
     assert checkpoint_events[0].payload["status"] == "saved"
 
 
+def test_service_imports_additional_live_openclaw_record_types(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    transcript_path = (
+        Path(__file__).parent / "fixtures" / "openclaw_sessions" / "live-record-types-session.jsonl"
+    )
+
+    result = service.import_openclaw_session(
+        transcript_path,
+        case_id="case_session_live_record_types",
+        title="Imported OpenClaw live record types session",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_session_live_record_types"
+    assert len(result.imported_events) == 5
+    assert result.unsupported_record_type_counts == {}
+
+    events = service.list_events("case_session_live_record_types")
+    thinking_events = [event for event in events if event.event_type.value == "model.invoked"]
+    custom_events = [event for event in events if event.event_type.value == "tool.completed"]
+    assert len(thinking_events) == 1
+    assert thinking_events[0].payload["thinking_level"] == "high"
+    assert thinking_events[0].payload["changed_by"] == "user"
+    assert thinking_events[0].payload["trigger"] == "slash_command"
+    assert len(custom_events) == 1
+    assert custom_events[0].payload["tool_name"] == "web_search"
+    assert custom_events[0].payload["content"] == "web_search failed because the network was unavailable."
+    assert custom_events[0].payload["details"] == {
+        "query": "repo governance openprecedent",
+        "status": "error",
+        "error": "network unavailable",
+    }
+
+    decisions = service.extract_decisions("case_session_live_record_types")
+    assert [item.decision_type.value for item in decisions] == ["plan"]
+
+
 def test_service_extracts_clarify_decision_from_follow_up_user_message(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     transcript_path = (
