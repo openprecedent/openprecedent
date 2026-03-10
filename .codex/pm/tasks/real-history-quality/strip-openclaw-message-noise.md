@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: strip-openclaw-message-noise
 title: Strip operator policy and transport metadata from imported OpenClaw session messages
-status: in_progress
+status: done
 labels: bug,feature
 issue: 47
 ---

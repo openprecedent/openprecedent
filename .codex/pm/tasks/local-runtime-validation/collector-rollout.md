@@ -3,7 +3,7 @@ type: task
 epic: local-runtime-validation
 slug: collector-rollout
 title: Roll out scheduled OpenClaw collector in a real target environment
-status: backlog
+status: done
 labels: feature,ops
 issue: 23
 ---

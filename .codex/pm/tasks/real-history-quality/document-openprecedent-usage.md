@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: document-openprecedent-usage
 title: Document how to use OpenPrecedent for humans and agents
-status: in_progress
+status: done
 labels: feature,docs
 issue: 59
 ---

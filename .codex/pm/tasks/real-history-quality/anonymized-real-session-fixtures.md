@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: anonymized-real-session-fixtures
 title: Add anonymized real-session fixtures to the evaluation suite
-status: in_progress
+status: done
 labels: feature,test
 issue: 26
 ---

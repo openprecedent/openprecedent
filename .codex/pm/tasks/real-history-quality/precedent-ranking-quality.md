@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: precedent-ranking-quality
 title: Improve precedent ranking quality on larger real-case history
-status: backlog
+status: done
 labels: feature,test
 depends_on: 26
 issue: 28

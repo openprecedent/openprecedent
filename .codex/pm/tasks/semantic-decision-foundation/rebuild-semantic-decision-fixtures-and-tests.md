@@ -3,7 +3,7 @@ type: task
 epic: semantic-decision-foundation
 slug: rebuild-semantic-decision-fixtures-and-tests
 title: Rebuild evaluation fixtures and tests for semantic decision lineage
-status: in_progress
+status: done
 labels: test,docs
 depends_on: 69
 issue: 70

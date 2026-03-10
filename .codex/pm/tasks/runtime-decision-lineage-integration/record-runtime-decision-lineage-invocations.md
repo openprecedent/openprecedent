@@ -3,7 +3,7 @@ type: task
 epic: runtime-decision-lineage-integration
 slug: record-runtime-decision-lineage-invocations
 title: Record runtime decision-lineage skill invocations
-status: completed
+status: done
 labels: feature,observability
 depends_on: 72
 issue: 81

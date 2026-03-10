@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: document-mvp-architecture
 title: Document MVP architecture with diagrams and capability boundaries
-status: in_progress
+status: done
 labels: feature,docs
 issue: 54
 ---

@@ -3,7 +3,7 @@ type: task
 epic: semantic-decision-foundation
 slug: retune-semantic-precedent-ranking
 title: Retune precedent ranking toward semantic decision similarity
-status: in_progress
+status: done
 labels: feature,test
 depends_on: 69
 issue: 71

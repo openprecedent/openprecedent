@@ -3,7 +3,7 @@ type: task
 epic: runtime-decision-lineage-integration
 slug: encapsulate-openclaw-decision-lineage-skill
 title: Encapsulate OpenPrecedent as an OpenClaw decision-lineage skill
-status: in_progress
+status: done
 labels: feature,docs
 depends_on: 71
 issue: 72

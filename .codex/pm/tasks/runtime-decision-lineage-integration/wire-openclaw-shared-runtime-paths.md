@@ -3,7 +3,7 @@ type: task
 epic: runtime-decision-lineage-integration
 slug: wire-openclaw-shared-runtime-paths
 title: Wire the OpenClaw decision-lineage skill to a stable shared OpenPrecedent DB and invocation log
-status: in_progress
+status: done
 labels: feature,docs,test
 issue: 85
 ---

@@ -3,7 +3,7 @@ type: task
 epic: runtime-decision-lineage-integration
 slug: record-runtime-decision-lineage-brief-effects
 title: Record decision-lineage brief outputs and downstream effects
-status: completed
+status: done
 labels: feature,observability,docs
 depends_on: 72
 issue: 82

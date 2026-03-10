@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: reduce-false-clarify-decisions
 title: Reduce false clarify decisions on wrapped OpenClaw multi-turn sessions
-status: in_progress
+status: done
 labels: bug,test
 issue: 45
 ---
