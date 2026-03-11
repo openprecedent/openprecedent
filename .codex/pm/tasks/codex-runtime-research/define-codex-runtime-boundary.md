@@ -3,7 +3,7 @@ type: task
 epic: codex-runtime-research
 slug: define-codex-runtime-boundary
 title: Define the Codex runtime integration boundary for research-only minimal support
-status: in_progress
+status: done
 labels: feature,docs
 issue: 125
 ---
