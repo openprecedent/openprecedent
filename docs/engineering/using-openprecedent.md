@@ -278,6 +278,19 @@ The importer also strips low-value Codex runtime wrapper noise such as transport
 Imported Codex rollout history now also flows through the same semantic decision taxonomy as the rest of the repository, including task framing, constraints, clarifications, success criteria, rejected options, and explicit approval signals found in user guidance.
 The current precedent-quality validation for Codex-derived history is recorded in [codex-precedent-retrieval-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-precedent-retrieval-validation.md).
 
+For Codex-driven development work, the repository-local runtime workflow is:
+
+```bash
+./scripts/run-codex-decision-lineage-workflow.sh \
+  --query-reason initial_planning \
+  --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
+```
+
+That workflow is documented here:
+
+- [codex-runtime-decision-lineage-workflow.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-decision-lineage-workflow.md)
+- [SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/codex-runtime-decision-lineage/SKILL.md)
+
 ### Runtime decision-lineage brief
 
 For OpenClaw-facing runtime use, OpenPrecedent now exposes a dedicated semantic briefing surface:
