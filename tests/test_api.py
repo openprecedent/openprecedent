@@ -211,6 +211,38 @@ def test_service_strips_codex_rollout_noise(db_path) -> None:
     assert replay.summary == "Codex replay should show semantic evidence without transport wrappers."
     assert all(event.payload.get("source") == "codex" for event in events if "source" in event.payload)
 
+
+def test_service_extracts_semantic_decisions_from_codex_rollout(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_path = Path(__file__).parent / "fixtures" / "codex_rollout_semantic.jsonl"
+
+    result = service.import_codex_rollout_jsonl(
+        fixture_path,
+        case_id="case_codex_semantic",
+        title="Codex semantic rollout",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_codex_semantic"
+
+    decisions = service.extract_decisions("case_codex_semantic")
+    decision_types = [item.decision_type.value for item in decisions]
+
+    assert "constraint_adopted" in decision_types
+    assert "success_criteria_set" in decision_types
+    assert "option_rejected" in decision_types
+    assert "task_frame_defined" in decision_types
+    assert "clarification_resolved" in decision_types
+    assert "authority_confirmed" in decision_types
+
+    authority = next(item for item in decisions if item.decision_type.value == "authority_confirmed")
+    assert authority.requires_human_confirmation is True
+    assert "Approved. Continue within that Codex-only scope." == authority.chosen_action
+
+    operational_texts = {item.chosen_action for item in decisions}
+    assert "def extract_decisions(self, case_id: str) -> list[Decision]:" not in operational_texts
+    assert "exec_command" not in operational_texts
+
 def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
