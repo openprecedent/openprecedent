@@ -246,6 +246,23 @@ Python service-layer pattern:
 
 Use this path when your runtime already knows its own events and does not need transcript import.
 
+### Post-MVP research path: Codex minimal integration
+
+OpenPrecedent is also beginning a Codex-specific research path.
+This is not part of the shipped MVP runtime surface.
+It is the next post-MVP validation path because current real usage density is higher in Codex-driven repository development than in OpenClaw.
+
+The controlling boundary document is:
+
+- [codex-runtime-boundary.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-boundary.md)
+
+That path is intentionally narrow:
+
+- Codex is being added as a second research runtime
+- the goal is denser real semantic decision data
+- the goal is later cross-project validation of decision-lineage reuse
+- it is explicitly not a generic adapter framework for arbitrary agents
+
 ### Runtime decision-lineage brief
 
 For OpenClaw-facing runtime use, OpenPrecedent now exposes a dedicated semantic briefing surface:

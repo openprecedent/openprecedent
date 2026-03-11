@@ -65,6 +65,7 @@ The repository now includes:
 - usage guide for humans and agents: [docs/engineering/using-openprecedent.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/using-openprecedent.md)
 - runtime decision-lineage validation baseline: [docs/engineering/openclaw-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-validation.md)
 - real OpenClaw runtime decision-lineage validation: [docs/engineering/openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
+- Codex runtime research boundary: [docs/engineering/codex-runtime-boundary.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-boundary.md)
 
 For live OpenClaw skill installs, set `OPENPRECEDENT_HOME` to a stable shared directory so runtime brief lookups and invocation logs do not fall back to workspace-local files.
 
