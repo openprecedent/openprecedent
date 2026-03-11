@@ -6,6 +6,11 @@ review_file="$repo_root/.codex-review"
 current_branch="$(git branch --show-current)"
 origin_url="$(git remote get-url origin 2>/dev/null || true)"
 base_ref="${OPENPRECEDENT_BASE_REF:-upstream/main}"
+python_bin="${OPENPRECEDENT_PYTHON_BIN:-$repo_root/.venv/bin/python}"
+
+if [[ ! -x "$python_bin" ]]; then
+  python_bin="python3"
+fi
 
 extract_owner() {
   local remote_url="$1"
@@ -14,6 +19,46 @@ extract_owner() {
     return 0
   fi
   return 1
+}
+
+run_local_pr_closure_check() {
+  local branch changed_files pr_body body_input
+  branch="$(git branch --show-current)"
+
+  if [[ -z "$branch" ]]; then
+    return 0
+  fi
+
+  if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
+    echo "Skipping local closure sync check: base ref $base_ref is unavailable"
+    return 0
+  fi
+
+  changed_files="$(git diff --name-only "$base_ref"...HEAD)"
+  if [[ -z "$changed_files" ]]; then
+    return 0
+  fi
+
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "Skipping local closure sync check: gh is unavailable"
+    return 0
+  fi
+
+  pr_body="$(
+    gh pr view --json body --jq .body 2>/dev/null || true
+  )"
+  if [[ -z "$pr_body" ]]; then
+    echo "Skipping local closure sync check: PR body is unavailable"
+    return 0
+  fi
+
+  body_input=("--pr-body" "$pr_body")
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    body_input+=("--changed-file" "$path")
+  done <<< "$changed_files"
+
+  PYTHONPATH=src "$python_bin" -m openprecedent.codex_pm verify-pr-closure-sync "${body_input[@]}"
 }
 
 if [[ "${BYPASS_CODEX_REVIEW:-}" == "1" ]]; then
@@ -84,5 +129,7 @@ EOF
     exit 1
   fi
 fi
+
+run_local_pr_closure_check
 
 echo "Codex review note detected."

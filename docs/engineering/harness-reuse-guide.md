@@ -48,6 +48,7 @@ Key capabilities:
 - require `.codex-review`
 - block pushing to branches whose PRs already merged
 - block stale branches that are behind `upstream/main`
+- run local issue/task closure-sync verification before push when PR context is available through `gh`
 - provide a fixed local checkpoint for native Codex `/review`
 
 ### 3. Local preflight and CI support layer

@@ -23,6 +23,7 @@ To enable the local hook:
 
 After that, each push requires a `.codex-review` file in the repository root unless you explicitly bypass the hook.
 The local hook also expects your branch to contain the latest `upstream/main` by default, so stale branches are caught before push.
+When `gh` can resolve the current PR body, the hook also performs a local issue/task closure sync check before push.
 
 ## Codex Review Hook
 
@@ -47,6 +48,7 @@ remaining risks: dependencies not installed locally, tests not executed
 
 This hook does not replace human judgment. It creates a minimal review checkpoint before code leaves the local branch.
 It also acts as a branch-freshness guardrail: if your branch no longer contains the latest `upstream/main`, rebase before pushing.
+If the current PR body includes `Closes #<issue>`, the hook now tries to verify that the matching local task file is also updated consistently before allowing the push.
 
 ## Merge Validation
 
