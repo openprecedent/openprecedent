@@ -17,6 +17,7 @@ fi
 
 RUN_E2E="${OPENPRECEDENT_PREFLIGHT_RUN_E2E:-0}"
 REVIEW_FILE="${OPENPRECEDENT_REVIEW_FILE:-$ROOT_DIR/.codex-review}"
+REVIEW_PROOF_FILE="${OPENPRECEDENT_REVIEW_PROOF_FILE:-$ROOT_DIR/.codex-review-proof}"
 PYTEST_ARGS="${OPENPRECEDENT_PREFLIGHT_PYTEST_ARGS:-tests --ignore=tests/test_preflight_script.py}"
 BASE_REF="${OPENPRECEDENT_PREFLIGHT_BASE_REF:-upstream/main}"
 ENFORCE_ISSUE_STATE="${OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE:-0}"
@@ -28,9 +29,59 @@ check_review_note() {
     exit 1
   fi
 
-  if ! grep -Eq 'scope reviewed|no findings|remaining risks' "$REVIEW_FILE"; then
+  if ! grep -Eq '^scope reviewed:' "$REVIEW_FILE" \
+    || ! grep -Eq '^(findings:|no findings$)' "$REVIEW_FILE" \
+    || ! grep -Eq '^remaining risks:' "$REVIEW_FILE"; then
     echo "Preflight failed: .codex-review exists but is incomplete"
     echo "Rerun ./scripts/run-codex-review-checkpoint.sh if you need a fresh template."
+    exit 1
+  fi
+
+  if grep -Fq 'native /review has not been run yet' "$REVIEW_FILE"; then
+    echo "Preflight failed: .codex-review still contains the checkpoint placeholder"
+    echo "Run native Codex /review and replace the placeholder text with the real review result."
+    exit 1
+  fi
+}
+
+read_review_proof_value() {
+  local key="$1"
+  sed -n "s/^${key}=//p" "$REVIEW_PROOF_FILE" | head -n 1
+}
+
+check_review_proof() {
+  local current_head proof_head proof_branch current_branch
+
+  if [[ ! -f "$REVIEW_PROOF_FILE" ]]; then
+    echo "Preflight failed: missing .codex-review-proof"
+    echo "Run ./scripts/run-codex-review-checkpoint.sh before preflight."
+    exit 1
+  fi
+
+  current_head="$(git rev-parse HEAD)"
+  current_branch="$(git branch --show-current)"
+  proof_head="$(read_review_proof_value head_sha)"
+  proof_branch="$(read_review_proof_value branch)"
+
+  if [[ -z "$proof_head" ]]; then
+    echo "Preflight failed: .codex-review-proof is missing head_sha"
+    exit 1
+  fi
+
+  if [[ "$proof_head" != "$current_head" ]]; then
+    echo "Preflight failed: .codex-review-proof does not match the current HEAD"
+    echo "Run ./scripts/run-codex-review-checkpoint.sh again for the current commit set."
+    exit 1
+  fi
+
+  if [[ -n "$current_branch" ]] && [[ -n "$proof_branch" ]] && [[ "$proof_branch" != "$current_branch" ]]; then
+    echo "Preflight failed: .codex-review-proof was generated for a different branch"
+    exit 1
+  fi
+
+  if [[ "$REVIEW_FILE" -ot "$REVIEW_PROOF_FILE" ]]; then
+    echo "Preflight failed: .codex-review has not been updated since the latest review checkpoint"
+    echo "Update .codex-review after the native Codex /review step."
     exit 1
   fi
 }
@@ -152,6 +203,7 @@ echo "Running agent preflight in $ROOT_DIR"
 
 check_branch_freshness
 check_review_note
+check_review_proof
 check_issue_state
 check_merged_branch_reuse
 

@@ -8,6 +8,6 @@ Notable operational entrypoints:
 - `run-e2e.sh` runs the standard local fixture-backed end-to-end validation flow
 - `run-openclaw-live-validation.sh` prepares a reusable live OpenClaw validation workspace and summarizes runtime evidence
 - `run-agent-preflight.sh` runs the standard local pre-push confidence checks for agent-driven work
-- `run-codex-review-checkpoint.sh` creates or refreshes the local review note before invoking native Codex `/review`
+- `run-codex-review-checkpoint.sh` creates or refreshes the local review note and the current-HEAD review proof before invoking native Codex `/review`
 - `triage_pr_checks.py` summarizes and classifies current PR check results for faster CI diagnosis
 - `install-collector-assets.sh` renders `systemd` / `cron` assets against the current repo path

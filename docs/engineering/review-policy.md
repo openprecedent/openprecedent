@@ -83,7 +83,8 @@ The intended behavior is:
 
 - before pushing, the author runs a Codex review
 - the author records the result in `.codex-review`
-- the pre-push hook blocks the push if no review note is present
+- the review checkpoint refreshes a machine-generated `.codex-review-proof` file for the current `HEAD`
+- the pre-push hook blocks the push if no review note is present, if the proof is missing or stale, or if the note was not updated after the latest checkpoint
 
 This is a lightweight reliability mechanism, not a substitute for PR review.
 

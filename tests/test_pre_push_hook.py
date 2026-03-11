@@ -50,12 +50,6 @@ Test task.
         encoding="utf-8",
     )
 
-    review_file = repo / ".codex-review"
-    review_file.write_text(
-        "scope reviewed: pre-push hook\nfindings: no findings\nremaining risks: local closure sync test only\n",
-        encoding="utf-8",
-    )
-
     (repo / "README.md").write_text("base\n", encoding="utf-8")
     _git(repo, "add", ".")
     _git(repo, "commit", "-m", "base")
@@ -64,6 +58,19 @@ Test task.
     task_path.write_text(task_path.read_text(encoding="utf-8") + "\nMore task body.\n", encoding="utf-8")
     _git(repo, "add", str(task_path.relative_to(repo)))
     _git(repo, "commit", "-m", "update task")
+
+    head_sha = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    proof_file = repo / ".codex-review-proof"
+    proof_file.write_text(
+        f"branch=feature\nhead_sha={head_sha}\nbase_ref=main\ngenerated_at=2026-03-11T00:00:00Z\n",
+        encoding="utf-8",
+    )
+
+    review_file = repo / ".codex-review"
+    review_file.write_text(
+        "scope reviewed: pre-push hook\nfindings: no findings\nremaining risks: local closure sync test only\n",
+        encoding="utf-8",
+    )
 
     return repo
 
@@ -139,3 +146,58 @@ def test_pre_push_hook_skips_local_closure_sync_when_pr_body_is_unavailable(tmp_
     assert result.returncode == 0
     assert "Skipping local closure sync check: PR body is unavailable" in result.stdout
     assert "Codex review note detected." in result.stdout
+
+
+def test_pre_push_hook_blocks_missing_review_proof(tmp_path: Path) -> None:
+    repo = _prepare_repo(tmp_path)
+    (repo / ".codex-review-proof").unlink()
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    _write_fake_gh(fake_bin, pr_body="")
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["BYPASS_BRANCH_FRESHNESS_CHECK"] = "1"
+    env["OPENPRECEDENT_BASE_REF"] = "main"
+    env["OPENPRECEDENT_PYTHON_BIN"] = "python3"
+
+    result = subprocess.run(
+        [str(repo / ".githooks" / "pre-push")],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "missing .codex-review-proof" in result.stdout
+
+
+def test_pre_push_hook_blocks_stale_review_proof(tmp_path: Path) -> None:
+    repo = _prepare_repo(tmp_path)
+    (repo / ".codex-review-proof").write_text(
+        "branch=feature\nhead_sha=deadbeef\nbase_ref=main\ngenerated_at=2026-03-11T00:00:00Z\n",
+        encoding="utf-8",
+    )
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    _write_fake_gh(fake_bin, pr_body="")
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["BYPASS_BRANCH_FRESHNESS_CHECK"] = "1"
+    env["OPENPRECEDENT_BASE_REF"] = "main"
+    env["OPENPRECEDENT_PYTHON_BIN"] = "python3"
+
+    result = subprocess.run(
+        [str(repo / ".githooks" / "pre-push")],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "does not match the current HEAD" in result.stdout

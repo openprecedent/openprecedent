@@ -57,7 +57,7 @@ Expected local behavior:
 
 - authors run a Codex review before push
 - authors record the result in `.codex-review`
-- the local pre-push hook blocks the push if the review note is missing
+- the local pre-push hook blocks the push if the review note or the machine-generated `.codex-review-proof` file is missing
 - the local pre-push hook blocks stale branches that no longer contain the latest `upstream/main`
 - the local pre-push hook also blocks pushes to branches whose PRs have already been merged into `openprecedent/openprecedent`
 - when a PR body is locally available through `gh`, the local pre-push hook also checks issue/task closure sync before push
