@@ -5,6 +5,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -582,7 +583,11 @@ def _render_pr_body(document: PMDocument, *, issue: int | None, tests: list[str]
     if validation or tests:
         lines.append("Validation:")
         if validation:
-            lines.extend(validation.splitlines())
+            for line in validation.splitlines():
+                stripped = line.strip()
+                if not stripped or stripped == "-":
+                    continue
+                lines.append(line)
         for test in tests:
             lines.append(f"- `{test}`")
     return "\n".join(lines).rstrip()
@@ -632,28 +637,34 @@ def _create_pr(
 
     pr_title = title or document.metadata.get("title") or document.path.stem
     pr_body = _render_pr_body(document, issue=issue, tests=tests)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(pr_body)
+        body_path = Path(handle.name)
 
-    result = subprocess.run(
-        [
-            "gh",
-            "pr",
-            "create",
-            "--repo",
-            base_repo,
-            "--base",
-            base_branch,
-            "--head",
-            f"{head_owner}:{branch}",
-            "--title",
-            pr_title,
-            "--body",
-            pr_body,
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout.strip()
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "create",
+                "--repo",
+                base_repo,
+                "--base",
+                base_branch,
+                "--head",
+                f"{head_owner}:{branch}",
+                "--title",
+                pr_title,
+                "--body-file",
+                str(body_path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    finally:
+        body_path.unlink(missing_ok=True)
 
 
 def _parse_issue_number(value: str) -> int | None:
