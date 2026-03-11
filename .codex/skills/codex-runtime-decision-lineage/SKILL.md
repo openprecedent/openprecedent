@@ -28,12 +28,12 @@ Give Codex a narrow, inspectable runtime workflow for:
 ## Workflow
 
 1. Make sure the task has enough semantic context.
-   - At minimum, provide:
+   At minimum, provide:
    - `--task-summary`
    - the appropriate `--query-reason`
 
 2. Prefer a stable runtime home.
-   - If not already set, the workflow script defaults to:
+   If not already set, the workflow script defaults to:
    - `OPENPRECEDENT_HOME=$HOME/.openprecedent/runtime`
 
 3. Run the repository-local workflow script:
@@ -45,7 +45,7 @@ Give Codex a narrow, inspectable runtime workflow for:
 ```
 
 4. Add context when needed.
-   - Useful optional flags:
+   Useful optional flags:
    - `--current-plan`
    - `--candidate-action`
    - `--known-file`
