@@ -263,6 +263,18 @@ That path is intentionally narrow:
 - the goal is later cross-project validation of decision-lineage reuse
 - it is explicitly not a generic adapter framework for arbitrary agents
 
+The first Codex-facing import command is:
+
+```bash
+openprecedent runtime import-codex-rollout \
+  /path/to/rollout.jsonl \
+  --case-id case_codex_example \
+  --title "Imported Codex rollout"
+```
+
+This command is intentionally minimal.
+It imports one Codex rollout JSONL file into replayable `case` and `event` records so later extraction and precedent work can build on real Codex development history.
+
 ### Runtime decision-lineage brief
 
 For OpenClaw-facing runtime use, OpenPrecedent now exposes a dedicated semantic briefing surface:
