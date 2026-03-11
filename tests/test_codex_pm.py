@@ -515,6 +515,7 @@ def test_codex_pm_pr_create_uses_explicit_upstream_repo_and_fork_head(
     task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "pr-targeting.md"
 
     calls: list[list[str]] = []
+    captured_body: dict[str, str] = {}
 
     def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
         calls.append(cmd)
@@ -525,6 +526,8 @@ def test_codex_pm_pr_create_uses_explicit_upstream_repo_and_fork_head(
         if cmd == ["git", "remote", "get-url", "upstream"]:
             return subprocess.CompletedProcess(cmd, 0, stdout="https://github.com/openprecedent/openprecedent.git\n", stderr="")
         if cmd[:3] == ["gh", "pr", "create"]:
+            body_path = Path(cmd[cmd.index("--body-file") + 1])
+            captured_body["value"] = body_path.read_text(encoding="utf-8")
             return subprocess.CompletedProcess(cmd, 0, stdout="https://github.com/openprecedent/openprecedent/pull/999\n", stderr="")
         raise AssertionError(f"unexpected command: {cmd}")
 
@@ -549,6 +552,71 @@ def test_codex_pm_pr_create_uses_explicit_upstream_repo_and_fork_head(
     assert gh_call[gh_call.index("--repo") + 1] == "openprecedent/openprecedent"
     assert gh_call[gh_call.index("--head") + 1] == "yaoyinnan:codex/harden-pr-targeting"
     assert gh_call[gh_call.index("--base") + 1] == "main"
+    assert "--body-file" in gh_call
+    assert "--body" not in gh_call
+    assert "Closes #136" in captured_body["value"]
+    assert "- `PYTHONPATH=src .venv/bin/pytest tests/test_codex_pm.py`" in captured_body["value"]
+    assert "\\n" not in captured_body["value"]
+
+
+def test_codex_pm_pr_create_body_file_preserves_clean_closing_reference(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "closing-reference-preservation",
+                "--title",
+                "Preserve valid GitHub closing references in generated PR bodies",
+                "--issue",
+                "146",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = (
+        tmp_path
+        / ".codex"
+        / "pm"
+        / "tasks"
+        / "real-history-quality"
+        / "closing-reference-preservation.md"
+    )
+
+    captured_body: dict[str, str] = {}
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        if cmd == ["git", "branch", "--show-current"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="codex/closing-reference-preservation\n", stderr="")
+        if cmd == ["git", "remote", "get-url", "origin"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="git@github.com:yaoyinnan/openprecedent.git\n", stderr="")
+        if cmd == ["git", "remote", "get-url", "upstream"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="https://github.com/openprecedent/openprecedent.git\n", stderr="")
+        if cmd[:3] == ["gh", "pr", "create"]:
+            body_path = Path(cmd[cmd.index("--body-file") + 1])
+            captured_body["value"] = body_path.read_text(encoding="utf-8")
+            return subprocess.CompletedProcess(cmd, 0, stdout="https://github.com/openprecedent/openprecedent/pull/1000\n", stderr="")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert main(["pr-create", str(task_path), "--tests", "echo done"]) == 0
+    body = captured_body["value"]
+
+    assert body.splitlines()[0] == "Closes #146"
+    assert body.splitlines()[-1] == "- `echo done`"
+    assert "\n\nValidation:\n- `echo done`" in body
+    assert "\\nCloses #146" not in body
 
 
 def test_codex_pm_pr_create_fails_when_origin_owner_is_ambiguous(
