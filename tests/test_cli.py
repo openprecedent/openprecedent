@@ -1157,6 +1157,27 @@ def test_codex_runtime_decision_lineage_skill_exists() -> None:
     assert "python3 -m openprecedent.cli runtime" not in workflow
 
 
+def test_codex_runtime_startup_docs_exist() -> None:
+    repo_root = Path(__file__).parent.parent
+    guide_path = repo_root / "docs" / "engineering" / "codex-runtime-startup-guide.md"
+    validation_path = repo_root / "docs" / "engineering" / "codex-runtime-startup-validation.md"
+    readme_path = repo_root / "README.md"
+    usage_path = repo_root / "docs" / "engineering" / "using-openprecedent.md"
+
+    guide = guide_path.read_text(encoding="utf-8")
+    validation = validation_path.read_text(encoding="utf-8")
+    readme = readme_path.read_text(encoding="utf-8")
+    usage = usage_path.read_text(encoding="utf-8")
+
+    assert "./scripts/run-codex-live-validation.sh" in guide
+    assert "For Humans" in guide
+    assert "For Agents" in guide
+    assert "three runtime invocations were recorded" in validation
+    assert "Codex runtime startup guide" in readme
+    assert "codex-runtime-startup-guide.md" in usage
+    assert "codex-runtime-startup-validation.md" in usage
+
+
 def test_tooling_setup_mentions_live_validation_skill() -> None:
     path = Path(__file__).parent.parent / "docs" / "engineering" / "tooling-setup.md"
 

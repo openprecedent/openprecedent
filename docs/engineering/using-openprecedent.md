@@ -289,6 +289,8 @@ For Codex-driven development work, the repository-local runtime workflow is:
 That workflow is documented here:
 
 - [codex-runtime-decision-lineage-workflow.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-decision-lineage-workflow.md)
+- [codex-runtime-startup-guide.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-startup-guide.md)
+- [codex-runtime-startup-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-startup-validation.md)
 - [SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/codex-runtime-decision-lineage/SKILL.md)
 
 ### Runtime decision-lineage brief
