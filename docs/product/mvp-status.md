@@ -20,6 +20,9 @@ At this stage, the repository should be read as a local-first validation platfor
 This is no longer primarily a core-loop plumbing effort.
 The current platform role is to make those hypotheses fast to test against a real OpenClaw-first environment without reopening MVP foundation work each time.
 
+As of `2026-03-11`, the next planned research runtime after OpenClaw is Codex.
+That work is intentionally scoped as a research-only second runtime rather than a generalized multi-runtime abstraction effort.
+
 ## Research Governance
 
 The long-lived umbrella for this phase is GitHub issue `#100`, `Define the post-MVP research evolution framework for OpenPrecedent`.
@@ -76,6 +79,7 @@ These are product-effectiveness and research-quality questions, not missing core
 - [MVP roadmap](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-roadmap.md)
 - [MVP PRD](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-prd.md)
 - [MVP architecture](/workspace/02-projects/incubation/openprecedent/docs/architecture/mvp-design.md)
+- [Codex runtime research boundary](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-boundary.md)
 - [OpenClaw full user journey validation](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-full-user-journey-validation.md)
 - [OpenClaw real runtime decision-lineage validation](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
 - [Merge validation guidance](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md)
