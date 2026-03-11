@@ -234,6 +234,49 @@ def test_cli_import_codex_rollout_trace(capsys, db_path) -> None:
     )
     assert replay["artifacts"]
 
+
+def test_cli_import_codex_rollout_strips_noise(capsys, db_path) -> None:
+    fixture_path = Path(__file__).parent / "fixtures" / "codex_rollout_noisy.jsonl"
+
+    result = main(
+        [
+            "runtime",
+            "import-codex-rollout",
+            str(fixture_path),
+            "--case-id",
+            "case_codex_noise",
+            "--title",
+            "Codex noisy rollout",
+            "--user-id",
+            "u1",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["imported_event_count"] == 6
+    assert imported["unsupported_record_type_counts"] == {
+        "event_msg:task_started": 1,
+        "event_msg:token_count": 1,
+        "response_item:message": 2,
+        "response_item:reasoning": 1,
+        "turn_context": 1,
+    }
+
+    result = main(["replay", "case", "case_codex_noise", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    assert replay["summary"] == "Codex replay should show semantic evidence without transport wrappers."
+    tool_called = next(event for event in replay["events"] if event["event_type"] == "tool.called")
+    tool_completed = next(event for event in replay["events"] if event["event_type"] == "tool.completed")
+    assert tool_called["payload"]["arguments"] == {
+        "cmd": "sed -n '1,40p' docs/engineering/codex-runtime-boundary.md",
+        "workdir": "/workspace/02-projects/incubation/openprecedent",
+    }
+    assert tool_completed["payload"]["output"] == (
+        "# Codex Runtime Boundary For Research\n"
+        "The goal is not to make OpenPrecedent generic."
+    )
+
 def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"

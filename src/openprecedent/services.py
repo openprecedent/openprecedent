@@ -1625,7 +1625,10 @@ class OpenPrecedentService:
                     timestamp=timestamp,
                     payload={
                         "tool_name": tool_name,
-                        "arguments": _codex_arguments_to_payload(payload.get("arguments")),
+                        "arguments": _normalize_codex_tool_arguments(
+                            tool_name,
+                            _codex_arguments_to_payload(payload.get("arguments")),
+                        ),
                         "call_id": _string_or_none(payload.get("call_id")),
                         "source": "codex",
                     },
@@ -1638,7 +1641,7 @@ class OpenPrecedentService:
                     timestamp=timestamp,
                     payload={
                         "call_id": _string_or_none(payload.get("call_id")),
-                        "output": _string_or_default(payload.get("output"), ""),
+                        "output": _strip_codex_tool_output_noise(_string_or_default(payload.get("output"), "")),
                         "source": "codex",
                     },
                 )
@@ -1933,6 +1936,49 @@ def _codex_arguments_to_payload(value: object) -> dict[str, object]:
             return parsed
         return {"raw": value}
     return {}
+
+
+def _normalize_codex_tool_arguments(
+    tool_name: str,
+    arguments: dict[str, object],
+) -> dict[str, object]:
+    if not arguments:
+        return {}
+
+    cleaned = dict(arguments)
+    for key in (
+        "yield_time_ms",
+        "max_output_tokens",
+        "sandbox_permissions",
+        "justification",
+        "prefix_rule",
+        "login",
+        "tty",
+        "shell",
+    ):
+        cleaned.pop(key, None)
+
+    # Keep the high-signal tool intent rather than transport controls.
+    if tool_name == "exec_command" and "cmd" in cleaned:
+        return cleaned
+    return cleaned
+
+
+def _strip_codex_tool_output_noise(output: str) -> str:
+    if not output.strip():
+        return output
+
+    lines = output.splitlines()
+    while lines and (
+        lines[0].startswith("Chunk ID:")
+        or lines[0].startswith("Wall time:")
+        or lines[0].startswith("Process exited with code")
+        or lines[0].startswith("Original token count:")
+    ):
+        lines.pop(0)
+    if lines and lines[0] == "Output:":
+        lines.pop(0)
+    return "\n".join(lines).strip()
 
 
 def _codex_rollout_record_type(raw_item: dict[str, object]) -> str:

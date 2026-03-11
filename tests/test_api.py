@@ -172,6 +172,45 @@ def test_service_imports_codex_rollout_trace(db_path) -> None:
     assert replay.summary == "Codex runtime research should stay Codex-specific and avoid generic multi-runtime abstraction for now."
     assert replay.artifacts
 
+
+def test_service_strips_codex_rollout_noise(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_path = Path(__file__).parent / "fixtures" / "codex_rollout_noisy.jsonl"
+
+    result = service.import_codex_rollout_jsonl(
+        fixture_path,
+        case_id="case_codex_noise",
+        title="Codex noisy rollout",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_codex_noise"
+    assert len(result.imported_events) == 6
+    assert result.unsupported_record_type_counts == {
+        "event_msg:task_started": 1,
+        "event_msg:token_count": 1,
+        "response_item:message": 2,
+        "response_item:reasoning": 1,
+        "turn_context": 1,
+    }
+
+    events = service.list_events("case_codex_noise")
+    tool_called = next(event for event in events if event.event_type.value == "tool.called")
+    tool_completed = next(event for event in events if event.event_type.value == "tool.completed")
+
+    assert tool_called.payload["arguments"] == {
+        "cmd": "sed -n '1,40p' docs/engineering/codex-runtime-boundary.md",
+        "workdir": "/workspace/02-projects/incubation/openprecedent",
+    }
+    assert tool_completed.payload["output"] == (
+        "# Codex Runtime Boundary For Research\n"
+        "The goal is not to make OpenPrecedent generic."
+    )
+
+    replay = service.replay_case("case_codex_noise")
+    assert replay.summary == "Codex replay should show semantic evidence without transport wrappers."
+    assert all(event.payload.get("source") == "codex" for event in events if "source" in event.payload)
+
 def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
