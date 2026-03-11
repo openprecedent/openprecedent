@@ -374,6 +374,46 @@ class OpenPrecedentService:
 
         return RuntimeTraceImportResult(case=case, imported_events=imported)
 
+    def import_codex_rollout_jsonl(
+        self,
+        path: Path,
+        *,
+        case_id: str,
+        title: str,
+        user_id: str | None = None,
+        agent_id: str = "codex",
+    ) -> RuntimeTraceImportResult:
+        case = self.store.get_case(case_id)
+        if case is None:
+            case = self.create_case(
+                CreateCaseInput(
+                    case_id=case_id,
+                    title=title,
+                    user_id=user_id,
+                    agent_id=agent_id,
+                )
+            )
+
+        imported: list[Event] = []
+        unsupported_record_type_counts: Counter[str] = Counter()
+        with path.open("r", encoding="utf-8") as handle:
+            for line_no, line in enumerate(handle, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                raw_item = json.loads(stripped)
+                normalized = self._normalize_codex_rollout_line(raw_item, line_no)
+                if normalized is None:
+                    unsupported_record_type_counts[_codex_rollout_record_type(raw_item)] += 1
+                    continue
+                imported.append(self.append_event(case_id, normalized))
+
+        return RuntimeTraceImportResult(
+            case=case,
+            imported_events=imported,
+            unsupported_record_type_counts=dict(sorted(unsupported_record_type_counts.items())),
+        )
+
     def list_openclaw_sessions(self, sessions_root: Path, limit: int = 10) -> list[OpenClawSessionReference]:
         references: list[OpenClawSessionReference] = []
         index_path = sessions_root / "sessions.json"
@@ -1506,6 +1546,106 @@ class OpenPrecedentService:
 
         raise ValueError(f"line {line_no}: unsupported openclaw kind '{kind}'")
 
+    def _normalize_codex_rollout_line(
+        self,
+        raw_item: dict[str, object],
+        line_no: int,
+    ) -> AppendEventInput | None:
+        kind = _string_or_none(raw_item.get("type"))
+        if kind is None:
+            raise ValueError(f"line {line_no}: type is required for codex rollout import")
+
+        timestamp = self._parse_optional_timestamp(raw_item.get("timestamp"), line_no)
+        payload = raw_item.get("payload") if isinstance(raw_item.get("payload"), dict) else {}
+
+        if kind == "session_meta":
+            session_payload = payload if isinstance(payload, dict) else {}
+            return AppendEventInput(
+                event_id=_string_or_none(session_payload.get("id")) or f"codex-session-{line_no}",
+                event_type=EventType.CASE_STARTED,
+                actor=EventActor.SYSTEM,
+                timestamp=timestamp,
+                payload={
+                    "source": "codex",
+                    "session_id": _string_or_none(session_payload.get("id")),
+                    "cwd": _string_or_none(session_payload.get("cwd")),
+                    "originator": _string_or_none(session_payload.get("originator")),
+                    "cli_version": _string_or_none(session_payload.get("cli_version")),
+                    "model_provider": _string_or_none(session_payload.get("model_provider")),
+                },
+            )
+
+        if kind == "event_msg":
+            subtype = _string_or_none(payload.get("type"))
+            if subtype == "user_message":
+                return AppendEventInput(
+                    event_id=f"codex-user-{line_no}",
+                    event_type=EventType.MESSAGE_USER,
+                    actor=EventActor.USER,
+                    timestamp=timestamp,
+                    payload={
+                        "message": _string_or_default(payload.get("message"), ""),
+                        "source": "codex",
+                    },
+                )
+            if subtype == "agent_message":
+                return AppendEventInput(
+                    event_id=f"codex-agent-{line_no}",
+                    event_type=EventType.MESSAGE_AGENT,
+                    actor=EventActor.AGENT,
+                    timestamp=timestamp,
+                    payload={
+                        "message": _string_or_default(payload.get("message"), ""),
+                        "phase": _string_or_none(payload.get("phase")),
+                        "source": "codex",
+                    },
+                )
+            if subtype == "task_complete":
+                return AppendEventInput(
+                    event_id=f"codex-complete-{line_no}",
+                    event_type=EventType.CASE_COMPLETED,
+                    actor=EventActor.SYSTEM,
+                    timestamp=timestamp,
+                    payload={
+                        "summary": _string_or_none(payload.get("last_agent_message")) or "Codex task completed",
+                        "turn_id": _string_or_none(payload.get("turn_id")),
+                        "source": "codex",
+                    },
+                )
+            return None
+
+        if kind == "response_item":
+            subtype = _string_or_none(payload.get("type"))
+            if subtype in {"function_call", "custom_tool_call", "web_search_call"}:
+                tool_name = _string_or_none(payload.get("name")) or subtype
+                return AppendEventInput(
+                    event_id=_string_or_none(payload.get("call_id")) or f"codex-tool-call-{line_no}",
+                    event_type=EventType.TOOL_CALLED,
+                    actor=EventActor.AGENT,
+                    timestamp=timestamp,
+                    payload={
+                        "tool_name": tool_name,
+                        "arguments": _codex_arguments_to_payload(payload.get("arguments")),
+                        "call_id": _string_or_none(payload.get("call_id")),
+                        "source": "codex",
+                    },
+                )
+            if subtype in {"function_call_output", "custom_tool_call_output"}:
+                return AppendEventInput(
+                    event_id=f"{_string_or_none(payload.get('call_id')) or f'codex-tool-output-{line_no}'}-output",
+                    event_type=EventType.TOOL_COMPLETED,
+                    actor=EventActor.TOOL,
+                    timestamp=timestamp,
+                    payload={
+                        "call_id": _string_or_none(payload.get("call_id")),
+                        "output": _string_or_default(payload.get("output"), ""),
+                        "source": "codex",
+                    },
+                )
+            return None
+
+        return None
+
     def _normalize_openclaw_session_line(
         self,
         raw_item: dict[str, object],
@@ -1779,6 +1919,29 @@ def _parse_epoch_millis(value: object) -> datetime | None:
     if isinstance(value, int):
         return datetime.fromtimestamp(value / 1000, tz=UTC)
     return None
+
+
+def _codex_arguments_to_payload(value: object) -> dict[str, object]:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {"raw": value}
+        if isinstance(parsed, dict):
+            return parsed
+        return {"raw": value}
+    return {}
+
+
+def _codex_rollout_record_type(raw_item: dict[str, object]) -> str:
+    kind = _string_or_default(raw_item.get("type"), "unknown")
+    payload = raw_item.get("payload")
+    subtype = _string_or_none(payload.get("type")) if isinstance(payload, dict) else None
+    if subtype is None:
+        return kind
+    return f"{kind}:{subtype}"
 
 
 def _tokenize_keywords(text: str) -> set[str]:

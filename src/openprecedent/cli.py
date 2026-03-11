@@ -81,6 +81,12 @@ def build_parser() -> argparse.ArgumentParser:
     runtime_import.add_argument("--title", required=True)
     runtime_import.add_argument("--user-id")
     runtime_import.add_argument("--agent-id", default="openclaw")
+    runtime_import_codex = runtime_subparsers.add_parser("import-codex-rollout")
+    runtime_import_codex.add_argument("path")
+    runtime_import_codex.add_argument("--case-id", required=True)
+    runtime_import_codex.add_argument("--title", required=True)
+    runtime_import_codex.add_argument("--user-id")
+    runtime_import_codex.add_argument("--agent-id", default="codex")
     runtime_import_session = runtime_subparsers.add_parser("import-openclaw-session")
     runtime_import_session.add_argument("--session-file")
     runtime_import_session.add_argument("--session-id")
@@ -293,6 +299,23 @@ def _handle_runtime(args: argparse.Namespace, service: OpenPrecedentService) -> 
             {
                 "case": result.case.model_dump(mode="json"),
                 "imported_event_count": len(result.imported_events),
+                "events": [event.model_dump(mode="json") for event in result.imported_events],
+            }
+        )
+        return 0
+    if args.action == "import-codex-rollout":
+        result = service.import_codex_rollout_jsonl(
+            Path(args.path),
+            case_id=args.case_id,
+            title=args.title,
+            user_id=args.user_id,
+            agent_id=args.agent_id,
+        )
+        _print_json(
+            {
+                "case": result.case.model_dump(mode="json"),
+                "imported_event_count": len(result.imported_events),
+                "unsupported_record_type_counts": result.unsupported_record_type_counts,
                 "events": [event.model_dump(mode="json") for event in result.imported_events],
             }
         )

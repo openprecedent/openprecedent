@@ -143,6 +143,35 @@ def test_service_imports_openclaw_runtime_trace(db_path) -> None:
     assert replay.summary == "Provided the context-graph document summary."
     assert replay.artifacts
 
+
+def test_service_imports_codex_rollout_trace(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_path = Path(__file__).parent / "fixtures" / "codex_rollout.jsonl"
+
+    result = service.import_codex_rollout_jsonl(
+        fixture_path,
+        case_id="case_codex_runtime",
+        title="Codex imported rollout",
+        user_id="u1",
+    )
+
+    assert result.case.case_id == "case_codex_runtime"
+    assert len(result.imported_events) == 6
+    assert result.unsupported_record_type_counts == {"event_msg:task_started": 1}
+
+    events = service.list_events("case_codex_runtime")
+    assert events[0].event_type.value == "case.started"
+    assert any(event.event_type.value == "message.user" for event in events)
+    assert any(event.event_type.value == "message.agent" for event in events)
+    assert any(event.event_type.value == "tool.called" for event in events)
+    assert any(event.event_type.value == "tool.completed" for event in events)
+    assert events[-1].event_type.value == "case.completed"
+
+    replay = service.replay_case("case_codex_runtime")
+    assert replay.case.status.value == "completed"
+    assert replay.summary == "Codex runtime research should stay Codex-specific and avoid generic multi-runtime abstraction for now."
+    assert replay.artifacts
+
 def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"

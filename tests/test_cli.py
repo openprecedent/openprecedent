@@ -201,6 +201,39 @@ def test_cli_import_openclaw_runtime_trace(capsys, db_path) -> None:
     assert replay["summary"] == "Provided the context-graph document summary."
     assert replay["artifacts"]
 
+
+def test_cli_import_codex_rollout_trace(capsys, db_path) -> None:
+    fixture_path = Path(__file__).parent / "fixtures" / "codex_rollout.jsonl"
+
+    result = main(
+        [
+            "runtime",
+            "import-codex-rollout",
+            str(fixture_path),
+            "--case-id",
+            "case_codex_rollout",
+            "--title",
+            "Codex imported rollout",
+            "--user-id",
+            "u1",
+        ]
+    )
+    assert result == 0
+    imported = json.loads(capsys.readouterr().out)
+    assert imported["case"]["case_id"] == "case_codex_rollout"
+    assert imported["imported_event_count"] == 6
+    assert imported["unsupported_record_type_counts"] == {"event_msg:task_started": 1}
+
+    result = main(["replay", "case", "case_codex_rollout", "--json"])
+    assert result == 0
+    replay = json.loads(capsys.readouterr().out)
+    assert replay["case"]["status"] == "completed"
+    assert (
+        replay["summary"]
+        == "Codex runtime research should stay Codex-specific and avoid generic multi-runtime abstraction for now."
+    )
+    assert replay["artifacts"]
+
 def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
