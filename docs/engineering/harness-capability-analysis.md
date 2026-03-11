@@ -45,9 +45,11 @@ Relevant components:
 
 - [AGENTS.md](/workspace/02-projects/incubation/openprecedent/AGENTS.md)
 - [.codex/skills/ccpm-codex/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/ccpm-codex/SKILL.md)
+- [.codex/skills/harness-gap-closure/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/harness-gap-closure/SKILL.md)
 - [codex_pm.py](/workspace/02-projects/incubation/openprecedent/src/openprecedent/codex_pm.py)
 
 This is already better than a normal lightweight repo because it gives Codex a defined delivery state machine instead of relying on memory.
+The harness-gap closure skill also gives the repository a reusable way to convert repeated workflow failures into issue-scoped hardening work instead of relying on ad hoc reminders.
 
 ### 2. Local push guardrails
 
