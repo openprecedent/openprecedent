@@ -21,7 +21,7 @@ To enable the local hook:
 ./scripts/install-hooks.sh
 ```
 
-After that, each push requires a `.codex-review` file in the repository root unless you explicitly bypass the hook.
+After that, each push requires both a `.codex-review` file and a current `.codex-review-proof` file in the repository root unless you explicitly bypass the hook.
 The local hook also expects your branch to contain the latest `upstream/main` by default, so stale branches are caught before push.
 When `gh` can resolve the current PR body, the hook also performs a local issue/task closure sync check before push.
 
@@ -42,9 +42,10 @@ Before pushing, run:
 ```
 
 This is the preferred local checkpoint for invoking native Codex `/review`.
-The script creates a `.codex-review` template if one does not exist and reminds you to run `/review` before push.
+The script creates or refreshes a `.codex-review-proof` file for the current `HEAD`, creates a `.codex-review` template if one does not exist, and reminds you to run `/review` before push.
 
 Then update `.codex-review` with a short review note.
+Pushes now fail if the proof does not match the current `HEAD`, if the note still contains the placeholder review text, or if the note was not updated after the latest checkpoint refresh.
 
 Recommended format:
 

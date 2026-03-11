@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 review_file="$repo_root/.codex-review"
+review_proof_file="${OPENPRECEDENT_REVIEW_PROOF_FILE:-$repo_root/.codex-review-proof}"
 current_branch="$(git branch --show-current)"
 origin_url="$(git remote get-url origin 2>/dev/null || true)"
 base_ref="${OPENPRECEDENT_BASE_REF:-upstream/main}"
@@ -19,6 +20,13 @@ extract_owner() {
     return 0
   fi
   return 1
+}
+
+read_proof_value() {
+  local key="$1"
+  local value
+  value="$(sed -n "s/^${key}=//p" "$review_proof_file" | head -n 1)"
+  printf '%s' "$value"
 }
 
 run_local_pr_closure_check() {
@@ -93,7 +101,9 @@ EOF
   exit 1
 fi
 
-if ! grep -Eq 'scope reviewed|no findings|remaining risks' "$review_file"; then
+if ! grep -Eq '^scope reviewed:' "$review_file" \
+  || ! grep -Eq '^(findings:|no findings$)' "$review_file" \
+  || ! grep -Eq '^remaining risks:' "$review_file"; then
   cat <<'EOF'
 Push blocked: .codex-review exists but is incomplete.
 
@@ -104,6 +114,69 @@ Include at least:
 
 If needed, rerun:
   ./scripts/run-codex-review-checkpoint.sh
+EOF
+  exit 1
+fi
+
+if grep -Fq 'native /review has not been run yet' "$review_file"; then
+  cat <<'EOF'
+Push blocked: .codex-review still contains the checkpoint placeholder.
+
+Run the native Codex /review flow, then replace the placeholder remaining-risks text with the real review outcome before pushing.
+EOF
+  exit 1
+fi
+
+if [[ ! -f "$review_proof_file" ]]; then
+  cat <<'EOF'
+Push blocked: missing .codex-review-proof
+
+Before pushing, run:
+  ./scripts/run-codex-review-checkpoint.sh
+
+The review checkpoint now writes a machine-generated proof for the current HEAD. Pushes require both the review note and a current proof file.
+EOF
+  exit 1
+fi
+
+proof_head_sha="$(read_proof_value head_sha)"
+proof_branch="$(read_proof_value branch)"
+current_head_sha="$(git rev-parse HEAD)"
+
+if [[ -z "$proof_head_sha" ]]; then
+  echo "Push blocked: .codex-review-proof is missing head_sha."
+  exit 1
+fi
+
+if [[ "$proof_head_sha" != "$current_head_sha" ]]; then
+  cat <<EOF
+Push blocked: .codex-review-proof does not match the current HEAD.
+
+Proof HEAD:   $proof_head_sha
+Current HEAD: $current_head_sha
+
+Rerun ./scripts/run-codex-review-checkpoint.sh and update .codex-review after the native Codex /review step.
+EOF
+  exit 1
+fi
+
+if [[ -n "$current_branch" ]] && [[ -n "$proof_branch" ]] && [[ "$proof_branch" != "$current_branch" ]]; then
+  cat <<EOF
+Push blocked: .codex-review-proof was generated for a different branch.
+
+Proof branch:   $proof_branch
+Current branch: $current_branch
+
+Rerun ./scripts/run-codex-review-checkpoint.sh on the current branch.
+EOF
+  exit 1
+fi
+
+if [[ "$review_file" -ot "$review_proof_file" ]]; then
+  cat <<'EOF'
+Push blocked: .codex-review has not been updated since the latest review checkpoint.
+
+After running ./scripts/run-codex-review-checkpoint.sh, run the native Codex /review flow and update .codex-review with the actual findings before pushing.
 EOF
   exit 1
 fi
