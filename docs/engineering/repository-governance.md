@@ -77,6 +77,7 @@ Additional branch hygiene rule:
 - once a pull request branch has been merged, that branch must be treated as closed
 - any follow-up work must start from a new branch created from the latest `upstream/main`
 - do not append new commits to a branch that already maps to a merged PR
+- local PR creation should use the repository-local `codex_pm pr-create` path so upstream targeting does not drift to a fork by accident
 
 ## Review Gate Model
 

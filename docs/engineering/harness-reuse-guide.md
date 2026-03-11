@@ -31,6 +31,7 @@ Key capabilities:
 - issue-scoped development state
 - explicit task types such as `implementation`, `docs`, `research`, and `umbrella`
 - PR-body and task-closure sync checks
+- repository-local PR creation that pins the upstream repo and fork head explicitly
 
 ### 2. Local guardrail layer
 

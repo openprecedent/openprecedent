@@ -25,6 +25,14 @@ After that, each push requires a `.codex-review` file in the repository root unl
 The local hook also expects your branch to contain the latest `upstream/main` by default, so stale branches are caught before push.
 When `gh` can resolve the current PR body, the hook also performs a local issue/task closure sync check before push.
 
+For PR creation, prefer the repository-local command:
+
+```bash
+python3 -m openprecedent.codex_pm pr-create .codex/pm/tasks/<epic>/<task>.md --tests "<cmd>"
+```
+
+This command forces the upstream target repo and explicit fork head reference instead of relying on whatever repository context `gh` infers from the local clone.
+
 ## Codex Review Hook
 
 Before pushing, run:
