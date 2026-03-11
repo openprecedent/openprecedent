@@ -487,6 +487,152 @@ def test_codex_pm_pr_body_omits_closing_clause_for_umbrella_task(tmp_path: Path,
     assert "Closes #100" not in pr_body
 
 
+def test_codex_pm_pr_create_uses_explicit_upstream_repo_and_fork_head(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "pr-targeting",
+                "--title",
+                "Harden PR targeting",
+                "--issue",
+                "136",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "pr-targeting.md"
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        calls.append(cmd)
+        if cmd == ["git", "branch", "--show-current"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="codex/harden-pr-targeting\n", stderr="")
+        if cmd == ["git", "remote", "get-url", "origin"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="git@github.com:yaoyinnan/openprecedent.git\n", stderr="")
+        if cmd == ["git", "remote", "get-url", "upstream"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="https://github.com/openprecedent/openprecedent.git\n", stderr="")
+        if cmd[:3] == ["gh", "pr", "create"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="https://github.com/openprecedent/openprecedent/pull/999\n", stderr="")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert (
+        main(
+            [
+                "pr-create",
+                str(task_path),
+                "--tests",
+                "PYTHONPATH=src .venv/bin/pytest tests/test_codex_pm.py",
+            ]
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+
+    assert "https://github.com/openprecedent/openprecedent/pull/999" in output
+    gh_call = next(cmd for cmd in calls if cmd[:3] == ["gh", "pr", "create"])
+    assert "--repo" in gh_call
+    assert gh_call[gh_call.index("--repo") + 1] == "openprecedent/openprecedent"
+    assert gh_call[gh_call.index("--head") + 1] == "yaoyinnan:codex/harden-pr-targeting"
+    assert gh_call[gh_call.index("--base") + 1] == "main"
+
+
+def test_codex_pm_pr_create_fails_when_origin_owner_is_ambiguous(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "pr-targeting",
+                "--title",
+                "Harden PR targeting",
+                "--issue",
+                "136",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "pr-targeting.md"
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        if cmd == ["git", "branch", "--show-current"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="codex/harden-pr-targeting\n", stderr="")
+        if cmd == ["git", "remote", "get-url", "origin"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="ssh://internal.example/openprecedent.git\n", stderr="")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert main(["pr-create", str(task_path)]) == 1
+    assert "could not derive the fork owner from the origin remote" in capsys.readouterr().err
+
+
+def test_codex_pm_pr_create_fails_when_upstream_repo_does_not_match(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "pr-targeting",
+                "--title",
+                "Harden PR targeting",
+                "--issue",
+                "136",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "pr-targeting.md"
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        if cmd == ["git", "branch", "--show-current"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="codex/harden-pr-targeting\n", stderr="")
+        if cmd == ["git", "remote", "get-url", "origin"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="git@github.com:yaoyinnan/openprecedent.git\n", stderr="")
+        if cmd == ["git", "remote", "get-url", "upstream"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="https://github.com/someone-else/openprecedent.git\n", stderr="")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert main(["pr-create", str(task_path)]) == 1
+    assert "upstream remote points to someone-else/openprecedent" in capsys.readouterr().err
+
+
 def test_codex_pm_issue_state_init_creates_state_doc_and_updates_task(
     tmp_path: Path,
     monkeypatch,

@@ -17,6 +17,7 @@ CLOSING_ISSUE_PATTERN = re.compile(
     r"\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)\b",
     re.IGNORECASE,
 )
+GITHUB_REMOTE_PATTERN = re.compile(r"github\.com[:/]([^/]+)/([^/.]+?)(?:\.git)?$")
 
 
 @dataclass
@@ -87,6 +88,16 @@ def build_parser() -> argparse.ArgumentParser:
     pr_body.add_argument("path")
     pr_body.add_argument("--issue", type=int)
     pr_body.add_argument("--tests", action="append", default=[])
+
+    pr_create = subparsers.add_parser("pr-create")
+    pr_create.add_argument("path")
+    pr_create.add_argument("--issue", type=int)
+    pr_create.add_argument("--tests", action="append", default=[])
+    pr_create.add_argument("--title")
+    pr_create.add_argument("--base-repo", default="openprecedent/openprecedent")
+    pr_create.add_argument("--base-branch", default="main")
+    pr_create.add_argument("--head-owner")
+    pr_create.add_argument("--head-branch")
 
     verify_pr_closure = subparsers.add_parser("verify-pr-closure-sync")
     verify_pr_closure.add_argument("--pr-body")
@@ -264,6 +275,28 @@ def main(argv: list[str] | None = None) -> int:
         document = _read_document(Path(args.path))
         print(_render_pr_body(document, issue=args.issue, tests=args.tests))
         return 0
+    if args.action == "pr-create":
+        document = _read_document(Path(args.path))
+        try:
+            pr_url = _create_pr(
+                document,
+                issue=args.issue,
+                tests=args.tests,
+                title=args.title,
+                base_repo=args.base_repo,
+                base_branch=args.base_branch,
+                head_owner=args.head_owner,
+                head_branch=args.head_branch,
+            )
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        except subprocess.CalledProcessError as exc:
+            message = exc.stderr.strip() or exc.stdout.strip() or str(exc)
+            print(message, file=sys.stderr)
+            return exc.returncode or 1
+        print(pr_url)
+        return 0
     if args.action == "verify-pr-closure-sync":
         pr_body = _resolve_pr_body(args.pr_body, args.event_path)
         changed_files = _resolve_changed_files(
@@ -397,13 +430,26 @@ def _doc_to_dict(document: PMDocument) -> dict[str, object]:
 
 
 def _current_branch() -> str:
+    return _git_output(["git", "branch", "--show-current"]) or ""
+
+
+def _git_output(args: list[str]) -> str | None:
     result = subprocess.run(
-        ["git", "branch", "--show-current"],
+        args,
         check=False,
         capture_output=True,
         text=True,
     )
+    if result.returncode != 0:
+        return None
     return result.stdout.strip()
+
+
+def _parse_github_remote(remote_url: str) -> tuple[str, str] | None:
+    match = GITHUB_REMOTE_PATTERN.search(remote_url)
+    if match is None:
+        return None
+    return match.group(1), match.group(2)
 
 
 def _parse_issue_from_branch(branch: str) -> int | None:
@@ -540,6 +586,74 @@ def _render_pr_body(document: PMDocument, *, issue: int | None, tests: list[str]
         for test in tests:
             lines.append(f"- `{test}`")
     return "\n".join(lines).rstrip()
+
+
+def _create_pr(
+    document: PMDocument,
+    *,
+    issue: int | None,
+    tests: list[str],
+    title: str | None,
+    base_repo: str,
+    base_branch: str,
+    head_owner: str | None,
+    head_branch: str | None,
+) -> str:
+    branch = head_branch or _current_branch()
+    if not branch:
+        raise ValueError("PR creation failed: current branch is unavailable.")
+
+    origin_url = _git_output(["git", "remote", "get-url", "origin"])
+    if head_owner is None:
+        if origin_url is None:
+            raise ValueError("PR creation failed: origin remote is unavailable.")
+        origin_remote = _parse_github_remote(origin_url)
+        if origin_remote is None:
+            raise ValueError(
+                "PR creation failed: could not derive the fork owner from the origin remote. "
+                "Pass --head-owner explicitly."
+            )
+        head_owner = origin_remote[0]
+
+    upstream_url = _git_output(["git", "remote", "get-url", "upstream"])
+    if upstream_url is not None:
+        upstream_remote = _parse_github_remote(upstream_url)
+        if upstream_remote is None:
+            raise ValueError(
+                "PR creation failed: could not parse the upstream remote. "
+                "Fix the upstream remote or pass --base-repo explicitly."
+            )
+        upstream_repo = f"{upstream_remote[0]}/{upstream_remote[1]}"
+        if upstream_repo != base_repo:
+            raise ValueError(
+                f"PR creation failed: upstream remote points to {upstream_repo}, not {base_repo}. "
+                "Use the intended upstream repository explicitly."
+            )
+
+    pr_title = title or document.metadata.get("title") or document.path.stem
+    pr_body = _render_pr_body(document, issue=issue, tests=tests)
+
+    result = subprocess.run(
+        [
+            "gh",
+            "pr",
+            "create",
+            "--repo",
+            base_repo,
+            "--base",
+            base_branch,
+            "--head",
+            f"{head_owner}:{branch}",
+            "--title",
+            pr_title,
+            "--body",
+            pr_body,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
 
 
 def _parse_issue_number(value: str) -> int | None:
