@@ -44,7 +44,7 @@ Give Codex a narrow, inspectable runtime workflow for:
   --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
 ```
 
-4. Add context when needed.
+1. Add context when needed.
    Useful optional flags:
    - `--current-plan`
    - `--candidate-action`
@@ -52,7 +52,7 @@ Give Codex a narrow, inspectable runtime workflow for:
    - `--case-id`
    - `--session-id`
 
-5. If later inspection matters, use:
+2. If later inspection matters, use:
 
 ```bash
 ./scripts/run-codex-decision-lineage-workflow.sh \
