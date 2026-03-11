@@ -276,6 +276,7 @@ This command is intentionally minimal.
 It imports one Codex rollout JSONL file into replayable `case` and `event` records so later extraction and precedent work can build on real Codex development history.
 The importer also strips low-value Codex runtime wrapper noise such as transport metadata, duplicated prompt mirrors, token-count records, and command-output wrapper lines that do not help replay or semantic interpretation.
 Imported Codex rollout history now also flows through the same semantic decision taxonomy as the rest of the repository, including task framing, constraints, clarifications, success criteria, rejected options, and explicit approval signals found in user guidance.
+The current precedent-quality validation for Codex-derived history is recorded in [codex-precedent-retrieval-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-precedent-retrieval-validation.md).
 
 ### Runtime decision-lineage brief
 

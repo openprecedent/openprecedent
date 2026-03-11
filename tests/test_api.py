@@ -243,6 +243,33 @@ def test_service_extracts_semantic_decisions_from_codex_rollout(db_path) -> None
     assert "def extract_decisions(self, case_id: str) -> list[Decision]:" not in operational_texts
     assert "exec_command" not in operational_texts
 
+
+def test_service_precedent_prefers_semantically_related_codex_case(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+    fixture_root = Path(__file__).parent / "fixtures"
+
+    imports = [
+        ("case_codex_precedent_current", "Current Codex docs-only recommendation", "codex_rollout_precedent_current.jsonl"),
+        ("case_codex_precedent_semantic", "Semantic Codex docs-only precedent", "codex_rollout_precedent_semantic_match.jsonl"),
+        ("case_codex_precedent_operational", "Operationally similar Codex summary", "codex_rollout_precedent_operational_overlap.jsonl"),
+    ]
+    for case_id, title, filename in imports:
+        service.import_codex_rollout_jsonl(
+            fixture_root / filename,
+            case_id=case_id,
+            title=title,
+            user_id="u1",
+        )
+        service.extract_decisions(case_id)
+
+    precedents = service.find_precedents("case_codex_precedent_current", limit=2)
+
+    assert len(precedents) == 2
+    assert precedents[0].case_id == "case_codex_precedent_semantic"
+    assert precedents[0].similarity_score > precedents[1].similarity_score
+    assert any("constraint_adopted" in item.lower() for item in precedents[0].similarities)
+    assert precedents[1].case_id == "case_codex_precedent_operational"
+
 def test_service_lists_and_imports_openclaw_session(db_path, tmp_path: Path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
