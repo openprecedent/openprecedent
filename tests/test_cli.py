@@ -313,6 +313,44 @@ def test_cli_extracts_semantic_decisions_from_codex_rollout(capsys, db_path) -> 
     assert authority["requires_human_confirmation"] is True
     assert authority["chosen_action"] == "Approved. Continue within that Codex-only scope."
 
+
+def test_cli_precedent_prefers_semantically_related_codex_case(capsys, db_path) -> None:
+    fixture_root = Path(__file__).parent / "fixtures"
+    imports = [
+        ("case_codex_precedent_current", "Current Codex docs-only recommendation", "codex_rollout_precedent_current.jsonl"),
+        ("case_codex_precedent_semantic", "Semantic Codex docs-only precedent", "codex_rollout_precedent_semantic_match.jsonl"),
+        ("case_codex_precedent_operational", "Operationally similar Codex summary", "codex_rollout_precedent_operational_overlap.jsonl"),
+    ]
+
+    for case_id, title, filename in imports:
+        result = main(
+            [
+                "runtime",
+                "import-codex-rollout",
+                str(fixture_root / filename),
+                "--case-id",
+                case_id,
+                "--title",
+                title,
+                "--user-id",
+                "u1",
+            ]
+        )
+        assert result == 0
+        capsys.readouterr()
+        result = main(["extract", "decisions", case_id])
+        assert result == 0
+        capsys.readouterr()
+
+    result = main(["precedent", "find", "case_codex_precedent_current", "--limit", "2"])
+    assert result == 0
+    precedents = json.loads(capsys.readouterr().out)
+
+    assert len(precedents) == 2
+    assert precedents[0]["case_id"] == "case_codex_precedent_semantic"
+    assert precedents[0]["similarity_score"] > precedents[1]["similarity_score"]
+    assert precedents[1]["case_id"] == "case_codex_precedent_operational"
+
 def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"

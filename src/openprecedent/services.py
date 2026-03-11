@@ -396,13 +396,14 @@ class OpenPrecedentService:
 
         imported: list[Event] = []
         unsupported_record_type_counts: Counter[str] = Counter()
+        rollout_id_prefix = _codex_rollout_id_prefix(path)
         with path.open("r", encoding="utf-8") as handle:
             for line_no, line in enumerate(handle, start=1):
                 stripped = line.strip()
                 if not stripped:
                     continue
                 raw_item = json.loads(stripped)
-                normalized = self._normalize_codex_rollout_line(raw_item, line_no)
+                normalized = self._normalize_codex_rollout_line(raw_item, line_no, rollout_id_prefix=rollout_id_prefix)
                 if normalized is None:
                     unsupported_record_type_counts[_codex_rollout_record_type(raw_item)] += 1
                     continue
@@ -1565,6 +1566,8 @@ class OpenPrecedentService:
         self,
         raw_item: dict[str, object],
         line_no: int,
+        *,
+        rollout_id_prefix: str,
     ) -> AppendEventInput | None:
         kind = _string_or_none(raw_item.get("type"))
         if kind is None:
@@ -1576,7 +1579,7 @@ class OpenPrecedentService:
         if kind == "session_meta":
             session_payload = payload if isinstance(payload, dict) else {}
             return AppendEventInput(
-                event_id=_string_or_none(session_payload.get("id")) or f"codex-session-{line_no}",
+                event_id=_string_or_none(session_payload.get("id")) or f"{rollout_id_prefix}-session-{line_no}",
                 event_type=EventType.CASE_STARTED,
                 actor=EventActor.SYSTEM,
                 timestamp=timestamp,
@@ -1594,7 +1597,7 @@ class OpenPrecedentService:
             subtype = _string_or_none(payload.get("type"))
             if subtype == "user_message":
                 return AppendEventInput(
-                    event_id=f"codex-user-{line_no}",
+                    event_id=f"{rollout_id_prefix}-user-{line_no}",
                     event_type=EventType.MESSAGE_USER,
                     actor=EventActor.USER,
                     timestamp=timestamp,
@@ -1605,7 +1608,7 @@ class OpenPrecedentService:
                 )
             if subtype == "agent_message":
                 return AppendEventInput(
-                    event_id=f"codex-agent-{line_no}",
+                    event_id=f"{rollout_id_prefix}-agent-{line_no}",
                     event_type=EventType.MESSAGE_AGENT,
                     actor=EventActor.AGENT,
                     timestamp=timestamp,
@@ -1617,7 +1620,7 @@ class OpenPrecedentService:
                 )
             if subtype == "task_complete":
                 return AppendEventInput(
-                    event_id=f"codex-complete-{line_no}",
+                    event_id=f"{rollout_id_prefix}-complete-{line_no}",
                     event_type=EventType.CASE_COMPLETED,
                     actor=EventActor.SYSTEM,
                     timestamp=timestamp,
@@ -1634,7 +1637,7 @@ class OpenPrecedentService:
             if subtype in {"function_call", "custom_tool_call", "web_search_call"}:
                 tool_name = _string_or_none(payload.get("name")) or subtype
                 return AppendEventInput(
-                    event_id=_string_or_none(payload.get("call_id")) or f"codex-tool-call-{line_no}",
+                    event_id=_string_or_none(payload.get("call_id")) or f"{rollout_id_prefix}-tool-call-{line_no}",
                     event_type=EventType.TOOL_CALLED,
                     actor=EventActor.AGENT,
                     timestamp=timestamp,
@@ -1650,7 +1653,7 @@ class OpenPrecedentService:
                 )
             if subtype in {"function_call_output", "custom_tool_call_output"}:
                 return AppendEventInput(
-                    event_id=f"{_string_or_none(payload.get('call_id')) or f'codex-tool-output-{line_no}'}-output",
+                    event_id=f"{_string_or_none(payload.get('call_id')) or f'{rollout_id_prefix}-tool-output-{line_no}'}-output",
                     event_type=EventType.TOOL_COMPLETED,
                     actor=EventActor.TOOL,
                     timestamp=timestamp,
@@ -1951,6 +1954,11 @@ def _codex_arguments_to_payload(value: object) -> dict[str, object]:
             return parsed
         return {"raw": value}
     return {}
+
+
+def _codex_rollout_id_prefix(path: Path) -> str:
+    sanitized = re.sub(r"[^a-z0-9]+", "-", path.stem.lower()).strip("-")
+    return sanitized or "codex-rollout"
 
 
 def _normalize_codex_tool_arguments(
