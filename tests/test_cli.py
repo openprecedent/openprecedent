@@ -1129,6 +1129,34 @@ def test_openclaw_live_validation_skill_exists() -> None:
     assert "triggered with non-empty brief" in content
 
 
+def test_codex_runtime_decision_lineage_skill_exists() -> None:
+    skill_path = (
+        Path(__file__).parent.parent
+        / ".codex"
+        / "skills"
+        / "codex-runtime-decision-lineage"
+        / "SKILL.md"
+    )
+    workflow_path = (
+        Path(__file__).parent.parent
+        / "docs"
+        / "engineering"
+        / "codex-runtime-decision-lineage-workflow.md"
+    )
+
+    content = skill_path.read_text(encoding="utf-8")
+    workflow = workflow_path.read_text(encoding="utf-8")
+
+    assert content.startswith("---\n")
+    assert "name: codex-runtime-decision-lineage" in content
+    assert "./scripts/run-codex-decision-lineage-workflow.sh" in content
+    assert "--inspect-latest" in content
+    assert "Codex-driven development work" in content
+    assert "minimal Codex-facing runtime workflow" in workflow
+    assert "openprecedent runtime list-decision-lineage-invocations" in workflow
+    assert "python3 -m openprecedent.cli runtime" not in workflow
+
+
 def test_tooling_setup_mentions_live_validation_skill() -> None:
     path = Path(__file__).parent.parent / "docs" / "engineering" / "tooling-setup.md"
 
