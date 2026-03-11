@@ -38,6 +38,7 @@ The first implementation target is a local single-agent workflow. The current go
 
 - For project-management work in this repository, use the local skill at `.codex/skills/ccpm-codex/`.
 - Use it for PRD, epic, task, issue, and PR workflow management instead of inventing an ad hoc process each time.
+- When a repeated workflow failure reveals a missing local guardrail, use `.codex/skills/harness-gap-closure/` to turn that failure into issue-scoped harness hardening with regression follow-through.
 
 ## Documentation Rules
 

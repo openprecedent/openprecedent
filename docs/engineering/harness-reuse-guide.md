@@ -19,6 +19,7 @@ Main components:
 
 - [AGENTS.md](/workspace/02-projects/incubation/openprecedent/AGENTS.md)
 - [.codex/skills/ccpm-codex/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/ccpm-codex/SKILL.md)
+- [.codex/skills/harness-gap-closure/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/harness-gap-closure/SKILL.md)
 - [codex_pm.py](/workspace/02-projects/incubation/openprecedent/src/openprecedent/codex_pm.py)
 - `.codex/pm/tasks/`
 - `.codex/pm/issue-state/`
@@ -32,6 +33,7 @@ Key capabilities:
 - explicit task types such as `implementation`, `docs`, `research`, and `umbrella`
 - PR-body and task-closure sync checks
 - repository-local PR creation that pins the upstream repo and fork head explicitly
+- a reusable workflow for turning repeated failures into harness hardening work
 
 ### 2. Local guardrail layer
 
