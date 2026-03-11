@@ -847,6 +847,21 @@ class OpenPrecedentService:
                             confidence=0.82,
                         )
                     )
+                if message is not None and is_new_user_intent and _looks_like_authority_confirmation(message):
+                    extracted.append(
+                        self._build_decision(
+                            case_id=case_id,
+                            decision_type=DecisionType.AUTHORITY_CONFIRMED,
+                            title="Authority confirmed",
+                            question="What approval or decision authority was confirmed?",
+                            chosen_action=message,
+                            evidence_event_ids=[event.event_id],
+                            constraints=["Human approval established the allowed path forward"],
+                            selection_reason="The user message explicitly approved or authorized the current direction.",
+                            outcome=message,
+                            confidence=0.86,
+                        ).model_copy(update={"requires_human_confirmation": True})
+                    )
                 if message is not None:
                     prior_user_messages.append(message)
             elif event.event_type == EventType.USER_CONFIRMED:
@@ -2145,6 +2160,15 @@ _OPTION_REJECTION_MARKERS = (
     "rather than",
     "skip ",
 )
+_AUTHORITY_CONFIRMATION_MARKERS = (
+    "approved",
+    "approval granted",
+    "go ahead",
+    "you can proceed",
+    "proceed with",
+    "continue with",
+    "continue within",
+)
 
 
 def _looks_like_task_frame(message: str) -> bool:
@@ -2165,6 +2189,11 @@ def _looks_like_success_criteria(message: str) -> bool:
 def _looks_like_option_rejection(message: str) -> bool:
     normalized = _normalize_message_intent(message)
     return any(marker in normalized for marker in _OPTION_REJECTION_MARKERS)
+
+
+def _looks_like_authority_confirmation(message: str) -> bool:
+    normalized = _normalize_message_intent(message)
+    return any(marker in normalized for marker in _AUTHORITY_CONFIRMATION_MARKERS)
 
 
 def _decision_texts(

@@ -277,6 +277,42 @@ def test_cli_import_codex_rollout_strips_noise(capsys, db_path) -> None:
         "The goal is not to make OpenPrecedent generic."
     )
 
+
+def test_cli_extracts_semantic_decisions_from_codex_rollout(capsys, db_path) -> None:
+    fixture_path = Path(__file__).parent / "fixtures" / "codex_rollout_semantic.jsonl"
+
+    result = main(
+        [
+            "runtime",
+            "import-codex-rollout",
+            str(fixture_path),
+            "--case-id",
+            "case_codex_semantic",
+            "--title",
+            "Codex semantic rollout",
+            "--user-id",
+            "u1",
+        ]
+    )
+    assert result == 0
+    capsys.readouterr()
+
+    result = main(["extract", "decisions", "case_codex_semantic"])
+    assert result == 0
+    decisions = json.loads(capsys.readouterr().out)
+    decision_types = [item["decision_type"] for item in decisions]
+
+    assert "constraint_adopted" in decision_types
+    assert "success_criteria_set" in decision_types
+    assert "option_rejected" in decision_types
+    assert "task_frame_defined" in decision_types
+    assert "clarification_resolved" in decision_types
+    assert "authority_confirmed" in decision_types
+
+    authority = next(item for item in decisions if item["decision_type"] == "authority_confirmed")
+    assert authority["requires_human_confirmation"] is True
+    assert authority["chosen_action"] == "Approved. Continue within that Codex-only scope."
+
 def test_cli_lists_and_imports_openclaw_sessions(capsys, db_path, tmp_path: Path) -> None:
     fixture_dir = Path(__file__).parent / "fixtures" / "openclaw_sessions"
     sessions_dir = tmp_path / "sessions"
