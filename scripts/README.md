@@ -13,6 +13,8 @@ Notable operational entrypoints:
 - `run-codex-review-checkpoint.sh` creates or refreshes the local review note and the current-HEAD review proof before invoking native Codex `/review`
 - `export_harnesshub_codex_round.py` exports one completed HarnessHub Codex development round as a minimal importable searchable-history bundle
 - `import_harnesshub_codex_round.py` imports one exported HarnessHub round bundle into the shared runtime and extracts decisions
+- `sync_harnesshub_shared_runtime.py` backfills and incrementally auto-seeds the shared runtime from completed HarnessHub rounds
+- `run-harnesshub-decision-lineage-workflow.sh` auto-syncs completed HarnessHub rounds into the shared runtime before running the standard decision-lineage workflow
 - `run-harnesshub-matched-case-validation.sh` imports one prior HarnessHub round bundle, runs a later semantically related runtime query, and writes matched-case summary artifacts
 - `triage_pr_checks.py` summarizes and classifies current PR check results for faster CI diagnosis
 - `install-collector-assets.sh` renders `systemd` / `cron` assets against the current repo path
