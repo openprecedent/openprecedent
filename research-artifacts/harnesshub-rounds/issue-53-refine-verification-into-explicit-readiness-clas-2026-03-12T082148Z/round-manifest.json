@@ -1,0 +1,25 @@
+{
+  "study": "harnesshub",
+  "issue": 53,
+  "case_id": "case_harnesshub_issue_53_refine-verification-into-explicit-readiness-clas",
+  "case_title": "HarnessHub issue #53: Refine verification into explicit readiness classes",
+  "repo_root": "/workspace/02-projects/active/HarnessHub",
+  "task_path": "/workspace/02-projects/active/HarnessHub/.codex/pm/tasks/product-direction/refine-verification-into-explicit-readiness-classes.md",
+  "state_path": "/workspace/02-projects/active/HarnessHub/.codex/pm/issue-state/53-refine-verification-into-explicit-readiness-classes.md",
+  "runtime_home": "/root/.openprecedent/runtime",
+  "commit": "ae90c768904d773b3e961b1a6bf840d58633af1e",
+  "runtime_invocation_count": 1,
+  "artifact_files": [
+    "source-task.md",
+    "source-issue-state.md",
+    "source-runtime-invocations.jsonl",
+    "source-commit.json",
+    "events.jsonl"
+  ],
+  "import_hints": {
+    "case_id": "case_harnesshub_issue_53_refine-verification-into-explicit-readiness-clas",
+    "title": "HarnessHub issue #53: Refine verification into explicit readiness classes",
+    "agent_id": "codex",
+    "event_import_path": "events.jsonl"
+  }
+}
