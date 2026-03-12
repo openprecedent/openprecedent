@@ -1232,3 +1232,56 @@ def test_service_fixture_suite_includes_operational_negative_case(db_path) -> No
     assert operational_only.actual_decision_types == []
     assert operational_only.missing_decision_types == []
     assert operational_only.extra_decision_types == []
+
+
+def test_service_prefers_semantically_closer_harnesshub_case_under_wording_drift(db_path) -> None:
+    service = OpenPrecedentService.from_path(get_db_path())
+
+    real_harnesshub_cases = (
+        (
+            "case_harnesshub_issue_45",
+            "HarnessHub issue #45: Separate structural restore from runtime-ready verification",
+            [
+                "Split verification semantics so HarnessHub can distinguish between a structurally restored import and a runtime-ready environment.",
+                "Define structural restore and runtime readiness as separate verification levels for imported images.",
+                "Clarify which imported environments are intact versus actually ready for use.",
+            ],
+        ),
+        (
+            "case_harnesshub_issue_53",
+            "HarnessHub issue #53: Refine verification into explicit readiness classes",
+            [
+                "Refine verification semantics beyond a boolean runtime-ready signal into explicit readiness classes that describe what kind of follow-up, if any, is still required.",
+                "Map current runtime-readiness issues into explicit readiness classes for imported images and update operator-facing verification output.",
+                "Replace a yes/no readiness signal with operator-facing stages that explain what extra setup reused images still need.",
+            ],
+        ),
+    )
+
+    for case_id, title, messages in real_harnesshub_cases:
+        service.create_case(CreateCaseInput(case_id=case_id, title=title))
+        for index, message in enumerate(messages, start=1):
+            is_user_turn = index % 2 == 1
+            service.append_event(
+                case_id,
+                AppendEventInput(
+                    event_type=EventType.MESSAGE_USER if is_user_turn else EventType.MESSAGE_AGENT,
+                    actor=EventActor.USER if is_user_turn else EventActor.AGENT,
+                    payload={"message": message},
+                    sequence_no=index,
+                ),
+            )
+        service.extract_decisions(case_id)
+
+    brief = service.build_decision_lineage_brief(
+        DecisionLineageBriefInput(
+            query_reason=DecisionLineageQueryReason.BEFORE_FILE_WRITE,
+            task_summary="Differentiate setup stages for restored images so operators know what is required.",
+            limit=2,
+        )
+    )
+
+    assert [item.case_id for item in brief.matched_cases[:2]] == [
+        "case_harnesshub_issue_53",
+        "case_harnesshub_issue_45",
+    ]
