@@ -1,0 +1,17 @@
+{
+  "sha": "ae90c768904d773b3e961b1a6bf840d58633af1e",
+  "subject": "Add explicit verification readiness classes",
+  "authored_at": "2026-03-12T15:46:00+08:00",
+  "author_name": "root",
+  "changed_files": [
+    ".codex/pm/issue-state/53-refine-verification-into-explicit-readiness-classes.md",
+    ".codex/pm/tasks/product-direction/refine-verification-into-explicit-readiness-classes.md",
+    "scripts/run-openclaw-e2e-validation.sh",
+    "src/core/types.ts",
+    "src/core/verifier.ts",
+    "src/utils/output.ts",
+    "test/cli-integration.test.ts",
+    "test/e2e.test.ts",
+    "test/openclaw-e2e-script.test.ts"
+  ]
+}
