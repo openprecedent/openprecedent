@@ -35,6 +35,11 @@ Use Codex as a second, research-only runtime so OpenPrecedent can gather dense r
 - `#129` Validate precedent retrieval quality on Codex real development history
 - `#130` Encapsulate OpenPrecedent as a Codex-facing minimal runtime workflow
 - `#131` Validate Codex real-project decision-lineage reuse across project development
+- `#152` Export completed HarnessHub Codex rounds as importable searchable-history artifacts
+- `#153` Import exported HarnessHub rounds into the shared runtime and extract decisions
+- `#154` Validate non-empty matched_case_ids for a later HarnessHub runtime query
+- `#155` Improve HarnessHub decision-lineage matching beyond lexical overlap
+- `#161` Auto-seed shared runtime from completed HarnessHub rounds
 - `#163` Research contamination controls for decision-lineage retrieval
 
 ## Notes
