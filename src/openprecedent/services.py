@@ -2028,6 +2028,8 @@ def _tokenize_keywords(text: str) -> set[str]:
                 for part in re.split(r"[/._-]+", token)
                 if len(part) >= 3 and part not in _STOP_WORDS
             )
+    for token in list(expanded):
+        expanded.update(_SEMANTIC_ALIAS_MAP.get(token, ()))
     return expanded
 
 
@@ -2422,6 +2424,27 @@ _STOP_WORDS = {
     "tool",
     "command",
     "agent",
+}
+
+_SEMANTIC_ALIAS_MAP: dict[str, tuple[str, ...]] = {
+    "bring": ("readiness", "runtime"),
+    "bringup": ("readiness", "runtime"),
+    "categories": ("classes",),
+    "category": ("classes",),
+    "class": ("classes",),
+    "differentiate": ("split",),
+    "followup": ("required", "follow-up"),
+    "handoff": ("required",),
+    "images": ("imported",),
+    "needed": ("required",),
+    "operators": ("operator",),
+    "restored": ("restore", "imported"),
+    "setup": ("required",),
+    "stage": ("classes",),
+    "stages": ("classes",),
+    "state": ("classes",),
+    "states": ("classes",),
+    "wiring": ("required",),
 }
 
 
