@@ -9,6 +9,7 @@ Can OpenPrecedent lineage and harness practice materially improve real Codex dev
 - multiple issue-scoped HarnessHub development rounds were executed with runtime decision-lineage invocations recorded at `initial_planning`, `before_file_write`, and selected repair points
 - repeated observation and sanitized archival were performed against the shared runtime invocation log
 - a systematic diagnosis was performed on the shared runtime database, runtime workflow scripts, and retrieval implementation after `matched_case_ids` remained empty across repeated HarnessHub rounds
+- the missing searchable-history loop was then closed through issues `#152`, `#153`, `#154`, `#155`, and `#161`, followed by a later live HarnessHub round that queried against the seeded shared runtime
 
 ## Observed Result
 
@@ -16,47 +17,54 @@ Can OpenPrecedent lineage and harness practice materially improve real Codex dev
   - cross-session research instrumentation
   - issue-scoped scope-discipline support
   - a durable decision externalization layer during HarnessHub development
-- OpenPrecedent is not yet validated as an effective precedent-hit layer for HarnessHub runtime use
-- the strongest immediate reason is structural: the shared runtime database currently contains no searchable HarnessHub history
-  - `cases = 0`
-  - `decisions = 0`
-  - `events = 0`
-- the current Codex runtime workflow records invocation logs but does not continuously ingest completed external-project Codex rounds into searchable runtime cases
-- even after that pipeline gap is fixed, the current brief matcher still ranks primarily by lexical token overlap, so semantically related but differently worded HarnessHub issues will remain easy to miss
+- OpenPrecedent is now also validated as an effective precedent-hit layer for live HarnessHub runtime use at the current research threshold
+- after the shared-runtime seeding and retrieval-quality follow-up chain was completed, later live HarnessHub runtime queries returned non-empty `matched_case_ids`
+- the strongest concrete validation moment came during HarnessHub issue `#67`, where the returned matched cases grounded later product-positioning work in prior imported HarnessHub foundation and image-spec decisions rather than forcing the session to reframe the problem from scratch
+- at the observed successful live-reuse point, the shared runtime contained non-zero searchable history:
+  - `cases = 19`
+  - `decisions = 73`
+  - `events = 154`
+- the remaining limitation is no longer “the live precedent loop is unbuilt”; it is now quality-oriented:
+  - match strength can still degrade under partial semantic overlap or contamination from only partly related prior cases
+  - more imported HarnessHub rounds will still improve confidence and retrieval evaluation depth
 
 ## Interpretation
 
-The current evidence does not show that precedent retrieval has failed on real HarnessHub work.
-It shows that the retrieval layer has not yet been given the minimum searchable history it needs to operate.
+The current evidence now supports the main hypothesis for issue `#131`.
+OpenPrecedent decision-lineage retrieval is no longer only useful as instrumentation or post-hoc explanation in HarnessHub.
+It has now been shown to retrieve imported prior HarnessHub cases back into a later live development session strongly enough to influence a real product-positioning decision.
 
-The problem decomposes into three layers:
+The earlier “no matched cases” result was still valuable because it correctly identified the missing chain:
 
 1. pipeline gap
-   - completed HarnessHub rounds are not yet converted into searchable runtime cases and decisions
+   - completed HarnessHub rounds had to become searchable runtime cases and decisions
 2. retrieval quality gap
-   - the current matcher still relies mainly on lexical overlap
+   - the matcher needed to improve enough to survive wording drift across related issues
 3. sample volume gap
-   - even after the first two layers improve, the study will still need more imported HarnessHub rounds
+   - more imported HarnessHub history still improves robustness
 
-This means issue `#131` has already produced useful evidence, but the chain from real development history to reusable matched precedent is still incomplete.
+That chain has now been closed to the point required by this issue.
+Future work should treat the remaining problems as post-validation quality and contamination questions rather than as proof that cross-project precedent reuse failed.
 
 ## Confidence Change
 
 - confidence increased that OpenPrecedent can already help real external development as a research harness and decision externalization layer
-- confidence did not yet increase for real precedent-hit usefulness, because the searchable-history loop remains unbuilt
-- confidence increased that the next research work should focus on building and validating that loop rather than immediately redesigning retrieval in the abstract
+- confidence increased for real precedent-hit usefulness, because later live HarnessHub queries now return non-empty matched cases from imported prior history
+- confidence increased that the full external-project loop now works end-to-end: capture, import, extract, seed, retrieve, and reuse during later live work
+- confidence also increased that the next research work should focus on contamination control and continued quality evaluation rather than reopening the question of whether cross-project reuse is possible at all
 
 ## Follow-Up
 
-Minimal follow-up issue chain:
+Completed follow-up issue chain:
 
 - `#152` Export completed HarnessHub Codex rounds as importable searchable-history artifacts
 - `#153` Import exported HarnessHub rounds into the shared runtime and extract decisions
 - `#154` Validate non-empty `matched_case_ids` for a later HarnessHub runtime query
 - `#155` Improve HarnessHub decision-lineage matching beyond lexical overlap
+- `#161` Auto-seed shared runtime from completed HarnessHub rounds
 
-Target end-state for this issue chain:
+Remaining follow-up:
 
-- completed HarnessHub development rounds become searchable runtime cases
-- later HarnessHub runtime queries return non-empty `matched_case_ids`
-- the matched cases are strong enough to influence a real later development decision
+- `#163` Research contamination controls for decision-lineage retrieval
+
+The remaining work is now about improving retrieval hygiene and continued evaluation depth, not about proving that the external-project precedent loop can work.
