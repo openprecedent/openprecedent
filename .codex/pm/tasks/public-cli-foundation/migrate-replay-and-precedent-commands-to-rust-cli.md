@@ -3,7 +3,7 @@ type: task
 epic: public-cli-foundation
 slug: migrate-replay-and-precedent-commands-to-rust-cli
 title: Migrate replay and precedent commands to the Rust CLI
-status: backlog
+status: done
 task_type: implementation
 labels: cli,rust,interface
 issue: 180
@@ -11,24 +11,33 @@ issue: 180
 
 ## Context
 
-Planned child issue under `#172`. Expand the implementation detail when this issue becomes active.
+Child issue `#180` under `#172` migrates replay and precedent lookup into the Rust public CLI. This slice should expose the first full read path across stored cases, events, decisions, and derived artifacts.
 
 ## Deliverable
 
-Implement the scoped GitHub issue on a child branch that merges into `codex/issue-172-rust-public-cli`.
+Implement Rust `replay case` and `precedent find` on a child branch that merges into `codex/issue-172-rust-public-cli`.
 
 ## Scope
 
-- follow the scoped work and constraints defined in the linked GitHub issue
+- replace the placeholder Rust `replay` and `precedent` handlers with real implementations
+- add any missing Rust contract types needed for replay and precedent output
+- preserve current summary, artifact derivation, and precedent ranking behavior closely enough for downstream automation
 
 ## Acceptance Criteria
 
-- satisfy the acceptance criteria in the linked GitHub issue before opening a child PR
+- `openprecedent replay case <case-id>` returns stable Rust-native replay output
+- `openprecedent precedent find <case-id>` returns stable Rust-native precedent output
+- replay and precedent lookup do not depend on Python CLI execution
+- Rust tests cover representative replay and precedent scenarios plus missing-case handling
 
 ## Validation
 
-- run issue-appropriate local validation when this task becomes active
+- run `cargo test`
+- run `./scripts/run-pytest.sh -q tests/test_rust_cli_workspace.py`
+- run `./scripts/run-agent-preflight.sh` before opening the PR
 
 ## Implementation Notes
 
-- This task twin was scaffolded during the Rust CLI issue decomposition and should be elaborated when implementation starts.
+- Reuse the Rust SQLite store and Rust decision extraction now available from earlier child issues.
+- Keep machine-readable JSON shapes stable; text rendering can stay close to the current Python human output.
+- Completed on `codex/issue-180-rust-replay-precedent` with Rust-native replay and precedent read paths, dedicated contract types, artifact derivation, and replay/precedent contract tests.
