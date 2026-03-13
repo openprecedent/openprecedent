@@ -49,7 +49,7 @@ else
 fi
 ```
 
-4. Run the Rust CLI directly:
+1. Run the Rust CLI directly:
 
 ```bash
 "$OPENPRECEDENT_BIN" \
@@ -60,7 +60,7 @@ fi
   --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
 ```
 
-5. Add context when needed.
+1. Add context when needed.
    Useful optional flags:
    - `--current-plan`
    - `--candidate-action`
@@ -68,7 +68,7 @@ fi
    - `--case-id`
    - `--session-id`
 
-6. If later inspection matters, inspect the recorded invocation explicitly:
+1. If later inspection matters, inspect the recorded invocation explicitly:
 
 ```bash
 "$OPENPRECEDENT_BIN" --home "$HOME/.openprecedent/runtime" --format json lineage invocation list
