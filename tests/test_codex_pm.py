@@ -802,3 +802,80 @@ def test_codex_pm_issue_state_check_passes_after_state_init(
 
     assert main(["issue-state-check", "--branch", "codex/issue-106-issue-scoped-dev-state"]) == 0
     assert "Issue state check passed" in capsys.readouterr().out
+
+
+def test_codex_pm_session_start_reports_issue_context_and_default_policy(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "session-start",
+                "--title",
+                "Add session start workflow",
+                "--issue",
+                "166",
+                "--status",
+                "in_progress",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "session-start.md"
+    assert main(["issue-state-init", str(task_path)]) == 0
+    capsys.readouterr()
+
+    monkeypatch.setattr("openprecedent.codex_pm._pr_context_for_branch", lambda branch: {"number": 165, "title": "open pr", "url": "https://example.com/pr/165"})
+
+    assert main(["session-start", "--branch", "issue-166-session-start-consistency"]) == 0
+    output = capsys.readouterr().out
+    assert "Branch: issue-166-session-start-consistency" in output
+    assert "Issue: #166" in output
+    assert "Task status: in_progress" in output
+    assert "Pull request: #165 open pr" in output
+    assert "directly diagnose, implement, verify, and close the loop" in output
+
+
+def test_codex_pm_session_start_warns_when_in_progress_issue_lacks_state(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "session-start-missing-state",
+                "--title",
+                "Add session start workflow",
+                "--issue",
+                "166",
+                "--status",
+                "in_progress",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    monkeypatch.setattr("openprecedent.codex_pm._pr_context_for_branch", lambda branch: None)
+
+    assert main(["session-start", "--branch", "issue-166-session-start-consistency"]) == 0
+    output = capsys.readouterr().out
+    assert "Warnings:" in output
+    assert "has no issue-state document" in output
