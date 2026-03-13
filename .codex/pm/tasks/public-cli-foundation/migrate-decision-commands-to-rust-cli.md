@@ -3,7 +3,7 @@ type: task
 epic: public-cli-foundation
 slug: migrate-decision-commands-to-rust-cli
 title: Migrate decision commands to the Rust CLI
-status: backlog
+status: done
 task_type: implementation
 labels: cli,rust,interface
 issue: 179
@@ -11,24 +11,33 @@ issue: 179
 
 ## Context
 
-Planned child issue under `#172`. Expand the implementation detail when this issue becomes active.
+Child issue `#179` under `#172` migrates the public derived-decision workflow into Rust. This slice should implement Rust-native decision extraction and listing while preserving the separation between raw events and derived decision records.
 
 ## Deliverable
 
-Implement the scoped GitHub issue on a child branch that merges into `codex/issue-172-rust-public-cli`.
+Implement `openprecedent decision extract` and `openprecedent decision list` in Rust on a child branch that merges into `codex/issue-172-rust-public-cli`.
 
 ## Scope
 
-- follow the scoped work and constraints defined in the linked GitHub issue
+- replace the placeholder Rust `decision` handlers with real extraction and listing implementations
+- preserve the current decision heuristics for task framing, constraints, success criteria, clarification, option rejection, and authority confirmation
+- persist extracted decisions through the Rust SQLite store
 
 ## Acceptance Criteria
 
-- satisfy the acceptance criteria in the linked GitHub issue before opening a child PR
+- `openprecedent decision extract <case-id>` derives and stores decisions through the Rust path
+- `openprecedent decision list <case-id>` returns stable JSON and readable text output from the Rust path
+- extracted decisions remain compatible with the current persistence model and downstream replay/precedent assumptions
+- Rust tests cover representative extraction scenarios and key failure cases
 
 ## Validation
 
-- run issue-appropriate local validation when this task becomes active
+- run `cargo test`
+- run `./scripts/run-pytest.sh -q tests/test_rust_cli_workspace.py`
+- run `./scripts/run-agent-preflight.sh` before opening the PR
 
 ## Implementation Notes
 
-- This task twin was scaffolded during the Rust CLI issue decomposition and should be elaborated when implementation starts.
+- Keep the extraction logic Rust-native; do not shell out to the Python CLI or Python service layer.
+- Favor a direct behavior port from the current Python heuristics before attempting any semantic redesign.
+- Completed on `codex/issue-179-rust-decision-commands` with Rust-native decision extraction/listing, contract tests, and persisted decision records through the Rust SQLite store.

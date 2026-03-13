@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -5,8 +6,9 @@ use std::io::{BufRead, BufReader};
 use chrono::{DateTime, Utc};
 use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use openprecedent_contracts::{
-    Case, CaseStatus, Event, EventActor, EventType, OutputFormat, PathsDoctorReport,
-    StorageDoctorReport, VersionReport, CLI_BINARY_NAME, CONTRACT_PHASE,
+    Case, CaseStatus, Decision, DecisionExplanation, DecisionType, Event, EventActor, EventType,
+    OutputFormat, PathsDoctorReport, StorageDoctorReport, VersionReport, CLI_BINARY_NAME,
+    CONTRACT_PHASE,
 };
 use openprecedent_core::{
     build_environment_report, build_paths_report, build_storage_report, build_version_report,
@@ -122,8 +124,13 @@ struct DecisionCommand {
 
 #[derive(Debug, Subcommand)]
 enum DecisionSubcommand {
-    Extract(TrailingArgs),
-    List(TrailingArgs),
+    Extract(DecisionCaseArgs),
+    List(DecisionCaseArgs),
+}
+
+#[derive(Debug, Args)]
+struct DecisionCaseArgs {
+    case_id: String,
 }
 
 #[derive(Debug, Args)]
@@ -290,7 +297,7 @@ where
         ),
         Command::Case(command) => handle_case(command, &config),
         Command::Event(command) => handle_event(command, &config),
-        Command::Decision(command) => render_not_implemented_path(decision_path(command)),
+        Command::Decision(command) => handle_decision(command, &config),
         Command::Replay(command) => render_not_implemented_path(replay_path(command)),
         Command::Precedent(command) => render_not_implemented_path(precedent_path(command)),
         Command::Capture(command) => render_not_implemented_path(capture_path(command)),
@@ -499,6 +506,51 @@ fn handle_event(command: EventCommand, config: &ResolvedRuntimeConfig) -> i32 {
     }
 }
 
+fn handle_decision(command: DecisionCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    let store = match SqliteStore::new(&config.db.path) {
+        Ok(store) => store,
+        Err(error) => {
+            eprintln!("{error}");
+            return 1;
+        }
+    };
+
+    match command.command {
+        DecisionSubcommand::Extract(args) => {
+            if let Some(code) = ensure_case_exists(&store, &args.case_id) {
+                return code;
+            }
+
+            let events = match store.list_events(&args.case_id) {
+                Ok(events) => events,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let decisions = extract_decisions(&args.case_id, &events);
+            if let Err(error) = store.replace_decisions(&args.case_id, &decisions) {
+                eprintln!("{error}");
+                return 1;
+            }
+            render_decision_list(&decisions, config.format.value)
+        }
+        DecisionSubcommand::List(args) => {
+            if let Some(code) = ensure_case_exists(&store, &args.case_id) {
+                return code;
+            }
+
+            match store.list_decisions(&args.case_id) {
+                Ok(decisions) => render_decision_list(&decisions, config.format.value),
+                Err(error) => {
+                    eprintln!("{error}");
+                    1
+                }
+            }
+        }
+    }
+}
+
 fn render_not_implemented_path(path: Vec<&'static str>) -> i32 {
     let error = not_implemented(&path);
     eprintln!("{error}");
@@ -572,6 +624,30 @@ fn render_event_list(events: &[Event], format: OutputFormat) -> i32 {
     }
 }
 
+fn render_decision_list(decisions: &[Decision], format: OutputFormat) -> i32 {
+    match format {
+        OutputFormat::Json => match serde_json::to_string_pretty(decisions) {
+            Ok(json) => {
+                println!("{json}");
+                0
+            }
+            Err(error) => {
+                eprintln!("{error}");
+                1
+            }
+        },
+        OutputFormat::Text => {
+            for (index, decision) in decisions.iter().enumerate() {
+                if index > 0 {
+                    println!();
+                }
+                println!("{}", decision.render_text());
+            }
+            0
+        }
+    }
+}
+
 trait TextRenderable {
     fn render_text(&self) -> String;
 }
@@ -613,6 +689,38 @@ impl TextRenderable for Event {
         ];
         if let Some(parent_event_id) = &self.parent_event_id {
             lines.push(format!("parent_event_id: {parent_event_id}"));
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for Decision {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!(
+                "[{}] {}: {}",
+                self.sequence_no, self.decision_type, self.title
+            ),
+            format!("  question: {}", self.question),
+            format!("  chosen_action: {}", self.chosen_action),
+            format!("  confidence: {:.2}", self.confidence),
+            format!("  goal: {}", self.explanation.goal),
+            format!("  why: {}", self.explanation.selection_reason),
+        ];
+        if !self.explanation.evidence.is_empty() {
+            lines.push(format!(
+                "  evidence: {}",
+                self.explanation.evidence.join(", ")
+            ));
+        }
+        if !self.explanation.constraints.is_empty() {
+            lines.push(format!(
+                "  constraints: {}",
+                self.explanation.constraints.join(", ")
+            ));
+        }
+        if let Some(result) = &self.explanation.result {
+            lines.push(format!("  result: {result}"));
         }
         lines.join("\n")
     }
@@ -695,13 +803,6 @@ fn render_storage_line(label: &str, path: &openprecedent_contracts::StoragePathR
     )
 }
 
-fn decision_path(command: DecisionCommand) -> Vec<&'static str> {
-    match command.command {
-        DecisionSubcommand::Extract(_) => vec!["decision", "extract"],
-        DecisionSubcommand::List(_) => vec!["decision", "list"],
-    }
-}
-
 fn ensure_case_exists(store: &SqliteStore, case_id: &str) -> Option<i32> {
     match store.get_case(case_id) {
         Ok(Some(_)) => None,
@@ -781,6 +882,391 @@ fn imported_event_to_event(
         payload,
     })
 }
+
+fn extract_decisions(case_id: &str, events: &[Event]) -> Vec<Decision> {
+    let mut extracted = Vec::new();
+    let mut seen_task_frame = false;
+    let mut prior_user_messages: Vec<String> = Vec::new();
+
+    for event in events {
+        let payload = event.payload.as_object();
+        match event.event_type {
+            EventType::MessageUser => {
+                let message = payload
+                    .and_then(|payload| payload.get("message"))
+                    .and_then(string_or_none);
+                let is_new_user_intent = message.as_ref().is_some_and(|message| {
+                    prior_user_messages.is_empty()
+                        || normalize_message_intent(message)
+                            != normalize_message_intent(
+                                prior_user_messages.last().expect("prior user message"),
+                            )
+                });
+
+                if let Some(message) = &message {
+                    if let Some(prior_message) = prior_user_messages.last() {
+                        if is_meaningful_clarification(message, prior_message) {
+                            extracted.push(build_decision(
+                                case_id,
+                                DecisionType::ClarificationResolved,
+                                "Task ambiguity resolved",
+                                "How did follow-up guidance change the task understanding?",
+                                message,
+                                &[event.event_id.clone()],
+                                &["Later user guidance can refine or narrow task understanding"],
+                                "A meaningful follow-up user message changed the task framing compared with the earlier request.",
+                                Some(message.clone()),
+                                0.85,
+                            ));
+                        }
+                    }
+                    if is_new_user_intent && looks_like_constraint(message) {
+                        extracted.push(build_decision(
+                            case_id,
+                            DecisionType::ConstraintAdopted,
+                            "Constraint adopted",
+                            "What constraint or guardrail is now part of the task?",
+                            message,
+                            &[event.event_id.clone()],
+                            &["User-stated constraints should shape subsequent execution"],
+                            "The user message introduced or narrowed a concrete task constraint.",
+                            Some(message.clone()),
+                            0.84,
+                        ));
+                    }
+                    if is_new_user_intent && looks_like_success_criteria(message) {
+                        extracted.push(build_decision(
+                            case_id,
+                            DecisionType::SuccessCriteriaSet,
+                            "Success criteria established",
+                            "What explicit standard now defines done or acceptable output?",
+                            message,
+                            &[event.event_id.clone()],
+                            &["The task should be evaluated against explicit success criteria"],
+                            "The user message made the expected output shape or acceptance bar explicit.",
+                            Some(message.clone()),
+                            0.83,
+                        ));
+                    }
+                    if is_new_user_intent && looks_like_option_rejection(message) {
+                        extracted.push(build_decision(
+                            case_id,
+                            DecisionType::OptionRejected,
+                            "Option rejected",
+                            "Which candidate path was explicitly ruled out?",
+                            message,
+                            &[event.event_id.clone()],
+                            &["Rejected options should remain out of scope"],
+                            "The message explicitly rejected one path in favor of a different direction.",
+                            Some(message.clone()),
+                            0.82,
+                        ));
+                    }
+                    if is_new_user_intent && looks_like_authority_confirmation(message) {
+                        let mut decision = build_decision(
+                            case_id,
+                            DecisionType::AuthorityConfirmed,
+                            "Authority confirmed",
+                            "What approval or decision authority was confirmed?",
+                            message,
+                            &[event.event_id.clone()],
+                            &["Human approval established the allowed path forward"],
+                            "The user message explicitly approved or authorized the current direction.",
+                            Some(message.clone()),
+                            0.86,
+                        );
+                        decision.requires_human_confirmation = true;
+                        extracted.push(decision);
+                    }
+                    prior_user_messages.push(message.clone());
+                }
+            }
+            EventType::UserConfirmed => {
+                let chosen_action = payload
+                    .and_then(|payload| payload.get("message"))
+                    .and_then(string_or_none)
+                    .unwrap_or_else(|| "Continue within the approved boundary".to_string());
+                let outcome = payload
+                    .and_then(|payload| payload.get("message"))
+                    .and_then(string_or_none);
+                let mut decision = build_decision(
+                    case_id,
+                    DecisionType::AuthorityConfirmed,
+                    "Authority confirmed",
+                    "What approval or decision authority was confirmed?",
+                    &chosen_action,
+                    &[event.event_id.clone()],
+                    &["Human confirmation established the allowed path forward"],
+                    "A user confirmation event signals explicit approval or authority for the chosen direction.",
+                    outcome,
+                    0.9,
+                );
+                decision.requires_human_confirmation = true;
+                extracted.push(decision);
+            }
+            EventType::MessageAgent => {
+                let Some(message) = payload
+                    .and_then(|payload| payload.get("message"))
+                    .and_then(string_or_none)
+                else {
+                    continue;
+                };
+
+                if !seen_task_frame && looks_like_task_frame(&message) {
+                    extracted.push(build_decision(
+                        case_id,
+                        DecisionType::TaskFrameDefined,
+                        "Task frame established",
+                        "How is the task being framed for execution?",
+                        &message,
+                        &[event.event_id.clone()],
+                        &["The first substantive agent framing sets the working interpretation of the task"],
+                        "The agent explicitly restated how it understood the task and what boundary it would operate within.",
+                        Some("Initial task frame captured from agent response".to_string()),
+                        0.7,
+                    ));
+                    seen_task_frame = true;
+                }
+                if looks_like_option_rejection(&message) {
+                    extracted.push(build_decision(
+                        case_id,
+                        DecisionType::OptionRejected,
+                        "Alternative path rejected",
+                        "Which path did the agent explicitly decide not to pursue?",
+                        &message,
+                        &[event.event_id.clone()],
+                        &["Explicitly rejected paths should remain out of scope"],
+                        "The agent message ruled out one approach while committing to another.",
+                        Some(message.clone()),
+                        0.77,
+                    ));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    extracted
+        .into_iter()
+        .enumerate()
+        .map(|(index, mut decision)| {
+            decision.sequence_no = (index + 1) as i64;
+            decision
+        })
+        .collect()
+}
+
+fn build_decision(
+    case_id: &str,
+    decision_type: DecisionType,
+    title: &str,
+    question: &str,
+    chosen_action: &str,
+    evidence_event_ids: &[String],
+    constraints: &[&str],
+    selection_reason: &str,
+    outcome: Option<String>,
+    confidence: f64,
+) -> Decision {
+    let evidence_event_ids = evidence_event_ids.to_vec();
+    let constraints = constraints
+        .iter()
+        .map(|value| value.to_string())
+        .collect::<Vec<_>>();
+    let explanation = DecisionExplanation {
+        goal: question.to_string(),
+        evidence: evidence_event_ids
+            .iter()
+            .map(|event_id| format!("event:{event_id}"))
+            .collect(),
+        constraints: constraints.clone(),
+        selection_reason: selection_reason.to_string(),
+        result: outcome.clone(),
+    };
+
+    Decision {
+        decision_id: format!("dec_{}", &Uuid::new_v4().simple().to_string()[..12]),
+        case_id: case_id.to_string(),
+        decision_type,
+        title: title.to_string(),
+        question: question.to_string(),
+        chosen_action: chosen_action.to_string(),
+        alternatives: Vec::new(),
+        evidence_event_ids,
+        constraint_summary: if constraints.is_empty() {
+            None
+        } else {
+            Some(constraints.join("; "))
+        },
+        requires_human_confirmation: false,
+        outcome,
+        confidence,
+        explanation,
+        sequence_no: 0,
+    }
+}
+
+fn string_or_none(value: &Value) -> Option<String> {
+    match value {
+        Value::String(value) if !value.trim().is_empty() => Some(value.clone()),
+        _ => None,
+    }
+}
+
+fn is_meaningful_clarification(message: &str, prior_message: &str) -> bool {
+    let current = normalize_message_intent(message);
+    let previous = normalize_message_intent(prior_message);
+    if current.is_empty() || previous.is_empty() {
+        return current != previous;
+    }
+    if current == previous {
+        return false;
+    }
+
+    let current_tokens = tokenize_keywords(&current);
+    let previous_tokens = tokenize_keywords(&previous);
+    if current_tokens.is_empty() || previous_tokens.is_empty() {
+        return current != previous;
+    }
+
+    let shared = current_tokens.intersection(&previous_tokens).count();
+    let overlap_ratio = shared as f64 / current_tokens.len().min(previous_tokens.len()) as f64;
+    overlap_ratio < 0.8
+}
+
+fn normalize_message_intent(text: &str) -> String {
+    text.split_whitespace()
+        .map(|part| part.to_ascii_lowercase())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn tokenize_keywords(text: &str) -> HashSet<String> {
+    let mut tokens = HashSet::new();
+    let lower = text.to_ascii_lowercase();
+    let mut current = String::new();
+    for ch in lower.chars() {
+        if ch.is_ascii_alphanumeric() || matches!(ch, '_' | '.' | '/' | '-') {
+            current.push(ch);
+        } else if !current.is_empty() {
+            add_token(&mut tokens, &current);
+            current.clear();
+        }
+    }
+    if !current.is_empty() {
+        add_token(&mut tokens, &current);
+    }
+
+    let expanded_tokens = tokens.clone();
+    for token in expanded_tokens {
+        for alias in semantic_aliases(&token) {
+            tokens.insert(alias.to_string());
+        }
+    }
+    tokens
+}
+
+fn add_token(tokens: &mut HashSet<String>, token: &str) {
+    if token.len() >= 3 && !STOP_WORDS.contains(&token) {
+        tokens.insert(token.to_string());
+    }
+    if token.contains(['/', '.', '-', '_']) {
+        for part in token.split(['/', '.', '-', '_']) {
+            if part.len() >= 3 && !STOP_WORDS.contains(&part) {
+                tokens.insert(part.to_string());
+            }
+        }
+    }
+}
+
+fn semantic_aliases(token: &str) -> &'static [&'static str] {
+    match token {
+        "bring" | "bringup" => &["readiness", "runtime"],
+        "categories" | "category" | "class" | "stage" | "stages" | "state" | "states" => {
+            &["classes"]
+        }
+        "differentiate" => &["split"],
+        "followup" => &["required", "follow-up"],
+        "handoff" | "needed" | "setup" | "wiring" => &["required"],
+        "images" => &["imported"],
+        "operators" => &["operator"],
+        "restored" => &["restore", "imported"],
+        _ => &[],
+    }
+}
+
+fn looks_like_task_frame(message: &str) -> bool {
+    let normalized = normalize_message_intent(message);
+    normalized.starts_with("i will ")
+        || normalized.starts_with("i'll ")
+        || normalized.starts_with("i can ")
+        || normalized.starts_with("i found ")
+        || normalized.starts_with("i am going to ")
+        || normalized.starts_with("i'm going to ")
+        || normalized.starts_with("let me ")
+        || normalized.contains(" i will ")
+}
+
+fn looks_like_constraint(message: &str) -> bool {
+    let normalized = normalize_message_intent(message);
+    [
+        "focus on",
+        "only ",
+        "do not",
+        "don't",
+        "without ",
+        "must ",
+        "need to",
+        "avoid ",
+        "instead of",
+    ]
+    .iter()
+    .any(|marker| normalized.contains(marker))
+}
+
+fn looks_like_success_criteria(message: &str) -> bool {
+    let normalized = normalize_message_intent(message);
+    [
+        "done when",
+        "success means",
+        "return ",
+        "provide ",
+        "give me",
+        "output ",
+        "summary ",
+        "summarize ",
+        "nothing else",
+    ]
+    .iter()
+    .any(|marker| normalized.contains(marker))
+}
+
+fn looks_like_option_rejection(message: &str) -> bool {
+    let normalized = normalize_message_intent(message);
+    ["do not", "don't", "instead of", "rather than", "skip "]
+        .iter()
+        .any(|marker| normalized.contains(marker))
+}
+
+fn looks_like_authority_confirmation(message: &str) -> bool {
+    let normalized = normalize_message_intent(message);
+    [
+        "approved",
+        "approval granted",
+        "go ahead",
+        "you can proceed",
+        "proceed with",
+        "continue with",
+        "continue within",
+    ]
+    .iter()
+    .any(|marker| normalized.contains(marker))
+}
+
+const STOP_WORDS: [&str; 18] = [
+    "the", "and", "for", "with", "that", "this", "from", "into", "will", "then", "case",
+    "openclaw", "session", "docs", "file", "tool", "command", "agent",
+];
 
 fn replay_path(command: ReplayCommand) -> Vec<&'static str> {
     match command.command {
