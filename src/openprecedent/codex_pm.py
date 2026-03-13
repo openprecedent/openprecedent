@@ -81,6 +81,9 @@ def build_parser() -> argparse.ArgumentParser:
     issue_state_check.add_argument("--branch")
 
     subparsers.add_parser("standup").add_argument("--json", action="store_true", dest="as_json")
+    session_start = subparsers.add_parser("session-start")
+    session_start.add_argument("--branch")
+    session_start.add_argument("--json", action="store_true", dest="as_json")
 
     issue_body = subparsers.add_parser("issue-body")
     issue_body.add_argument("path")
@@ -268,6 +271,13 @@ def main(argv: list[str] | None = None) -> int:
                 for item in summary[status]:
                     print(f"  - {item['title']} ({item['path']})")
         return 0
+    if args.action == "session-start":
+        summary = _build_session_start_summary(args.branch or _current_branch())
+        if args.as_json:
+            print(json.dumps(summary, ensure_ascii=True, indent=2, sort_keys=True))
+        else:
+            print(_render_session_start_summary(summary))
+        return 0
     if args.action == "issue-body":
         document = _read_document(Path(args.path))
         print(_render_issue_body(document))
@@ -430,6 +440,80 @@ def _doc_to_dict(document: PMDocument) -> dict[str, object]:
     }
 
 
+def _build_session_start_summary(branch: str) -> dict[str, object]:
+    issue = _parse_issue_from_branch(branch) if branch else None
+    task = _find_task_by_issue(issue) if issue is not None else None
+    issue_state = _load_issue_state(task) if task is not None else None
+    pr_context = _pr_context_for_branch(branch)
+    policies = [
+        "When the user reports a concrete problem, directly diagnose, implement, verify, and close the loop unless blocked or high-risk.",
+        "Prefer repository-local execution paths such as ./scripts/run-pytest.sh and the local .venv before treating missing global tools as blockers.",
+        "Keep the issue, task twin, issue-state, and PR closure state synchronized before considering the work complete.",
+    ]
+    warnings: list[str] = []
+    if issue is not None and task is None:
+        warnings.append(f"No local task twin found for issue #{issue}.")
+    if task is not None and task.metadata.get("status") == "in_progress" and issue_state is None:
+        warnings.append(
+            f"In-progress issue #{issue} has no issue-state document. Run `python3 -m openprecedent.codex_pm issue-state-init {task.path}`."
+        )
+
+    summary: dict[str, object] = {
+        "branch": branch,
+        "issue": issue,
+        "task": _doc_to_dict(task) if task is not None else None,
+        "issue_state": {
+            "path": str(issue_state.path),
+            "status": issue_state.metadata.get("status", ""),
+        }
+        if issue_state is not None
+        else None,
+        "pull_request": pr_context,
+        "default_policies": policies,
+        "warnings": warnings,
+    }
+    return summary
+
+
+def _render_session_start_summary(summary: dict[str, object]) -> str:
+    lines = [
+        "Codex session-start summary",
+        f"Branch: {summary.get('branch') or '(detached)'}",
+    ]
+    issue = summary.get("issue")
+    lines.append(f"Issue: #{issue}" if issue is not None else "Issue: none detected from branch")
+
+    task = summary.get("task")
+    if isinstance(task, dict):
+        lines.append(f"Task: {task.get('title')} ({task.get('path')})")
+        lines.append(f"Task status: {task.get('status')}")
+    else:
+        lines.append("Task: no matching local task twin")
+
+    issue_state = summary.get("issue_state")
+    if isinstance(issue_state, dict):
+        lines.append(f"Issue state: {issue_state.get('path')}")
+    else:
+        lines.append("Issue state: missing or not initialized")
+
+    pull_request = summary.get("pull_request")
+    if isinstance(pull_request, dict):
+        lines.append(f"Pull request: #{pull_request.get('number')} {pull_request.get('title')} ({pull_request.get('url')})")
+    else:
+        lines.append("Pull request: none detected for the current branch")
+
+    lines.extend(["", "Default execution policy:"])
+    for item in summary.get("default_policies", []):
+        lines.append(f"- {item}")
+
+    warnings = summary.get("warnings", [])
+    if warnings:
+        lines.extend(["", "Warnings:"])
+        for warning in warnings:
+            lines.append(f"- {warning}")
+    return "\n".join(lines)
+
+
 def _current_branch() -> str:
     return _git_output(["git", "branch", "--show-current"]) or ""
 
@@ -451,6 +535,61 @@ def _parse_github_remote(remote_url: str) -> tuple[str, str] | None:
     if match is None:
         return None
     return match.group(1), match.group(2)
+
+
+def _repository_for_pr_lookup() -> str | None:
+    for remote_name in ("upstream", "origin"):
+        remote_url = _git_output(["git", "remote", "get-url", remote_name])
+        if remote_url is None:
+            continue
+        parsed = _parse_github_remote(remote_url)
+        if parsed is not None:
+            return f"{parsed[0]}/{parsed[1]}"
+    return None
+
+
+def _pr_context_for_branch(branch: str) -> dict[str, object] | None:
+    if not branch:
+        return None
+    repo = _repository_for_pr_lookup()
+    origin_url = _git_output(["git", "remote", "get-url", "origin"])
+    if repo is None or origin_url is None:
+        return None
+    parsed_origin = _parse_github_remote(origin_url)
+    if parsed_origin is None:
+        return None
+
+    result = subprocess.run(
+        [
+            "gh",
+            "pr",
+            "list",
+            "--repo",
+            repo,
+            "--head",
+            f"{parsed_origin[0]}:{branch}",
+            "--state",
+            "open",
+            "--json",
+            "number,title,url",
+            "--limit",
+            "1",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    items = json.loads(result.stdout)
+    if not items:
+        return None
+    pr = items[0]
+    return {
+        "number": pr.get("number"),
+        "title": pr.get("title"),
+        "url": pr.get("url"),
+    }
 
 
 def _parse_issue_from_branch(branch: str) -> int | None:

@@ -9,6 +9,7 @@ Notable operational entrypoints:
 - `run-openclaw-live-validation.sh` prepares a reusable live OpenClaw validation workspace and summarizes runtime evidence
 - `run-agent-preflight.sh` runs the standard local pre-push confidence checks for agent-driven work
 - `run-pytest.sh` resolves the repository-local pytest runner before falling back to global Python or `pytest`
+- `run-codex-session-start.sh` restores active issue and PR context and restates the repository's default direct-fix workflow at session start
 - `run-codex-review-checkpoint.sh` creates or refreshes the local review note and the current-HEAD review proof before invoking native Codex `/review`
 - `export_harnesshub_codex_round.py` exports one completed HarnessHub Codex development round as a minimal importable searchable-history bundle
 - `import_harnesshub_codex_round.py` imports one exported HarnessHub round bundle into the shared runtime and extracts decisions

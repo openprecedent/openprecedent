@@ -11,6 +11,7 @@ The repository already includes:
 - `scripts/run-codex-review-checkpoint.sh` as the preferred local checkpoint for invoking native Codex `/review`
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
 - `scripts/run-pytest.sh` for repository-local pytest resolution before falling back to global commands
+- `scripts/run-codex-session-start.sh` for restoring branch, issue, task, issue-state, and PR context at the start of a Codex session
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
 - `scripts/run-openclaw-live-validation.sh` for preparing a reusable live OpenClaw validation workspace and summarizing runtime evidence
@@ -62,6 +63,25 @@ If the current PR body includes `Closes #<issue>`, the hook now tries to verify 
 
 ## Merge Validation
 
+## Codex Session Start
+
+When starting or resuming a Codex session in this repository, run:
+
+```bash
+./scripts/run-codex-session-start.sh
+```
+
+The command surfaces the current branch, issue number, matching local task twin, issue-state availability, and open PR context when available.
+It also restates the repository's default execution policy:
+
+- when the user reports a concrete problem, directly diagnose, implement, verify, and close the loop unless the work is destructive, high-risk, or blocked
+- prefer repository-local execution paths such as `./scripts/run-pytest.sh`
+- keep issue, task twin, issue-state, and PR closure state synchronized
+
+Use this startup entrypoint before substantive work so a fresh session does not rely on prior chat memory alone.
+
+## Merge Validation
+
 For a normal local readiness pass before push, run:
 
 ```bash
@@ -94,6 +114,7 @@ python3 -m openprecedent.codex_pm issue-state-init .codex/pm/tasks/<epic>/<task>
 
 This creates a repository-local issue state document under `.codex/pm/issue-state/` and records its path back into the task metadata.
 Use it to keep validated facts, open questions, next steps, and key artifacts in one stable place as the work evolves across sessions.
+The standard session-start command will warn if an in-progress issue branch is missing this state document.
 
 For runtime-affecting pull requests, run:
 

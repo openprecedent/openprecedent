@@ -1186,6 +1186,23 @@ def test_tooling_setup_mentions_live_validation_skill() -> None:
     assert ".codex/skills/openclaw-live-validation/SKILL.md" in content
 
 
+def test_tooling_setup_mentions_session_start_workflow() -> None:
+    path = Path(__file__).parent.parent / "docs" / "engineering" / "tooling-setup.md"
+
+    content = path.read_text(encoding="utf-8")
+
+    assert "./scripts/run-codex-session-start.sh" in content
+    assert "directly diagnose, implement, verify, and close the loop" in content
+
+
+def test_agents_mentions_default_direct_fix_behavior() -> None:
+    path = Path(__file__).parent.parent / "AGENTS.md"
+
+    content = path.read_text(encoding="utf-8")
+
+    assert "default to directly diagnosing and fixing it through implementation, verification, and workflow closure" in content
+
+
 def test_harness_reuse_guide_exists() -> None:
     path = Path(__file__).parent.parent / "docs" / "engineering" / "harness-reuse-guide.md"
 
