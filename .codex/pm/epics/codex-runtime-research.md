@@ -35,6 +35,7 @@ Use Codex as a second, research-only runtime so OpenPrecedent can gather dense r
 - `#129` Validate precedent retrieval quality on Codex real development history
 - `#130` Encapsulate OpenPrecedent as a Codex-facing minimal runtime workflow
 - `#131` Validate Codex real-project decision-lineage reuse across project development
+- `#163` Research contamination controls for decision-lineage retrieval
 
 ## Notes
 

@@ -7,6 +7,7 @@ status: backlog
 task_type: umbrella
 labels: docs
 issue: 100
+state_path: .codex/pm/issue-state/100-define-post-mvp-research-evolution-framework.md
 ---
 
 ## Context

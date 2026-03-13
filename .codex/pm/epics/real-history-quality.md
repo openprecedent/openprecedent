@@ -30,6 +30,7 @@ Improve the quality of replay, evaluation, and precedent behavior on real or ano
 - `#166` Add a standard Codex session-start workflow for issue continuity and default direct-fix behavior
 - `#164` Resolve repository-local test runner before reporting missing pytest
 - `#168` Enforce local task status correctness before PR creation and reconcile remote drift
+- `#204` Restore local PM twins for remaining open GitHub issues
 
 ## Notes
 
