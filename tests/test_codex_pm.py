@@ -506,6 +506,8 @@ def test_codex_pm_pr_create_uses_explicit_upstream_repo_and_fork_head(
                 "Harden PR targeting",
                 "--issue",
                 "136",
+                "--status",
+                "done",
             ]
         )
         == 0
@@ -578,6 +580,8 @@ def test_codex_pm_pr_create_body_file_preserves_clean_closing_reference(
                 "Preserve valid GitHub closing references in generated PR bodies",
                 "--issue",
                 "146",
+                "--status",
+                "done",
             ]
         )
         == 0
@@ -638,6 +642,8 @@ def test_codex_pm_pr_create_fails_when_origin_owner_is_ambiguous(
                 "Harden PR targeting",
                 "--issue",
                 "136",
+                "--status",
+                "done",
             ]
         )
         == 0
@@ -678,6 +684,8 @@ def test_codex_pm_pr_create_fails_when_upstream_repo_does_not_match(
                 "Harden PR targeting",
                 "--issue",
                 "136",
+                "--status",
+                "done",
             ]
         )
         == 0
