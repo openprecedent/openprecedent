@@ -17,6 +17,8 @@ def test_run_pytest_script_prefers_repo_python(tmp_path: Path) -> None:
     env["OPENPRECEDENT_SYSTEM_PYTEST"] = "missing-pytest"
     env["PATH"] = "/usr/bin:/bin"
     env["PYTHONPATH"] = str(repo_root / "src")
+    env["OPENPRECEDENT_REVIEW_FILE"] = str(tmp_path / ".codex-review")
+    env["OPENPRECEDENT_REVIEW_PROOF_FILE"] = str(tmp_path / ".codex-review-proof")
 
     result = subprocess.run(
         ["./scripts/run-pytest.sh", "-q", "tests/test_preflight_script.py"],
