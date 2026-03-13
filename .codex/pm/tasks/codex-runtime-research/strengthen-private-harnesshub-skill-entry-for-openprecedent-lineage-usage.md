@@ -11,9 +11,11 @@ state_path: .codex/pm/issue-state/170-strengthen-private-harnesshub-skill-entry-
 ---
 
 ## Context
+
 Maintain the private HarnessHub validation skill in OpenPrecedent as the canonical source, then install that skill into HarnessHub so the outward-facing trial skill stays consistent without turning OpenPrecedent into a public HarnessHub dependency.
 
 ## Deliverable
+
 Add an OpenPrecedent-maintained HarnessHub validation skill source plus a local install path that syncs the skill bundle into a HarnessHub checkout with the strengthened entry choreography.
 
 ## Scope
