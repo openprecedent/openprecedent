@@ -8,9 +8,10 @@ from pathlib import Path
 
 def test_run_pytest_script_prefers_repo_python(tmp_path: Path) -> None:
     repo_root = Path(__file__).parent.parent
+    repo_python = str(repo_root / ".venv" / "bin" / "python")
     env = os.environ.copy()
-    env["OPENPRECEDENT_PYTHON_BIN"] = sys.executable
-    env["OPENPRECEDENT_VENV_PYTHON"] = sys.executable
+    env["OPENPRECEDENT_PYTHON_BIN"] = repo_python
+    env["OPENPRECEDENT_VENV_PYTHON"] = repo_python
     env["OPENPRECEDENT_VENV_PYTEST"] = str(tmp_path / "missing-pytest")
     env["OPENPRECEDENT_SYSTEM_PYTHON"] = "missing-python3"
     env["OPENPRECEDENT_ALT_SYSTEM_PYTHON"] = "missing-python"
