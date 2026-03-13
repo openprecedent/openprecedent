@@ -3,7 +3,7 @@ type: task
 epic: public-cli-foundation
 slug: design-and-adopt-rust-cli-as-stable-public-interface
 title: Design and adopt a Rust CLI as the stable public interface for OpenPrecedent
-status: in_progress
+status: done
 task_type: umbrella
 labels: cli,rust,interface
 issue: 172
@@ -18,7 +18,7 @@ The design baseline landed through PR `#173`, but the issue remains open as the 
 
 ## Deliverable
 
-Keep the Rust public CLI design baseline authoritative, define the branch integration policy for the migration train, and serve as the parent issue for the fine-grained child issues that implement and integrate the Rust public CLI.
+Keep the Rust public CLI design baseline authoritative, define the branch integration policy for the migration train, and carry the full Rust CLI child-issue chain through integration until the completed train is ready for one final merge from `codex/issue-172-rust-public-cli` back to `main`.
 
 ## Scope
 
@@ -40,9 +40,11 @@ Keep the Rust public CLI design baseline authoritative, define the branch integr
 - review the design against the current Python CLI surface, public docs, and script-based runtime workflows
 - verify the child issue chain covers all currently shipped public capabilities that are exposed through `openprecedent` or through public shell wrappers
 - confirm the parent issue and integration-branch policy are explicit in both local PM state and the GitHub issue body
+- run the integrated Rust CLI branch through `cargo test`, targeted Python regression tests, and `./scripts/run-agent-preflight.sh` before opening the final merge-back PR
 
 ## Implementation Notes
 
 - PR `#173` merged the design baseline into `main`.
 - Issue `#172` was reopened as the parent umbrella for the dedicated Rust CLI integration branch.
-- Child issues `#174` through `#187` implement the migration in independently reviewable slices and should merge into `codex/issue-172-rust-public-cli`.
+- Child issues `#174` through `#187` implemented the migration in independently reviewable slices and merged into `codex/issue-172-rust-public-cli`.
+- The integration branch now contains the full Rust workspace, Rust command families, skill migration, and public cutover away from the Python CLI and public shell-script entrypoints.
