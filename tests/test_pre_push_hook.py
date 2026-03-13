@@ -201,3 +201,37 @@ def test_pre_push_hook_blocks_stale_review_proof(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "does not match the current HEAD" in result.stdout
+
+
+def test_pre_push_hook_runs_rust_tests_when_forced(tmp_path: Path) -> None:
+    repo = _prepare_repo(tmp_path)
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    _write_fake_gh(fake_bin, pr_body="")
+    cargo_log = tmp_path / "cargo.log"
+    cargo_script = fake_bin / "cargo"
+    cargo_script.write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> {str(cargo_log)!r}\nexit 0\n",
+        encoding="utf-8",
+    )
+    cargo_script.chmod(0o755)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["BYPASS_BRANCH_FRESHNESS_CHECK"] = "1"
+    env["OPENPRECEDENT_BASE_REF"] = "main"
+    env["OPENPRECEDENT_PYTHON_BIN"] = "python3"
+    env["OPENPRECEDENT_FORCE_RUST_TESTS"] = "1"
+
+    result = subprocess.run(
+        [str(repo / ".githooks" / "pre-push")],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Running Rust tests" in result.stdout
+    assert cargo_log.read_text(encoding="utf-8").strip() == "test"

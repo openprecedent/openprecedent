@@ -53,3 +53,11 @@ def test_pyproject_no_longer_exposes_python_openprecedent_console_script() -> No
 
     assert 'openprecedent = "openprecedent.cli:run"' not in pyproject
     assert 'openprecedent-pm = "openprecedent.codex_pm:run"' in pyproject
+
+
+def test_python_ci_workflow_includes_dedicated_rust_ci_job() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "python-ci.yml").read_text(encoding="utf-8")
+
+    assert "rust-ci:" in workflow
+    assert "name: rust-ci" in workflow
+    assert "run: cargo test" in workflow

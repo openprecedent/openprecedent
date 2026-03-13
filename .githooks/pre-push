@@ -8,6 +8,8 @@ current_branch="$(git branch --show-current)"
 origin_url="$(git remote get-url origin 2>/dev/null || true)"
 base_ref="${OPENPRECEDENT_BASE_REF:-upstream/main}"
 python_bin="${OPENPRECEDENT_PYTHON_BIN:-$repo_root/.venv/bin/python}"
+force_rust_tests="${OPENPRECEDENT_FORCE_RUST_TESTS:-0}"
+skip_rust_tests="${OPENPRECEDENT_SKIP_RUST_TESTS:-0}"
 
 if [[ ! -x "$python_bin" ]]; then
   python_bin="python3"
@@ -67,6 +69,41 @@ run_local_pr_closure_check() {
   done <<< "$changed_files"
 
   PYTHONPATH=src "$python_bin" -m openprecedent.codex_pm verify-pr-closure-sync "${body_input[@]}"
+}
+
+should_run_rust_tests() {
+  if [[ "$skip_rust_tests" == "1" ]]; then
+    return 1
+  fi
+
+  if [[ "$force_rust_tests" == "1" ]]; then
+    return 0
+  fi
+
+  if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  git diff --name-only "$base_ref"...HEAD | grep -Eq '^(Cargo\.toml|Cargo\.lock|rust/)'
+}
+
+run_rust_tests_if_needed() {
+  if ! should_run_rust_tests; then
+    echo "Skipping Rust tests: no Rust-affecting changes detected"
+    return 0
+  fi
+
+  if ! command -v cargo >/dev/null 2>&1; then
+    cat <<'EOF'
+Push blocked: Rust-affecting changes detected but cargo is unavailable.
+
+Install Rust locally or set OPENPRECEDENT_SKIP_RUST_TESTS=1 only if you are intentionally bypassing the local Rust guardrail.
+EOF
+    exit 1
+  fi
+
+  echo "Running Rust tests"
+  cargo test
 }
 
 if [[ "${BYPASS_CODEX_REVIEW:-}" == "1" ]]; then
@@ -204,5 +241,6 @@ EOF
 fi
 
 run_local_pr_closure_check
+run_rust_tests_if_needed
 
 echo "Codex review note detected."
