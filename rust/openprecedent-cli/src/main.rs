@@ -5,6 +5,7 @@ use std::io::{BufRead, BufReader};
 
 use chrono::{DateTime, Utc};
 use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
+use openprecedent_capture_openclaw as capture_openclaw;
 use openprecedent_contracts::{
     Artifact, ArtifactType, Case, CaseStatus, Decision, DecisionExplanation, DecisionType, Event,
     EventActor, EventType, OutputFormat, PathsDoctorReport, Precedent, ReplayResponse,
@@ -19,6 +20,22 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{Map, Value};
 use uuid::Uuid;
+
+#[derive(Debug, Serialize)]
+struct CaptureImportOutput {
+    case: Case,
+    imported_event_count: usize,
+    events: Vec<Event>,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenClawSessionImportOutput {
+    case: Case,
+    transcript_path: String,
+    imported_event_count: usize,
+    unsupported_record_type_counts: std::collections::BTreeMap<String, usize>,
+    events: Vec<Event>,
+}
 
 #[derive(Debug, Parser)]
 #[command(name = CLI_BINARY_NAME)]
@@ -187,10 +204,65 @@ struct OpenclawCaptureCommand {
 
 #[derive(Debug, Subcommand)]
 enum OpenclawCaptureSubcommand {
-    ListSessions(TrailingArgs),
-    ImportSession(TrailingArgs),
-    CollectSessions(TrailingArgs),
-    ImportJsonl(TrailingArgs),
+    ListSessions(OpenClawListSessionsArgs),
+    ImportSession(OpenClawImportSessionArgs),
+    CollectSessions(OpenClawCollectSessionsArgs),
+    ImportJsonl(OpenClawImportJsonlArgs),
+}
+
+#[derive(Debug, Args)]
+struct OpenClawListSessionsArgs {
+    #[arg(long = "sessions-root")]
+    sessions_root: Option<std::path::PathBuf>,
+    #[arg(long, default_value_t = 10)]
+    limit: usize,
+}
+
+#[derive(Debug, Args)]
+struct OpenClawImportJsonlArgs {
+    path: std::path::PathBuf,
+    #[arg(long = "case-id")]
+    case_id: String,
+    #[arg(long)]
+    title: String,
+    #[arg(long = "user-id")]
+    user_id: Option<String>,
+    #[arg(long = "agent-id", default_value = "openclaw")]
+    agent_id: String,
+}
+
+#[derive(Debug, Args)]
+struct OpenClawImportSessionArgs {
+    #[arg(long = "session-file")]
+    session_file: Option<std::path::PathBuf>,
+    #[arg(long = "session-id")]
+    session_id: Option<String>,
+    #[arg(long)]
+    latest: bool,
+    #[arg(long = "sessions-root")]
+    sessions_root: Option<std::path::PathBuf>,
+    #[arg(long = "case-id")]
+    case_id: String,
+    #[arg(long)]
+    title: Option<String>,
+    #[arg(long = "user-id")]
+    user_id: Option<String>,
+    #[arg(long = "agent-id", default_value = "openclaw")]
+    agent_id: String,
+}
+
+#[derive(Debug, Args)]
+struct OpenClawCollectSessionsArgs {
+    #[arg(long = "sessions-root")]
+    sessions_root: Option<std::path::PathBuf>,
+    #[arg(long = "state-file")]
+    state_file: Option<std::path::PathBuf>,
+    #[arg(long, default_value_t = 1)]
+    limit: usize,
+    #[arg(long = "user-id")]
+    user_id: Option<String>,
+    #[arg(long = "agent-id", default_value = "openclaw")]
+    agent_id: String,
 }
 
 #[derive(Debug, Args)]
@@ -312,7 +384,7 @@ where
         Command::Decision(command) => handle_decision(command, &config),
         Command::Replay(command) => handle_replay(command, &config),
         Command::Precedent(command) => handle_precedent(command, &config),
-        Command::Capture(command) => render_not_implemented_path(capture_path(command)),
+        Command::Capture(command) => handle_capture(command, &config),
         Command::Lineage(command) => render_not_implemented_path(lineage_path(command)),
         Command::Eval(command) => render_not_implemented_path(eval_path(command)),
     }
@@ -725,6 +797,291 @@ fn handle_precedent(command: PrecedentCommand, config: &ResolvedRuntimeConfig) -
     }
 }
 
+fn handle_capture(command: CaptureCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    match command.runtime {
+        CaptureRuntime::Openclaw(command) => match command.command {
+            OpenclawCaptureSubcommand::ListSessions(args) => {
+                let sessions_root = args
+                    .sessions_root
+                    .unwrap_or_else(capture_openclaw::default_sessions_root);
+                match capture_openclaw::list_sessions(&sessions_root, args.limit) {
+                    Ok(sessions) => match config.format.value {
+                        OutputFormat::Json => match serde_json::to_string_pretty(&sessions) {
+                            Ok(json) => {
+                                println!("{json}");
+                                0
+                            }
+                            Err(error) => {
+                                eprintln!("{error}");
+                                1
+                            }
+                        },
+                        OutputFormat::Text => {
+                            for session in sessions {
+                                println!(
+                                    "{} {} {}",
+                                    session.session_id,
+                                    session
+                                        .updated_at
+                                        .map(|value| value.to_rfc3339())
+                                        .unwrap_or_else(|| "<unknown>".to_string()),
+                                    session.transcript_path
+                                );
+                            }
+                            0
+                        }
+                    },
+                    Err(error) => {
+                        eprintln!("{error}");
+                        1
+                    }
+                }
+            }
+            OpenclawCaptureSubcommand::ImportSession(args) => {
+                let store = match SqliteStore::new(&config.db.path) {
+                    Ok(store) => store,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                let (transcript_path, session_title) = match resolve_openclaw_session_target(&args)
+                {
+                    Ok(target) => target,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                let import_result = match import_openclaw_session(
+                    &store,
+                    &transcript_path,
+                    &args.case_id,
+                    args.title.as_deref().unwrap_or(&session_title),
+                    args.user_id.as_deref(),
+                    Some(args.agent_id.as_str()),
+                ) {
+                    Ok(result) => result,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                match serde_json::to_string_pretty(&import_result) {
+                    Ok(json) => {
+                        println!("{json}");
+                        0
+                    }
+                    Err(error) => {
+                        eprintln!("{error}");
+                        1
+                    }
+                }
+            }
+            OpenclawCaptureSubcommand::CollectSessions(args) => {
+                let store = match SqliteStore::new(&config.db.path) {
+                    Ok(store) => store,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let sessions_root = args
+                    .sessions_root
+                    .unwrap_or_else(capture_openclaw::default_sessions_root);
+                let state_path = args
+                    .state_file
+                    .unwrap_or_else(|| config.state_file.path.clone());
+                let references = match capture_openclaw::list_sessions(&sessions_root, 200) {
+                    Ok(references) => references,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let mut state = match capture_openclaw::load_collection_state(&state_path) {
+                    Ok(state) => state,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let mut seen = state
+                    .imported_session_ids
+                    .iter()
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                let mut imported = Vec::new();
+                let mut skipped = Vec::new();
+
+                for reference in references {
+                    if seen.contains(&reference.session_id) {
+                        skipped.push(reference.session_id.clone());
+                        continue;
+                    }
+                    let import_result = match import_openclaw_session(
+                        &store,
+                        std::path::Path::new(&reference.transcript_path),
+                        &capture_openclaw::case_id_for_session(&reference.session_id),
+                        reference
+                            .label
+                            .as_deref()
+                            .unwrap_or(&format!("OpenClaw session {}", reference.session_id)),
+                        args.user_id.as_deref(),
+                        Some(args.agent_id.as_str()),
+                    ) {
+                        Ok(result) => result,
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+                    imported.push(capture_openclaw::CollectedSessionResult {
+                        session_id: reference.session_id.clone(),
+                        transcript_path: reference.transcript_path.clone(),
+                        case_id: import_result.case.case_id.clone(),
+                        title: import_result.case.title.clone(),
+                        imported_event_count: import_result.imported_event_count,
+                        unsupported_record_type_counts: import_result
+                            .unsupported_record_type_counts
+                            .clone(),
+                    });
+                    seen.insert(reference.session_id.clone());
+                    state.imported_session_ids.push(reference.session_id);
+                    if imported.len() >= args.limit {
+                        break;
+                    }
+                }
+
+                if let Err(error) = capture_openclaw::write_collection_state(&state_path, &state) {
+                    eprintln!("{error}");
+                    return 1;
+                }
+
+                let result = capture_openclaw::OpenClawCollectionResult {
+                    imported,
+                    skipped_session_ids: skipped,
+                    state_path: state_path.display().to_string(),
+                };
+                match serde_json::to_string_pretty(&result) {
+                    Ok(json) => {
+                        println!("{json}");
+                        0
+                    }
+                    Err(error) => {
+                        eprintln!("{error}");
+                        1
+                    }
+                }
+            }
+            OpenclawCaptureSubcommand::ImportJsonl(args) => {
+                let store = match SqliteStore::new(&config.db.path) {
+                    Ok(store) => store,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                let case = match ensure_case(
+                    &store,
+                    &args.case_id,
+                    &args.title,
+                    args.user_id.as_deref(),
+                    Some(args.agent_id.as_str()),
+                ) {
+                    Ok(case) => case,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                let file = match File::open(&args.path) {
+                    Ok(file) => file,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let mut imported = Vec::new();
+                for (index, line_result) in BufReader::new(file).lines().enumerate() {
+                    let line_number = index + 1;
+                    let line = match line_result {
+                        Ok(line) => line,
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+                    let stripped = line.trim();
+                    if stripped.is_empty() {
+                        continue;
+                    }
+                    let raw_item = match serde_json::from_str::<Value>(stripped) {
+                        Ok(Value::Object(item)) => item,
+                        Ok(_) => {
+                            eprintln!(
+                                "line {line_number}: openclaw trace line must be a JSON object"
+                            );
+                            return 1;
+                        }
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+
+                    let event = match normalize_openclaw_trace_line(
+                        raw_item,
+                        line_number,
+                        &store,
+                        &args.case_id,
+                    ) {
+                        Ok(event) => event,
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+
+                    match store.append_event(&event) {
+                        Ok(()) => imported.push(event),
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    }
+                }
+
+                let output = CaptureImportOutput {
+                    case,
+                    imported_event_count: imported.len(),
+                    events: imported,
+                };
+                match serde_json::to_string_pretty(&output) {
+                    Ok(json) => {
+                        println!("{json}");
+                        0
+                    }
+                    Err(error) => {
+                        eprintln!("{error}");
+                        1
+                    }
+                }
+            }
+        },
+        CaptureRuntime::Codex(command) => {
+            render_not_implemented_path(capture_path(CaptureCommand {
+                runtime: CaptureRuntime::Codex(command),
+            }))
+        }
+    }
+}
+
 fn render_not_implemented_path(path: Vec<&'static str>) -> i32 {
     let error = not_implemented(&path);
     eprintln!("{error}");
@@ -1110,6 +1467,160 @@ fn ensure_case_exists(store: &SqliteStore, case_id: &str) -> Option<i32> {
     }
 }
 
+fn ensure_case(
+    store: &SqliteStore,
+    case_id: &str,
+    title: &str,
+    user_id: Option<&str>,
+    agent_id: Option<&str>,
+) -> Result<Case, String> {
+    match store.get_case(case_id).map_err(|error| error.to_string())? {
+        Some(case) => Ok(case),
+        None => {
+            let case = Case {
+                case_id: case_id.to_string(),
+                title: title.to_string(),
+                status: CaseStatus::Started,
+                user_id: user_id.map(ToString::to_string),
+                agent_id: agent_id.map(ToString::to_string),
+                started_at: Utc::now(),
+                ended_at: None,
+                final_summary: None,
+            };
+            store
+                .create_case(&case)
+                .map_err(|error| error.to_string())?;
+            Ok(case)
+        }
+    }
+}
+
+fn resolve_openclaw_session_target(
+    args: &OpenClawImportSessionArgs,
+) -> Result<(std::path::PathBuf, String), String> {
+    if let Some(session_file) = &args.session_file {
+        let title = args.title.clone().unwrap_or_else(|| {
+            session_file
+                .file_stem()
+                .and_then(|item| item.to_str())
+                .unwrap_or("openclaw-session")
+                .to_string()
+        });
+        return Ok((session_file.clone(), title));
+    }
+
+    let sessions_root = args
+        .sessions_root
+        .clone()
+        .unwrap_or_else(capture_openclaw::default_sessions_root);
+    let sessions =
+        capture_openclaw::list_sessions(&sessions_root, 50).map_err(|error| error.to_string())?;
+    if args.latest {
+        let session = sessions
+            .first()
+            .ok_or_else(|| "no OpenClaw sessions found".to_string())?;
+        return Ok((
+            std::path::PathBuf::from(&session.transcript_path),
+            args.title
+                .clone()
+                .or_else(|| session.label.clone())
+                .unwrap_or_else(|| session.session_id.clone()),
+        ));
+    }
+    if let Some(session_id) = &args.session_id {
+        for session in sessions {
+            if &session.session_id == session_id {
+                return Ok((
+                    std::path::PathBuf::from(&session.transcript_path),
+                    args.title
+                        .clone()
+                        .or_else(|| session.label.clone())
+                        .unwrap_or_else(|| session.session_id.clone()),
+                ));
+            }
+        }
+        return Err(format!("OpenClaw session not found: {session_id}"));
+    }
+
+    Err("one of --session-file, --session-id, or --latest is required".to_string())
+}
+
+fn import_openclaw_session(
+    store: &SqliteStore,
+    transcript_path: &std::path::Path,
+    case_id: &str,
+    title: &str,
+    user_id: Option<&str>,
+    agent_id: Option<&str>,
+) -> Result<OpenClawSessionImportOutput, String> {
+    let file = File::open(transcript_path).map_err(|error| error.to_string())?;
+    let mut normalized_imports = Vec::new();
+    let mut unsupported = std::collections::BTreeMap::<String, usize>::new();
+
+    for (index, line_result) in BufReader::new(file).lines().enumerate() {
+        let line_number = index + 1;
+        let line = line_result.map_err(|error| error.to_string())?;
+        let stripped = line.trim();
+        if stripped.is_empty() {
+            continue;
+        }
+        let raw_item = match serde_json::from_str::<Value>(stripped) {
+            Ok(Value::Object(item)) => item,
+            Ok(_) => {
+                return Err(format!(
+                    "line {line_number}: openclaw session line must be a JSON object"
+                ))
+            }
+            Err(error) => return Err(error.to_string()),
+        };
+        let (events, unsupported_type) =
+            normalize_openclaw_session_line(raw_item, line_number, transcript_path)?;
+        if let Some(unsupported_type) = unsupported_type {
+            *unsupported.entry(unsupported_type).or_insert(0) += 1;
+        }
+        normalized_imports.extend(events);
+    }
+
+    let session_id = openclaw_session_id_from_import(&normalized_imports, transcript_path);
+    if let Some(existing_case_id) = store
+        .find_case_id_by_openclaw_session_id(&session_id)
+        .map_err(|error| error.to_string())?
+    {
+        let existing_case = store
+            .get_case(&existing_case_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| format!("case not found: {existing_case_id}"))?;
+        return Ok(OpenClawSessionImportOutput {
+            case: existing_case,
+            transcript_path: transcript_path.display().to_string(),
+            imported_event_count: 0,
+            unsupported_record_type_counts: unsupported,
+            events: Vec::new(),
+        });
+    }
+
+    let case = ensure_case(store, case_id, title, user_id, agent_id)?;
+    let mut imported = Vec::new();
+    for mut event in normalized_imports {
+        event.case_id = case_id.to_string();
+        event.sequence_no = store
+            .next_event_sequence(case_id)
+            .map_err(|error| error.to_string())?;
+        store
+            .append_event(&event)
+            .map_err(|error| error.to_string())?;
+        imported.push(event);
+    }
+
+    Ok(OpenClawSessionImportOutput {
+        case,
+        transcript_path: transcript_path.display().to_string(),
+        imported_event_count: imported.len(),
+        unsupported_record_type_counts: unsupported,
+        events: imported,
+    })
+}
+
 #[derive(Debug, Deserialize)]
 struct ImportedEventRecord {
     case_id: Option<String>,
@@ -1174,6 +1685,1032 @@ fn imported_event_to_event(
         parent_event_id,
         payload,
     })
+}
+
+fn normalize_openclaw_trace_line(
+    raw_item: serde_json::Map<String, Value>,
+    line_no: usize,
+    store: &SqliteStore,
+    case_id: &str,
+) -> Result<Event, String> {
+    let kind = raw_item
+        .get("kind")
+        .and_then(string_or_none)
+        .ok_or_else(|| format!("line {line_no}: kind is required for openclaw import"))?;
+    let timestamp = parse_optional_timestamp(raw_item.get("timestamp"))
+        .map_err(|error| format!("line {line_no}: {error}"))?
+        .unwrap_or_else(Utc::now);
+    let event_id = raw_item.get("event_id").and_then(string_or_none);
+
+    let (event_type, actor, payload) = match kind.as_str() {
+        "user_message" => (
+            EventType::MessageUser,
+            EventActor::User,
+            json_object([
+                (
+                    "message",
+                    raw_item
+                        .get("content")
+                        .and_then(string_or_none)
+                        .unwrap_or_default()
+                        .into(),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        "agent_message" => (
+            EventType::MessageAgent,
+            EventActor::Agent,
+            json_object([
+                (
+                    "message",
+                    raw_item
+                        .get("content")
+                        .and_then(string_or_none)
+                        .unwrap_or_default()
+                        .into(),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        "tool_call" => (
+            EventType::ToolCalled,
+            EventActor::Agent,
+            json_object([
+                (
+                    "tool_name",
+                    raw_item
+                        .get("tool_name")
+                        .and_then(string_or_none)
+                        .unwrap_or_else(|| "unknown_tool".to_string())
+                        .into(),
+                ),
+                (
+                    "reason",
+                    raw_item
+                        .get("reason")
+                        .and_then(string_or_none)
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                (
+                    "arguments",
+                    raw_item
+                        .get("arguments")
+                        .cloned()
+                        .filter(|value| value.is_object())
+                        .unwrap_or_else(|| Value::Object(Map::new())),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        "tool_result" => (EventType::ToolCompleted, EventActor::Tool, {
+            let mut payload = raw_item.clone();
+            payload.remove("kind");
+            payload.remove("timestamp");
+            payload.remove("event_id");
+            Value::Object(payload)
+        }),
+        "command" => (
+            EventType::CommandCompleted,
+            EventActor::System,
+            json_object([
+                (
+                    "command",
+                    raw_item
+                        .get("command")
+                        .and_then(string_or_none)
+                        .unwrap_or_default()
+                        .into(),
+                ),
+                (
+                    "exit_code",
+                    raw_item
+                        .get("exit_code")
+                        .and_then(|value| value.as_i64())
+                        .unwrap_or(0)
+                        .into(),
+                ),
+                (
+                    "stdout",
+                    raw_item
+                        .get("stdout")
+                        .and_then(string_or_none)
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                (
+                    "stderr",
+                    raw_item
+                        .get("stderr")
+                        .and_then(string_or_none)
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        "file_write" => (
+            EventType::FileWrite,
+            EventActor::Agent,
+            json_object([
+                (
+                    "path",
+                    raw_item
+                        .get("path")
+                        .and_then(string_or_none)
+                        .unwrap_or_else(|| "unknown_path".to_string())
+                        .into(),
+                ),
+                (
+                    "summary",
+                    raw_item
+                        .get("summary")
+                        .and_then(string_or_none)
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        "confirmation" => (
+            EventType::UserConfirmed,
+            EventActor::User,
+            json_object([
+                (
+                    "message",
+                    raw_item
+                        .get("content")
+                        .and_then(string_or_none)
+                        .unwrap_or_default()
+                        .into(),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        "completed" => (
+            EventType::CaseCompleted,
+            EventActor::System,
+            json_object([
+                (
+                    "summary",
+                    raw_item
+                        .get("summary")
+                        .and_then(string_or_none)
+                        .unwrap_or_else(|| "OpenClaw task completed".to_string())
+                        .into(),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        "failed" => (
+            EventType::CaseFailed,
+            EventActor::System,
+            json_object([
+                (
+                    "summary",
+                    raw_item
+                        .get("summary")
+                        .and_then(string_or_none)
+                        .unwrap_or_else(|| "OpenClaw task failed".to_string())
+                        .into(),
+                ),
+                ("source", "openclaw".into()),
+            ]),
+        ),
+        _ => {
+            return Err(format!(
+                "line {line_no}: unsupported openclaw kind '{kind}'"
+            ))
+        }
+    };
+
+    Ok(Event {
+        event_id: event_id
+            .unwrap_or_else(|| format!("evt_{}", &Uuid::new_v4().simple().to_string()[..12])),
+        case_id: case_id.to_string(),
+        event_type,
+        actor,
+        timestamp,
+        sequence_no: store
+            .next_event_sequence(case_id)
+            .map_err(|error| error.to_string())?,
+        parent_event_id: None,
+        payload,
+    })
+}
+
+fn normalize_openclaw_session_line(
+    raw_item: serde_json::Map<String, Value>,
+    line_no: usize,
+    transcript_path: &std::path::Path,
+) -> Result<(Vec<Event>, Option<String>), String> {
+    let record_type = raw_item
+        .get("type")
+        .and_then(string_or_none)
+        .ok_or_else(|| format!("line {line_no}: type is required for openclaw session import"))?;
+    let timestamp = parse_optional_timestamp(raw_item.get("timestamp"))
+        .map_err(|error| format!("line {line_no}: {error}"))?;
+    let record_id = raw_item
+        .get("id")
+        .and_then(string_or_none)
+        .unwrap_or_else(|| format!("session_line_{line_no}"));
+    let parent_id = raw_item.get("parentId").and_then(string_or_none);
+
+    match record_type.as_str() {
+        "session" => Ok((
+            vec![session_event(
+                &format!("evt_session_{record_id}"),
+                EventType::CaseStarted,
+                EventActor::System,
+                timestamp,
+                parent_id,
+                json_object([
+                    (
+                        "session_id",
+                        raw_item
+                            .get("id")
+                            .and_then(string_or_none)
+                            .unwrap_or_else(|| {
+                                transcript_path
+                                    .file_stem()
+                                    .and_then(|item| item.to_str())
+                                    .unwrap_or_default()
+                                    .to_string()
+                            })
+                            .into(),
+                    ),
+                    (
+                        "transcript_version",
+                        raw_item.get("version").cloned().unwrap_or(Value::Null),
+                    ),
+                    (
+                        "cwd",
+                        raw_item
+                            .get("cwd")
+                            .and_then(string_or_none)
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    ("source", "openclaw.session".into()),
+                ]),
+            )],
+            None,
+        )),
+        "checkpoint" => Ok((
+            vec![session_event(
+                &format!("evt_checkpoint_{record_id}"),
+                EventType::CheckpointSaved,
+                EventActor::System,
+                timestamp,
+                parent_id,
+                json_object([
+                    (
+                        "checkpoint_id",
+                        raw_item
+                            .get("id")
+                            .and_then(string_or_none)
+                            .unwrap_or_else(|| record_id.clone())
+                            .into(),
+                    ),
+                    (
+                        "status",
+                        raw_item
+                            .get("status")
+                            .and_then(string_or_none)
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    ("source", "openclaw.session".into()),
+                ]),
+            )],
+            None,
+        )),
+        "model_change" => Ok((
+            vec![session_event(
+                &format!("evt_model_{record_id}"),
+                EventType::ModelCompleted,
+                EventActor::System,
+                timestamp,
+                parent_id,
+                json_object([
+                    (
+                        "provider",
+                        raw_item
+                            .get("provider")
+                            .and_then(string_or_none)
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    (
+                        "model_id",
+                        raw_item
+                            .get("modelId")
+                            .and_then(string_or_none)
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    ("source", "openclaw.session".into()),
+                ]),
+            )],
+            None,
+        )),
+        "thinking_level_change" => Ok((
+            vec![session_event(
+                &format!("evt_thinking_level_{record_id}"),
+                EventType::ModelInvoked,
+                EventActor::System,
+                timestamp,
+                parent_id,
+                json_object([
+                    (
+                        "thinking_level",
+                        raw_item
+                            .get("thinkingLevel")
+                            .and_then(string_or_none)
+                            .or_else(|| raw_item.get("level").and_then(string_or_none))
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    (
+                        "changed_by",
+                        raw_item
+                            .get("source")
+                            .and_then(string_or_none)
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    (
+                        "trigger",
+                        raw_item
+                            .get("trigger")
+                            .and_then(string_or_none)
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    ("source", "openclaw.session".into()),
+                ]),
+            )],
+            None,
+        )),
+        "custom" => {
+            let custom =
+                normalize_openclaw_custom_record(&raw_item, &record_id, parent_id, timestamp);
+            match custom {
+                Some(custom) => Ok((vec![custom], None)),
+                None => Ok((Vec::new(), Some(record_type))),
+            }
+        }
+        "message" => normalize_openclaw_message_record(raw_item, &record_id, parent_id, timestamp),
+        _ => Ok((Vec::new(), Some(record_type))),
+    }
+}
+
+fn session_event(
+    event_id: &str,
+    event_type: EventType,
+    actor: EventActor,
+    timestamp: Option<DateTime<Utc>>,
+    parent_event_id: Option<String>,
+    payload: Value,
+) -> Event {
+    Event {
+        event_id: event_id.to_string(),
+        case_id: String::new(),
+        event_type,
+        actor,
+        timestamp: timestamp.unwrap_or_else(Utc::now),
+        sequence_no: 0,
+        parent_event_id,
+        payload,
+    }
+}
+
+fn normalize_openclaw_message_record(
+    raw_item: serde_json::Map<String, Value>,
+    record_id: &str,
+    parent_id: Option<String>,
+    timestamp: Option<DateTime<Utc>>,
+) -> Result<(Vec<Event>, Option<String>), String> {
+    let message = raw_item
+        .get("message")
+        .and_then(|value| value.as_object())
+        .ok_or_else(|| "message record must contain an object message".to_string())?;
+    let role = message.get("role").and_then(string_or_none);
+    let content = message
+        .get("content")
+        .and_then(|value| value.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let mut normalized = Vec::new();
+    match role.as_deref() {
+        Some("user") => {
+            let text = sanitize_openclaw_message_text(
+                &extract_openclaw_text_segments(&content).join("\n"),
+            );
+            if let Some(text) = text {
+                normalized.push(session_event(
+                    &format!("evt_message_{record_id}"),
+                    EventType::MessageUser,
+                    EventActor::User,
+                    timestamp,
+                    parent_id,
+                    json_object([
+                        ("message", text.into()),
+                        ("source", "openclaw.session".into()),
+                    ]),
+                ));
+            }
+            Ok((normalized, None))
+        }
+        Some("assistant") => {
+            let visible_text = sanitize_openclaw_message_text(
+                &extract_openclaw_visible_assistant_text(&content).join("\n"),
+            );
+            if let Some(text) = visible_text {
+                normalized.push(session_event(
+                    &format!("evt_message_{record_id}"),
+                    EventType::MessageAgent,
+                    EventActor::Agent,
+                    timestamp,
+                    parent_id.clone(),
+                    json_object([
+                        ("message", text.into()),
+                        ("source", "openclaw.session".into()),
+                    ]),
+                ));
+            }
+            for (index, item) in content.iter().enumerate() {
+                let Some(item) = item.as_object() else {
+                    continue;
+                };
+                if item.get("type").and_then(string_or_none).as_deref() != Some("toolCall") {
+                    continue;
+                }
+                let tool_name = item
+                    .get("name")
+                    .and_then(string_or_none)
+                    .unwrap_or_else(|| "unknown_tool".to_string());
+                let arguments = item
+                    .get("arguments")
+                    .cloned()
+                    .filter(|value| value.is_object())
+                    .unwrap_or_else(|| Value::Object(Map::new()));
+                let tool_call_id = item.get("id").and_then(string_or_none);
+                normalized.push(session_event(
+                    &format!("evt_tool_{record_id}_{}", index + 1),
+                    EventType::ToolCalled,
+                    EventActor::Agent,
+                    timestamp,
+                    parent_id.clone(),
+                    json_object([
+                        ("tool_name", tool_name.clone().into()),
+                        ("arguments", arguments.clone()),
+                        (
+                            "tool_call_id",
+                            tool_call_id
+                                .clone()
+                                .map(Value::String)
+                                .unwrap_or(Value::Null),
+                        ),
+                        ("source", "openclaw.session".into()),
+                    ]),
+                ));
+                normalized.extend(normalize_openclaw_tool_call_events(
+                    record_id,
+                    index + 1,
+                    parent_id.clone(),
+                    timestamp,
+                    &tool_name,
+                    tool_call_id,
+                    arguments,
+                ));
+            }
+            Ok((normalized, None))
+        }
+        Some("toolResult") => {
+            let text = extract_openclaw_text_segments(&content).join("\n");
+            let text = if text.trim().is_empty() {
+                None
+            } else {
+                Some(text)
+            };
+            let tool_name = message.get("toolName").and_then(string_or_none);
+            let tool_call_id = message.get("toolCallId").and_then(string_or_none);
+            let details = message
+                .get("details")
+                .cloned()
+                .filter(|value| value.is_object())
+                .unwrap_or_else(|| Value::Object(Map::new()));
+
+            normalized.push(session_event(
+                &format!("evt_tool_result_{record_id}"),
+                EventType::ToolCompleted,
+                EventActor::Tool,
+                timestamp,
+                parent_id.clone(),
+                json_object([
+                    (
+                        "tool_name",
+                        tool_name.clone().map(Value::String).unwrap_or(Value::Null),
+                    ),
+                    (
+                        "tool_call_id",
+                        tool_call_id
+                            .clone()
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    (
+                        "content",
+                        text.clone().map(Value::String).unwrap_or(Value::Null),
+                    ),
+                    (
+                        "is_error",
+                        message
+                            .get("isError")
+                            .and_then(|value| value.as_bool())
+                            .unwrap_or(false)
+                            .into(),
+                    ),
+                    ("details", details.clone()),
+                    ("source", "openclaw.session".into()),
+                ]),
+            ));
+            normalized.extend(normalize_openclaw_tool_result_events(
+                record_id,
+                parent_id,
+                timestamp,
+                tool_name,
+                tool_call_id,
+                text,
+                details,
+            ));
+            Ok((normalized, None))
+        }
+        _ => Ok((Vec::new(), None)),
+    }
+}
+
+fn normalize_openclaw_tool_call_events(
+    record_id: &str,
+    index: usize,
+    parent_id: Option<String>,
+    timestamp: Option<DateTime<Utc>>,
+    tool_name: &str,
+    tool_call_id: Option<String>,
+    arguments: Value,
+) -> Vec<Event> {
+    let Some(arguments_obj) = arguments.as_object() else {
+        return Vec::new();
+    };
+
+    if tool_name == "exec_command" {
+        let Some(command) = arguments_obj.get("cmd").and_then(string_or_none) else {
+            return Vec::new();
+        };
+        let mut events = vec![session_event(
+            &format!("evt_command_started_{record_id}_{index}"),
+            EventType::CommandStarted,
+            EventActor::Agent,
+            timestamp,
+            parent_id.clone(),
+            json_object([
+                ("command", command.clone().into()),
+                (
+                    "tool_call_id",
+                    tool_call_id
+                        .clone()
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                ("source", "openclaw.session".into()),
+            ]),
+        )];
+        for (read_index, path) in extract_file_reads_from_command(&command)
+            .into_iter()
+            .enumerate()
+        {
+            events.push(session_event(
+                &format!("evt_file_read_{record_id}_{index}_{}", read_index + 1),
+                EventType::FileRead,
+                EventActor::Agent,
+                timestamp,
+                parent_id.clone(),
+                json_object([
+                    ("path", path.into()),
+                    ("command", command.clone().into()),
+                    (
+                        "tool_call_id",
+                        tool_call_id
+                            .clone()
+                            .map(Value::String)
+                            .unwrap_or(Value::Null),
+                    ),
+                    ("source", "openclaw.session".into()),
+                ]),
+            ));
+        }
+        return events;
+    }
+
+    if tool_name == "apply_patch" {
+        let Some(patch_text) = arguments_obj.get("patch").and_then(string_or_none) else {
+            return Vec::new();
+        };
+        return extract_paths_from_apply_patch(&patch_text)
+            .into_iter()
+            .enumerate()
+            .map(|(path_index, path)| {
+                session_event(
+                    &format!("evt_file_write_{record_id}_{index}_{}", path_index + 1),
+                    EventType::FileWrite,
+                    EventActor::Agent,
+                    timestamp,
+                    parent_id.clone(),
+                    json_object([
+                        ("path", path.into()),
+                        ("summary", "Modified via apply_patch".into()),
+                        (
+                            "tool_call_id",
+                            tool_call_id
+                                .clone()
+                                .map(Value::String)
+                                .unwrap_or(Value::Null),
+                        ),
+                        ("source", "openclaw.session".into()),
+                    ]),
+                )
+            })
+            .collect();
+    }
+
+    if tool_name == "view_image" {
+        let Some(path) = arguments_obj.get("path").and_then(string_or_none) else {
+            return Vec::new();
+        };
+        return vec![session_event(
+            &format!("evt_file_read_{record_id}_{index}_image"),
+            EventType::FileRead,
+            EventActor::Agent,
+            timestamp,
+            parent_id,
+            json_object([
+                ("path", path.into()),
+                (
+                    "tool_call_id",
+                    tool_call_id.map(Value::String).unwrap_or(Value::Null),
+                ),
+                ("source", "openclaw.session".into()),
+            ]),
+        )];
+    }
+
+    Vec::new()
+}
+
+fn normalize_openclaw_tool_result_events(
+    record_id: &str,
+    parent_id: Option<String>,
+    timestamp: Option<DateTime<Utc>>,
+    tool_name: Option<String>,
+    tool_call_id: Option<String>,
+    text: Option<String>,
+    details: Value,
+) -> Vec<Event> {
+    if tool_name.as_deref() != Some("exec_command") {
+        return Vec::new();
+    }
+    let details_obj = details.as_object();
+    let command = details_obj
+        .and_then(|details| details.get("cmd"))
+        .and_then(string_or_none)
+        .or_else(|| {
+            details_obj
+                .and_then(|details| details.get("command"))
+                .and_then(string_or_none)
+        });
+    let exit_code = details_obj
+        .and_then(|details| details.get("exit_code"))
+        .and_then(|value| value.as_i64())
+        .unwrap_or(0);
+    let stderr = details_obj
+        .and_then(|details| details.get("stderr"))
+        .and_then(string_or_none);
+    if text.is_none() && stderr.is_none() && details_obj.and_then(|d| d.get("exit_code")).is_none()
+    {
+        return Vec::new();
+    }
+
+    vec![session_event(
+        &format!("evt_command_completed_{record_id}"),
+        EventType::CommandCompleted,
+        EventActor::System,
+        timestamp,
+        parent_id,
+        json_object([
+            (
+                "command",
+                command.unwrap_or_else(|| "exec_command".to_string()).into(),
+            ),
+            ("exit_code", exit_code.into()),
+            ("stdout", text.map(Value::String).unwrap_or(Value::Null)),
+            ("stderr", stderr.map(Value::String).unwrap_or(Value::Null)),
+            (
+                "tool_call_id",
+                tool_call_id.map(Value::String).unwrap_or(Value::Null),
+            ),
+            ("source", "openclaw.session".into()),
+        ]),
+    )]
+}
+
+fn normalize_openclaw_custom_record(
+    raw_item: &serde_json::Map<String, Value>,
+    record_id: &str,
+    parent_id: Option<String>,
+    timestamp: Option<DateTime<Utc>>,
+) -> Option<Event> {
+    let tool_name = raw_item
+        .get("name")
+        .and_then(string_or_none)
+        .or_else(|| raw_item.get("customType").and_then(string_or_none))
+        .or_else(|| raw_item.get("event").and_then(string_or_none));
+    let details = raw_item
+        .get("data")
+        .cloned()
+        .filter(|value| value.is_object())
+        .or_else(|| {
+            raw_item
+                .get("details")
+                .cloned()
+                .filter(|value| value.is_object())
+        })
+        .unwrap_or_else(|| Value::Object(Map::new()));
+    let content = raw_item
+        .get("text")
+        .and_then(string_or_none)
+        .or_else(|| raw_item.get("summary").and_then(string_or_none))
+        .or_else(|| raw_item.get("content").and_then(string_or_none));
+
+    if tool_name.is_none() && content.is_none() && details.as_object().is_none_or(|d| d.is_empty())
+    {
+        return None;
+    }
+
+    Some(session_event(
+        &format!("evt_custom_{record_id}"),
+        EventType::ToolCompleted,
+        EventActor::Tool,
+        timestamp,
+        parent_id,
+        json_object([
+            (
+                "tool_name",
+                tool_name.unwrap_or_else(|| "custom".to_string()).into(),
+            ),
+            (
+                "tool_call_id",
+                raw_item
+                    .get("toolCallId")
+                    .and_then(string_or_none)
+                    .map(Value::String)
+                    .unwrap_or(Value::Null),
+            ),
+            ("content", content.map(Value::String).unwrap_or(Value::Null)),
+            ("details", details),
+            ("source", "openclaw.session.custom".into()),
+        ]),
+    ))
+}
+
+fn openclaw_session_id_from_import(events: &[Event], transcript_path: &std::path::Path) -> String {
+    for event in events {
+        if event.event_type != EventType::CaseStarted {
+            continue;
+        }
+        if let Some(session_id) = event
+            .payload
+            .as_object()
+            .and_then(|payload| payload.get("session_id"))
+            .and_then(string_or_none)
+        {
+            return session_id;
+        }
+    }
+    transcript_path
+        .file_stem()
+        .and_then(|item| item.to_str())
+        .unwrap_or("openclaw-session")
+        .to_string()
+}
+
+fn extract_openclaw_text_segments(content: &[Value]) -> Vec<String> {
+    let mut segments = Vec::new();
+    for item in content {
+        let Some(item) = item.as_object() else {
+            continue;
+        };
+        match item.get("type").and_then(string_or_none).as_deref() {
+            Some("text") => {
+                if let Some(text) = item.get("text").and_then(string_or_none) {
+                    segments.push(text);
+                }
+            }
+            Some("thinking") => {
+                if let Some(thinking) = item.get("thinking").and_then(string_or_none) {
+                    segments.push(thinking);
+                }
+            }
+            _ => {}
+        }
+    }
+    segments
+}
+
+fn extract_openclaw_visible_assistant_text(content: &[Value]) -> Vec<String> {
+    let mut segments = Vec::new();
+    for item in content {
+        let Some(item) = item.as_object() else {
+            continue;
+        };
+        match item.get("type").and_then(string_or_none).as_deref() {
+            Some("text") => {
+                if let Some(text) = item.get("text").and_then(string_or_none) {
+                    segments.push(text);
+                }
+            }
+            Some("thinking") => {
+                if let Some(summary) = item.get("summary").and_then(|value| value.as_array()) {
+                    for part in summary {
+                        let Some(part) = part.as_object() else {
+                            continue;
+                        };
+                        if part.get("type").and_then(string_or_none).as_deref()
+                            != Some("summary_text")
+                        {
+                            continue;
+                        }
+                        if let Some(text) = part.get("text").and_then(string_or_none) {
+                            segments.push(text);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    segments
+}
+
+fn sanitize_openclaw_message_text(text: &str) -> Option<String> {
+    let cleaned = text.replace("\r\n", "\n").trim().to_string();
+    if cleaned.is_empty() {
+        return None;
+    }
+    let mut kept_lines = Vec::new();
+    let mut dropping_noise_block = false;
+    for raw_line in cleaned.lines() {
+        let line = raw_line.trim();
+        let normalized = line.to_ascii_lowercase();
+        if [
+            "operator policy",
+            "transport metadata",
+            "[operator policy]",
+            "[transport metadata]",
+        ]
+        .iter()
+        .any(|prefix| normalized.starts_with(prefix))
+        {
+            dropping_noise_block = true;
+            continue;
+        }
+        if dropping_noise_block {
+            if line.is_empty() {
+                dropping_noise_block = false;
+            }
+            continue;
+        }
+        kept_lines.push(raw_line.to_string());
+    }
+    let sanitized = kept_lines.join("\n").trim().to_string();
+    (!sanitized.is_empty()).then_some(sanitized)
+}
+
+fn extract_file_reads_from_command(command: &str) -> Vec<String> {
+    let tokens = match shlex::split(command) {
+        Some(tokens) => tokens,
+        None => return Vec::new(),
+    };
+    if tokens.is_empty() {
+        return Vec::new();
+    }
+    match tokens[0].as_str() {
+        "cat" | "head" | "tail" | "sed" => {
+            dedupe_preserve_order(extract_path_like_tokens(&tokens[1..]))
+        }
+        "rg" | "grep" => dedupe_preserve_order(extract_search_command_paths(&tokens[1..])),
+        _ => Vec::new(),
+    }
+}
+
+fn extract_paths_from_apply_patch(patch_text: &str) -> Vec<String> {
+    let mut paths = Vec::new();
+    for raw_line in patch_text.lines() {
+        let line = raw_line.trim();
+        for prefix in [
+            "*** Update File: ",
+            "*** Add File: ",
+            "*** Delete File: ",
+            "*** Move to: ",
+        ] {
+            if let Some(path) = line.strip_prefix(prefix).map(str::trim) {
+                if !path.is_empty() {
+                    paths.push(path.to_string());
+                }
+            }
+        }
+    }
+    dedupe_preserve_order(paths)
+}
+
+fn dedupe_preserve_order(values: Vec<String>) -> Vec<String> {
+    let mut seen = HashSet::new();
+    let mut deduped = Vec::new();
+    for value in values {
+        if seen.insert(value.clone()) {
+            deduped.push(value);
+        }
+    }
+    deduped
+}
+
+fn extract_path_like_tokens(tokens: &[String]) -> Vec<String> {
+    tokens
+        .iter()
+        .filter(|token| !token.starts_with('-'))
+        .filter(|token| {
+            token.contains('/')
+                || std::path::Path::new(token)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|name| name.contains('.'))
+        })
+        .cloned()
+        .collect()
+}
+
+fn extract_search_command_paths(tokens: &[String]) -> Vec<String> {
+    let mut paths = Vec::new();
+    let mut saw_pattern = false;
+    let mut skip_next = false;
+    for token in tokens {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if ["-g", "-e", "-f", "--glob", "--regexp", "--file"].contains(&token.as_str()) {
+            skip_next = true;
+            continue;
+        }
+        if token.starts_with('-') {
+            continue;
+        }
+        if !saw_pattern {
+            saw_pattern = true;
+            continue;
+        }
+        if token.contains('/')
+            || std::path::Path::new(token)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|name| name.contains('.'))
+        {
+            paths.push(token.clone());
+        }
+    }
+    paths
+}
+
+fn parse_optional_timestamp(value: Option<&Value>) -> Result<Option<DateTime<Utc>>, String> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let Some(value) = value.as_str() else {
+        return Err("timestamp must be an ISO-8601 string".to_string());
+    };
+    DateTime::parse_from_rfc3339(value)
+        .map(|value| Some(value.with_timezone(&Utc)))
+        .map_err(|error| error.to_string())
+}
+
+fn json_object<const N: usize>(pairs: [(&str, Value); N]) -> Value {
+    let mut map = Map::new();
+    for (key, value) in pairs {
+        map.insert(key.to_string(), value);
+    }
+    Value::Object(map)
 }
 
 fn extract_decisions(case_id: &str, events: &[Event]) -> Vec<Decision> {

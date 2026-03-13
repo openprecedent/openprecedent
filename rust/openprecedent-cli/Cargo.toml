@@ -14,9 +14,11 @@ chrono.workspace = true
 clap.workspace = true
 openprecedent-contracts = { path = "../openprecedent-contracts" }
 openprecedent-core = { path = "../openprecedent-core" }
+openprecedent-capture-openclaw = { path = "../openprecedent-capture-openclaw" }
 openprecedent-store-sqlite = { path = "../openprecedent-store-sqlite" }
 serde.workspace = true
 serde_json.workspace = true
+shlex.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

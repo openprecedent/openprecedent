@@ -449,7 +449,11 @@ dependencies = [
 name = "openprecedent-capture-openclaw"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "openprecedent-core",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
@@ -459,12 +463,14 @@ dependencies = [
  "assert_cmd",
  "chrono",
  "clap",
+ "openprecedent-capture-openclaw",
  "openprecedent-contracts",
  "openprecedent-core",
  "openprecedent-store-sqlite",
  "predicates",
  "serde",
  "serde_json",
+ "shlex",
  "tempfile",
  "uuid",
 ]
