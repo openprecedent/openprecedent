@@ -33,6 +33,7 @@ The first implementation target is a local single-agent workflow. The current go
 - After completing one issue, open exactly one PR for that issue instead of batching multiple issues into the same PR.
 - Link the PR to its issue in the PR body using a closing reference such as `Closes #24` so the issue is closed automatically when the PR is merged.
 - After a PR is merged, continue the next task on a new branch and a new PR linked to the next issue.
+- When running Python tests, do not stop at a missing global `pytest`; use `./scripts/run-pytest.sh` or the repository-local `.venv` resolution path first.
 
 ## Project-Local Codex Skill
 

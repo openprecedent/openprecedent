@@ -208,7 +208,7 @@ check_issue_state
 check_merged_branch_reuse
 
 echo "Running pytest"
-PYTHONPATH=src "$PYTHON_BIN" -m pytest $PYTEST_ARGS
+PYTHONPATH=src OPENPRECEDENT_PYTHON_BIN="$PYTHON_BIN" ./scripts/run-pytest.sh $PYTEST_ARGS
 
 echo "Running markdownlint if available"
 run_markdownlint_if_available

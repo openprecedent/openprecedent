@@ -27,6 +27,7 @@ Improve the quality of replay, evaluation, and precedent behavior on real or ano
 
 - `#26` Add anonymized real-session fixtures to the evaluation suite
 - `#28` Improve precedent ranking quality on larger real-case history
+- `#164` Resolve repository-local test runner before reporting missing pytest
 
 ## Notes
 

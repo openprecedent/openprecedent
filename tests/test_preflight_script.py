@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -9,7 +10,7 @@ def test_preflight_script_fails_without_codex_review(tmp_path: Path) -> None:
     repo_root = Path(__file__).parent.parent
     env = os.environ.copy()
     env["OPENPRECEDENT_REVIEW_FILE"] = str(tmp_path / ".codex-review")
-    env["OPENPRECEDENT_PYTHON_BIN"] = str(repo_root / ".venv" / "bin" / "python")
+    env["OPENPRECEDENT_PYTHON_BIN"] = sys.executable
     env["OPENPRECEDENT_PREFLIGHT_BASE_REF"] = "HEAD"
 
     result = subprocess.run(
@@ -51,7 +52,7 @@ def test_preflight_script_runs_and_skips_markdownlint_when_unavailable(tmp_path:
     env = os.environ.copy()
     env["OPENPRECEDENT_REVIEW_FILE"] = str(review_file)
     env["OPENPRECEDENT_REVIEW_PROOF_FILE"] = str(proof_file)
-    env["OPENPRECEDENT_PYTHON_BIN"] = str(repo_root / ".venv" / "bin" / "python")
+    env["OPENPRECEDENT_PYTHON_BIN"] = sys.executable
     env["PATH"] = "/usr/bin:/bin"
     env["OPENPRECEDENT_PREFLIGHT_BASE_REF"] = "HEAD"
     env["OPENPRECEDENT_PREFLIGHT_PYTEST_ARGS"] = "tests/test_codex_review_checkpoint.py"
