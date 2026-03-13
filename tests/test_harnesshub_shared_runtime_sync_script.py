@@ -14,10 +14,20 @@ def _python_bin(repo_root: Path) -> Path:
 
 
 def _openprecedent_bin(repo_root: Path) -> Path:
-    candidate = repo_root / ".venv" / "bin" / "openprecedent"
-    if candidate.exists():
-        return candidate
-    return repo_root.parent / "openprecedent" / ".venv" / "bin" / "openprecedent"
+    release_candidate = repo_root / "target" / "release" / "openprecedent"
+    if release_candidate.exists():
+        return release_candidate
+    debug_candidate = repo_root / "target" / "debug" / "openprecedent"
+    if debug_candidate.exists():
+        return debug_candidate
+    subprocess.run(
+        ["cargo", "build", "-q", "-p", "openprecedent-cli"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return debug_candidate
 
 
 def _write_round_files(repo_root: Path, issue: int, title: str) -> tuple[Path, Path]:

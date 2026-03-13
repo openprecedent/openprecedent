@@ -42,7 +42,7 @@ The live agent turn used this constrained recommendation prompt:
 In the live session, OpenClaw:
 
 - read the installed `openprecedent-decision-lineage` skill
-- executed `openprecedent runtime decision-lineage-brief`
+- executed `openprecedent --format json lineage brief`
 - received a non-empty brief with one matched case from shared history
 
 Observed brief result:
@@ -73,7 +73,7 @@ After updating the installed skill wording to make prior-decision consistency an
 In the same live profile, OpenClaw:
 
 - read the updated installed `openprecedent-decision-lineage` skill
-- executed `openprecedent runtime decision-lineage-brief`
+- executed `openprecedent --format json lineage brief`
 - received a non-empty brief with the same shared-history match
 
 Observed brief result:

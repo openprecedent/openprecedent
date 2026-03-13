@@ -4,18 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-PYTHON_BIN="${OPENPRECEDENT_PYTHON_BIN:-$ROOT_DIR/.venv/bin/python}"
-if [[ ! -x "$PYTHON_BIN" ]]; then
-  PYTHON_BIN="python3"
-fi
+source "$ROOT_DIR/scripts/lib/openprecedent-rust-cli.sh"
+
+OPENPRECEDENT_BIN="$(resolve_openprecedent_rust_cli "$ROOT_DIR")"
 
 if [[ -z "${OPENPRECEDENT_HOME:-}" ]]; then
   export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"
 fi
-
-run_openprecedent_cli() {
-  "$PYTHON_BIN" -c 'from openprecedent.cli import run; run()' "$@"
-}
 
 INSPECT_LATEST=0
 ARGS=()
@@ -33,7 +28,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-run_openprecedent_cli runtime decision-lineage-brief "${ARGS[@]}"
+"$OPENPRECEDENT_BIN" \
+  --home "$OPENPRECEDENT_HOME" \
+  --format json \
+  lineage brief "${ARGS[@]}"
 
 if [[ "$INSPECT_LATEST" != "1" ]]; then
   exit 0
@@ -46,7 +44,7 @@ if [[ ! -f "$LOG_FILE" ]]; then
 fi
 
 INVOCATION_ID="$(
-  "$PYTHON_BIN" - "$LOG_FILE" <<'PY'
+  python3 - "$LOG_FILE" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -64,6 +62,9 @@ print(last_id)
 PY
 )"
 
-run_openprecedent_cli runtime inspect-decision-lineage-invocation \
-  --invocation-id "$INVOCATION_ID" \
-  --log-file "$LOG_FILE"
+"$OPENPRECEDENT_BIN" \
+  --home "$OPENPRECEDENT_HOME" \
+  --invocation-log "$LOG_FILE" \
+  --format json \
+  lineage invocation inspect \
+  --invocation-id "$INVOCATION_ID"

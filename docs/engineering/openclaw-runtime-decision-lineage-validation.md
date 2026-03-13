@@ -13,7 +13,7 @@ It defines the current best trigger policy and the expected effect of the brief 
 - validation date: `2026-03-10`
 - repository baseline: `upstream/main` at `8e62389`
 - runtime surface under test:
-  - `openprecedent runtime decision-lineage-brief`
+  - `openprecedent --format json lineage brief`
   - `skills/openprecedent-decision-lineage/SKILL.md`
 - validation mode: repository-local fixture-backed simulation
 

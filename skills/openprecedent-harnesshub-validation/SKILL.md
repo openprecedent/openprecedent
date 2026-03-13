@@ -27,8 +27,16 @@ Before trying to retrieve lineage, verify that local OpenPrecedent is available:
 
 ```bash
 OPENPRECEDENT_REPO_ROOT="{{OPENPRECEDENT_REPO_ROOT}}"
-OPENPRECEDENT_WORKFLOW="$OPENPRECEDENT_REPO_ROOT/scripts/run-codex-decision-lineage-workflow.sh"
-test -x "$OPENPRECEDENT_WORKFLOW"
+if command -v openprecedent >/dev/null 2>&1; then
+  OPENPRECEDENT_BIN="$(command -v openprecedent)"
+elif [[ -x "$OPENPRECEDENT_REPO_ROOT/target/release/openprecedent" ]]; then
+  OPENPRECEDENT_BIN="$OPENPRECEDENT_REPO_ROOT/target/release/openprecedent"
+elif [[ -x "$OPENPRECEDENT_REPO_ROOT/target/debug/openprecedent" ]]; then
+  OPENPRECEDENT_BIN="$OPENPRECEDENT_REPO_ROOT/target/debug/openprecedent"
+else
+  OPENPRECEDENT_BIN=""
+fi
+test -n "$OPENPRECEDENT_BIN"
 ```
 
 If that probe fails:
@@ -54,7 +62,7 @@ Start with the lowest-cost query first:
 ```bash
 OPENPRECEDENT_REPO_ROOT="{{OPENPRECEDENT_REPO_ROOT}}"
 export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"
-"$OPENPRECEDENT_REPO_ROOT/scripts/run-codex-decision-lineage-workflow.sh" \
+"$OPENPRECEDENT_BIN" --home "$OPENPRECEDENT_HOME" --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "<one-line HarnessHub issue summary>"
 ```
@@ -68,7 +76,7 @@ When the write path is clearer, tighten the query:
 ```bash
 OPENPRECEDENT_REPO_ROOT="{{OPENPRECEDENT_REPO_ROOT}}"
 export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"
-"$OPENPRECEDENT_REPO_ROOT/scripts/run-codex-decision-lineage-workflow.sh" \
+"$OPENPRECEDENT_BIN" --home "$OPENPRECEDENT_HOME" --format json lineage brief \
   --query-reason before_file_write \
   --task-summary "<current task summary>" \
   --current-plan "<current plan>" \
@@ -85,7 +93,7 @@ Use `after_failure` only when the failure should change task framing or recovery
 ```bash
 OPENPRECEDENT_REPO_ROOT="{{OPENPRECEDENT_REPO_ROOT}}"
 export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"
-"$OPENPRECEDENT_REPO_ROOT/scripts/run-codex-decision-lineage-workflow.sh" \
+"$OPENPRECEDENT_BIN" --home "$OPENPRECEDENT_HOME" --format json lineage brief \
   --query-reason after_failure \
   --task-summary "<current task summary>" \
   --current-plan "<failed or current plan>" \
@@ -95,7 +103,7 @@ export OPENPRECEDENT_HOME="$HOME/.openprecedent/runtime"
 ## Fallback Rules
 
 - If the OpenPrecedent repository path is absent, skip lineage and continue the HarnessHub task normally.
-- If the workflow script is absent, skip lineage and continue normally.
+- If the Rust CLI is absent, skip lineage and continue normally.
 - If the lineage query fails, treat it as a local tooling gap and continue the HarnessHub task normally.
 - If the lineage brief is empty, continue normally without forcing precedent use.
 
