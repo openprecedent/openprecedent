@@ -4,6 +4,10 @@
 
 This document defines the long-term public command interface for OpenPrecedent.
 
+For the shipped implementation summary, see:
+
+- [rust-public-cli-implementation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/rust-public-cli-implementation.md)
+
 The goal is not to port the current Python `argparse` tree one command at a time.
 The goal is to establish a stable, extensible, product-facing `openprecedent` CLI implemented in Rust and treated as the sole supported external executable surface.
 
