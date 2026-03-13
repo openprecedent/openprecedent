@@ -20,7 +20,7 @@ OpenPrecedent should function as a local private development aid for normal Harn
 
 ## Entry Guidance
 
-- Start with a local availability probe against `{{OPENPRECEDENT_REPO_ROOT}}/scripts/run-codex-decision-lineage-workflow.sh`.
+- Start with a local availability probe against the Rust `openprecedent` CLI or a local build under `{{OPENPRECEDENT_REPO_ROOT}}/target/`.
 - If the probe fails, continue the task normally instead of redefining HarnessHub's public workflow.
 - If the probe succeeds, run the minimum `initial_planning` query before implementation.
 - Compose this skill with HarnessHub's issue-execution skill rather than replacing the main delivery path.

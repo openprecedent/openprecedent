@@ -10,12 +10,13 @@ Can a new Codex project start from the documented runtime setup, run several dec
 
 ## Method
 
-The validation used the repository-local harness:
+The validation used the Rust CLI directly against one shared runtime home:
 
 ```bash
-OPENPRECEDENT_CODEX_LIVE_RESET=1 \
-OPENPRECEDENT_CODEX_LIVE_AUTO_RUN=1 \
-./scripts/run-codex-live-validation.sh
+openprecedent --home "$HOME/.openprecedent/runtime" --format json capture codex import-rollout tests/fixtures/codex_rollout_precedent_current.jsonl --case-id case_codex_live_current --title "Codex live seed current"
+openprecedent --home "$HOME/.openprecedent/runtime" --format json decision extract case_codex_live_current
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage brief --query-reason initial_planning --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage invocation list
 ```
 
 This run:
@@ -45,8 +46,8 @@ Observed outcomes:
 - the shared runtime home was created successfully
 - prior Codex precedent history was seeded successfully
 - three runtime invocations were recorded
-- `list-decision-lineage-invocations` returned those records
-- `inspect-decision-lineage-invocation` returned the latest invocation as an inspectable artifact
+- `lineage invocation list` returned those records
+- `lineage invocation inspect` returned the latest invocation as an inspectable artifact
 - the latest invocation still contained semantic matched case ids rather than empty output
 
 The recorded query-reason sequence for the validation run was:
@@ -69,7 +70,7 @@ The latest invocation summary reported:
 This validation proves that a new project can start from:
 
 - one shared runtime home
-- one repository-local Codex workflow entrypoint
+- one stable Rust CLI workflow entrypoint
 - one inspection path for verifying records
 
 That is the minimum startup loop needed before `#131` can be executed in a later real project.

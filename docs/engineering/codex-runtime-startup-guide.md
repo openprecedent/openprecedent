@@ -35,12 +35,12 @@ This is the recommended starting point for both humans and agents.
 
 ## For Humans
 
-### 1. Start from the repository-local workflow
+### 1. Start from the Rust CLI
 
 Use:
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "Describe the new project task here."
 ```
@@ -61,7 +61,7 @@ The current supported `query_reason` values are:
 Typical examples:
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage brief \
   --query-reason before_file_write \
   --task-summary "Stay within docs-only scope while updating the first project README." \
   --current-plan "Draft the project README before any broader implementation." \
@@ -69,7 +69,7 @@ Typical examples:
 ```
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage brief \
   --query-reason after_failure \
   --task-summary "Recover from a broader implementation attempt and stay within the approved docs-only scope." \
   --current-plan "Narrow back to documentation guidance." \
@@ -81,13 +81,13 @@ Typical examples:
 List recorded invocations:
 
 ```bash
-openprecedent runtime list-decision-lineage-invocations
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage invocation list
 ```
 
 Inspect one invocation:
 
 ```bash
-openprecedent runtime inspect-decision-lineage-invocation \
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage invocation inspect \
   --invocation-id <invocation_id>
 ```
 
@@ -115,32 +115,18 @@ An agent should not:
 - call the workflow on every turn
 - treat the brief as a replacement for current local context
 
-## End-To-End Startup Harness
+## End-To-End Startup Validation
 
-For a repeatable startup-and-recording validation flow, use:
-
-```bash
-./scripts/run-codex-live-validation.sh
-```
-
-By default this prepares a workspace under `/tmp/openprecedent-codex-live` with:
-
-- `runtime-home/` for the shared Codex runtime home
-- `prompts/` with three round prompts
-- `output/manifest.json`
-- `output/20-invocation-list.json`
-- `output/21-latest-invocation-summary.json`
-- `next-steps.txt`
-
-If you want the harness to execute a three-round repository-local validation automatically, run:
+For a repeatable startup-and-recording validation flow, execute the same Rust CLI surface directly:
 
 ```bash
-OPENPRECEDENT_CODEX_LIVE_RESET=1 \
-OPENPRECEDENT_CODEX_LIVE_AUTO_RUN=1 \
-./scripts/run-codex-live-validation.sh
+openprecedent --home "$HOME/.openprecedent/runtime" --format json capture codex import-rollout tests/fixtures/codex_rollout_precedent_current.jsonl --case-id case_codex_live_current --title "Codex live seed current"
+openprecedent --home "$HOME/.openprecedent/runtime" --format json decision extract case_codex_live_current
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage brief --query-reason initial_planning --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage invocation list
 ```
 
-That path is useful for validating that startup, runtime recording, listing, and inspection are all wired correctly before using the workflow in a different project.
+That path validates that startup, runtime recording, listing, and inspection are all wired correctly before using the workflow in a different project.
 
 ## Read Next
 

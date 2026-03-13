@@ -38,7 +38,7 @@ If the task is already straightforward and no semantic ambiguity exists, continu
 
 ## How To Call It
 
-Run the OpenPrecedent CLI and ask for a decision-lineage brief.
+Run the Rust `openprecedent` CLI and ask for a decision-lineage brief.
 
 ### Stable shared runtime paths
 
@@ -64,7 +64,7 @@ export OPENPRECEDENT_RUNTIME_INVOCATION_LOG="$HOME/.openprecedent/runtime/openpr
 ### Initial planning
 
 ```bash
-openprecedent runtime decision-lineage-brief \
+openprecedent --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "<current task summary>"
 ```
@@ -74,7 +74,7 @@ Use this even for no-code recommendation tasks when the user asks for consistenc
 Example:
 
 ```bash
-openprecedent runtime decision-lineage-brief \
+openprecedent --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "Do not edit code. Provide a short written recommendation only for improving repository navigation, and keep it consistent with earlier repository decisions if relevant."
 ```
@@ -82,7 +82,7 @@ openprecedent runtime decision-lineage-brief \
 ### Before a risky write
 
 ```bash
-openprecedent runtime decision-lineage-brief \
+openprecedent --format json lineage brief \
   --query-reason before_file_write \
   --task-summary "<current task summary>" \
   --candidate-action "<planned write or change>" \
@@ -92,7 +92,7 @@ openprecedent runtime decision-lineage-brief \
 ### After failure or ambiguity
 
 ```bash
-openprecedent runtime decision-lineage-brief \
+openprecedent --format json lineage brief \
   --query-reason after_failure \
   --task-summary "<current task summary>" \
   --current-plan "<current plan or attempted path>" \
@@ -140,7 +140,7 @@ Task:
 Useful call:
 
 ```bash
-openprecedent runtime decision-lineage-brief \
+openprecedent --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "Do not edit code. Provide a short written recommendation only."
 ```

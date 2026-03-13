@@ -1,6 +1,6 @@
 ---
 name: codex-runtime-decision-lineage
-description: Use for Codex-driven development work that should retrieve semantic decision-lineage context from OpenPrecedent during execution. Reuses the repository-local runtime workflow instead of introducing a generic multi-runtime abstraction.
+description: Use for Codex-driven development work that should retrieve semantic decision-lineage context from OpenPrecedent during execution through the Rust public CLI.
 ---
 
 # Codex Runtime Decision Lineage
@@ -33,18 +33,34 @@ Give Codex a narrow, inspectable runtime workflow for:
    - the appropriate `--query-reason`
 
 2. Prefer a stable runtime home.
-   If not already set, the workflow script defaults to:
+   If not already set, use:
    - `OPENPRECEDENT_HOME=$HOME/.openprecedent/runtime`
 
-3. Run the repository-local workflow script:
+3. Resolve the Rust CLI binary once per session:
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
+if [[ -x ./target/release/openprecedent ]]; then
+  OPENPRECEDENT_BIN=./target/release/openprecedent
+elif [[ -x ./target/debug/openprecedent ]]; then
+  OPENPRECEDENT_BIN=./target/debug/openprecedent
+else
+  cargo build -q -p openprecedent-cli
+  OPENPRECEDENT_BIN=./target/debug/openprecedent
+fi
+```
+
+4. Run the Rust CLI directly:
+
+```bash
+"$OPENPRECEDENT_BIN" \
+  --home "$HOME/.openprecedent/runtime" \
+  --format json \
+  lineage brief \
   --query-reason initial_planning \
   --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
 ```
 
-1. Add context when needed.
+5. Add context when needed.
    Useful optional flags:
    - `--current-plan`
    - `--candidate-action`
@@ -52,16 +68,12 @@ Give Codex a narrow, inspectable runtime workflow for:
    - `--case-id`
    - `--session-id`
 
-2. If later inspection matters, use:
+6. If later inspection matters, inspect the recorded invocation explicitly:
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
-  --inspect-latest \
-  --query-reason initial_planning \
-  --task-summary "..."
+"$OPENPRECEDENT_BIN" --home "$HOME/.openprecedent/runtime" --format json lineage invocation list
+"$OPENPRECEDENT_BIN" --home "$HOME/.openprecedent/runtime" --format json lineage invocation inspect --invocation-id <id>
 ```
-
-This prints the brief first, then inspects the newest recorded invocation from the runtime log.
 
 ## Decision Rules
 

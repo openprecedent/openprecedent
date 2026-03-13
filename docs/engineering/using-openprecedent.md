@@ -73,7 +73,7 @@ Choose the second mode if you are prototyping another local agent flow and want 
 If you are using the OpenClaw-first workflow, start by listing sessions:
 
 ```bash
-openprecedent runtime list-openclaw-sessions
+openprecedent capture openclaw list-sessions
 ```
 
 This reads `~/.openclaw/agents/main/sessions/sessions.json` and shows the latest discoverable sessions.
@@ -83,13 +83,13 @@ This reads `~/.openclaw/agents/main/sessions/sessions.json` and shows the latest
 Import the latest session:
 
 ```bash
-openprecedent runtime import-openclaw-session --latest --case-id case_openclaw_latest
+openprecedent capture openclaw import-session --latest --case-id case_openclaw_latest
 ```
 
 Or import a specific session by id:
 
 ```bash
-openprecedent runtime import-openclaw-session \
+openprecedent capture openclaw import-session \
   --session-id <session_id> \
   --case-id case_openclaw_target
 ```
@@ -97,7 +97,7 @@ openprecedent runtime import-openclaw-session \
 Or import a specific transcript file directly:
 
 ```bash
-openprecedent runtime import-openclaw-session \
+openprecedent capture openclaw import-session \
   --session-file /path/to/session.jsonl \
   --case-id case_openclaw_file
 ```
@@ -107,7 +107,7 @@ openprecedent runtime import-openclaw-session \
 After import, derive the current rule-based decisions:
 
 ```bash
-openprecedent extract decisions case_openclaw_latest
+openprecedent decision extract case_openclaw_latest
 ```
 
 ### 4. Replay the case
@@ -131,7 +131,7 @@ This returns:
 If you care more about the key decision points than the whole timeline:
 
 ```bash
-openprecedent decisions show case_openclaw_latest
+openprecedent decision list case_openclaw_latest
 ```
 
 ### 6. Look up precedent
@@ -154,7 +154,7 @@ This is useful when you want to answer questions like:
 If you want OpenPrecedent to keep importing new OpenClaw sessions over time:
 
 ```bash
-openprecedent runtime collect-openclaw-sessions --limit 1
+openprecedent capture openclaw collect-sessions --limit 1
 ```
 
 This command:
@@ -181,7 +181,7 @@ openprecedent eval fixtures tests/fixtures/evaluation/suite.json
 Collected-session evaluation:
 
 ```bash
-openprecedent eval collected-openclaw-sessions
+openprecedent eval captured-openclaw-sessions
 ```
 
 Use these when you want to check whether replay, extraction, and precedent behavior still look correct.
@@ -237,7 +237,7 @@ openprecedent case create --case-id case_manual_1 --title "Manual agent task"
 openprecedent event append case_manual_1 case.started system --payload '{}'
 openprecedent event append case_manual_1 message.user user --payload '{"message":"Summarize the rollout doc"}'
 openprecedent event append case_manual_1 message.agent agent --payload '{"message":"I will inspect the rollout documentation."}'
-openprecedent extract decisions case_manual_1
+openprecedent decision extract case_manual_1
 openprecedent replay case case_manual_1
 ```
 
@@ -270,7 +270,7 @@ That path is intentionally narrow:
 The first Codex-facing import command is:
 
 ```bash
-openprecedent runtime import-codex-rollout \
+openprecedent capture codex import-rollout \
   /path/to/rollout.jsonl \
   --case-id case_codex_example \
   --title "Imported Codex rollout"
@@ -282,10 +282,10 @@ The importer also strips low-value Codex runtime wrapper noise such as transport
 Imported Codex rollout history now also flows through the same semantic decision taxonomy as the rest of the repository, including task framing, constraints, clarifications, success criteria, rejected options, and explicit approval signals found in user guidance.
 The current precedent-quality validation for Codex-derived history is recorded in [codex-precedent-retrieval-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-precedent-retrieval-validation.md).
 
-For Codex-driven development work, the repository-local runtime workflow is:
+For Codex-driven development work, call the Rust CLI directly:
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
 ```
@@ -302,7 +302,7 @@ That workflow is documented here:
 For OpenClaw-facing runtime use, OpenPrecedent now exposes a dedicated semantic briefing surface:
 
 ```bash
-openprecedent runtime decision-lineage-brief \
+openprecedent --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "Do not edit code. Provide a short written recommendation only."
 ```
@@ -335,13 +335,13 @@ This is the supported way to make an OpenClaw-installed skill use the same persi
 If you want to inspect those records directly:
 
 ```bash
-openprecedent runtime list-decision-lineage-invocations
+openprecedent --format json lineage invocation list
 ```
 
 If you want to inspect one invocation together with its recorded brief summary and the nearby downstream case signals:
 
 ```bash
-openprecedent runtime inspect-decision-lineage-invocation \
+openprecedent --format json lineage invocation inspect \
   --invocation-id <invocation_id>
 ```
 
@@ -350,7 +350,7 @@ An installable OpenClaw skill is also included in this repository:
 - [SKILL.md](/workspace/02-projects/incubation/openprecedent/skills/openprecedent-decision-lineage/SKILL.md)
 
 That skill is designed for progressive disclosure.
-It teaches OpenClaw when to call `openprecedent runtime decision-lineage-brief`, how to choose `query_reason`, and how to use the returned brief as judgment context rather than operational instructions.
+It teaches OpenClaw when to call `openprecedent --format json lineage brief`, how to choose `query_reason`, and how to use the returned brief as judgment context rather than operational instructions.
 
 A separate OpenPrecedent-maintained HarnessHub validation skill is also included for the current real-project study:
 

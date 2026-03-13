@@ -6,13 +6,31 @@ import subprocess
 from pathlib import Path
 
 
+def _openprecedent_bin(repo_root: Path) -> Path:
+    release_candidate = repo_root / "target" / "release" / "openprecedent"
+    if release_candidate.exists():
+        return release_candidate
+
+    debug_candidate = repo_root / "target" / "debug" / "openprecedent"
+    if debug_candidate.exists():
+        return debug_candidate
+
+    subprocess.run(
+        ["cargo", "build", "-q", "-p", "openprecedent-cli"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return debug_candidate
+
+
 def test_harnesshub_matched_case_validation_produces_non_empty_matches(tmp_path: Path) -> None:
     repo_root = Path(__file__).parent.parent
     python_bin = repo_root / ".venv" / "bin" / "python"
-    openprecedent_bin = repo_root / ".venv" / "bin" / "openprecedent"
+    openprecedent_bin = _openprecedent_bin(repo_root)
     if not python_bin.exists():
         python_bin = repo_root.parent / "openprecedent" / ".venv" / "bin" / "python"
-        openprecedent_bin = repo_root.parent / "openprecedent" / ".venv" / "bin" / "openprecedent"
 
     bundle_dir = tmp_path / "bundle"
     bundle_dir.mkdir()
