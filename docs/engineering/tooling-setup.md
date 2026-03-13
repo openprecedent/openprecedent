@@ -35,6 +35,7 @@ python3 -m openprecedent.codex_pm pr-create .codex/pm/tasks/<epic>/<task>.md --t
 
 This command forces the upstream target repo and explicit fork head reference instead of relying on whatever repository context `gh` infers from the local clone.
 It now also fails fast if the matching task twin is not already marked `done` before PR creation.
+Fresh task twins created through `python3 -m openprecedent.codex_pm task-new ...` now also use markdownlint-clean placeholder section bodies by default, so new PM documents do not require manual spacing cleanup before review.
 
 To diagnose or reconcile local task drift against remote GitHub issue state, use:
 

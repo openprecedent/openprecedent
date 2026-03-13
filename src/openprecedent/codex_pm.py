@@ -14,6 +14,7 @@ PM_ROOT = Path(".codex/pm")
 ISSUE_STATE_ROOT = PM_ROOT / "issue-state"
 VALID_STATUSES = ("backlog", "in_progress", "blocked", "done")
 VALID_TASK_TYPES = ("implementation", "docs", "research", "umbrella")
+PLACEHOLDER_COMMENT = "<!-- TODO: fill in -->"
 CLOSING_ISSUE_PATTERN = re.compile(
     r"\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)\b",
     re.IGNORECASE,
@@ -189,12 +190,12 @@ def main(argv: list[str] | None = None) -> int:
             path,
             metadata=metadata,
             sections={
-                "Context": "",
-                "Deliverable": "",
-                "Scope": "- ",
-                "Acceptance Criteria": "- ",
-                "Validation": "- ",
-                "Implementation Notes": "",
+                "Context": PLACEHOLDER_COMMENT,
+                "Deliverable": PLACEHOLDER_COMMENT,
+                "Scope": PLACEHOLDER_COMMENT,
+                "Acceptance Criteria": PLACEHOLDER_COMMENT,
+                "Validation": PLACEHOLDER_COMMENT,
+                "Implementation Notes": PLACEHOLDER_COMMENT,
             },
         )
         print(path)
@@ -695,10 +696,10 @@ def _print_tasks(documents: list[PMDocument], as_json: bool) -> int:
 
 def _render_issue_body(document: PMDocument) -> str:
     lines = []
-    context = document.sections.get("Context", "")
-    deliverable = document.sections.get("Deliverable", "")
-    scope = document.sections.get("Scope", "")
-    acceptance = document.sections.get("Acceptance Criteria", "")
+    context = _renderable_section_body(document.sections.get("Context", ""))
+    deliverable = _renderable_section_body(document.sections.get("Deliverable", ""))
+    scope = _renderable_section_body(document.sections.get("Scope", ""))
+    acceptance = _renderable_section_body(document.sections.get("Acceptance Criteria", ""))
     task_type = document.metadata.get("task_type", "")
 
     if context:
@@ -723,9 +724,9 @@ def _render_pr_body(document: PMDocument, *, issue: int | None, tests: list[str]
     task_type = document.metadata.get("task_type", "implementation")
     if closing_issue is not None and task_type != "umbrella":
         lines.extend([f"Closes #{closing_issue}", ""])
-    deliverable = document.sections.get("Deliverable", "")
-    implementation_notes = document.sections.get("Implementation Notes", "")
-    validation = document.sections.get("Validation", "")
+    deliverable = _renderable_section_body(document.sections.get("Deliverable", ""))
+    implementation_notes = _renderable_section_body(document.sections.get("Implementation Notes", ""))
+    validation = _renderable_section_body(document.sections.get("Validation", ""))
     if deliverable:
         lines.extend([deliverable, ""])
     if implementation_notes:
@@ -741,6 +742,13 @@ def _render_pr_body(document: PMDocument, *, issue: int | None, tests: list[str]
         for test in tests:
             lines.append(f"- `{test}`")
     return "\n".join(lines).rstrip()
+
+
+def _renderable_section_body(body: str) -> str:
+    stripped = body.strip()
+    if not stripped or stripped == PLACEHOLDER_COMMENT:
+        return ""
+    return body
 
 
 def _remote_issue_states(issue_numbers: list[int]) -> tuple[dict[int, str], list[str]]:
