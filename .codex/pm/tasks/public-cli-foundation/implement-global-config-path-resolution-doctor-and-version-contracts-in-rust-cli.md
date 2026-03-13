@@ -3,32 +3,44 @@ type: task
 epic: public-cli-foundation
 slug: implement-global-config-path-resolution-doctor-and-version-contracts-in-rust-cli
 title: Implement global config, path resolution, doctor, and version contracts in the Rust CLI
-status: backlog
+status: done
 task_type: implementation
 labels: cli,rust,interface
 issue: 175
+state_path: .codex/pm/issue-state/175-implement-global-config-path-resolution-doctor-and-version-contracts-in-rust-cli.md
 ---
 
 ## Context
 
-Planned child issue under `#172`. Expand the implementation detail when this issue becomes active.
+The Rust workspace from `#174` already established the binary and crate layout.
+This slice needs to turn the Rust CLI from a pure topology scaffold into a machine-usable contract surface by adding global flags, config precedence, and the first real commands: `doctor` and `version`.
 
 ## Deliverable
 
-Implement the scoped GitHub issue on a child branch that merges into `codex/issue-172-rust-public-cli`.
+Implement the Rust-side config resolution contract and expose `openprecedent doctor ...` and `openprecedent version` as working commands with stable JSON output.
 
 ## Scope
 
-- follow the scoped work and constraints defined in the linked GitHub issue
+- implement global CLI flags for `--format`, `--home`, `--db`, `--invocation-log`, `--state-file`, `--config`, and `--no-color`
+- define resolution precedence across flags, environment variables, optional config file, and defaults
+- implement `doctor paths`, `doctor storage`, and `doctor environment`
+- implement `version` with both text and JSON output
+- add Rust integration tests that exercise the contract directly through the compiled binary
 
 ## Acceptance Criteria
 
-- satisfy the acceptance criteria in the linked GitHub issue before opening a child PR
+- the Rust CLI exposes the global configuration contract from the design doc
+- `doctor` and `version` work without depending on the Python CLI
+- JSON output is stable enough for skill availability probes and automation
+- local tests cover precedence behavior and the initial doctor reports
 
 ## Validation
 
-- run issue-appropriate local validation when this task becomes active
+- run `. \"$HOME/.cargo/env\" && cargo test -p openprecedent-cli -p openprecedent-core -p openprecedent-contracts`
+- run `. \"$HOME/.cargo/env\" && cargo run -p openprecedent-cli -- doctor paths --format json`
+- run `./scripts/run-pytest.sh -q tests/test_rust_cli_workspace.py`
 
 ## Implementation Notes
 
-- This task twin was scaffolded during the Rust CLI issue decomposition and should be elaborated when implementation starts.
+- The Rust CLI now defaults runtime home to `~/.openprecedent/runtime`, matching the design baseline instead of the current Python CLI cwd fallback.
+- Non-implemented command families still return explicit not-implemented errors, but now use the more accurate long-term subcommand tree.
