@@ -127,19 +127,28 @@ def test_codex_pm_updates_status_and_renders_issue_and_pr_body(tmp_path: Path, m
     capsys.readouterr()
 
     task_text = task_path.read_text(encoding="utf-8")
-    task_text = task_text.replace("## Context\n\n", "## Context\n\nCollector rollout still needs a real target host.\n\n")
-    task_text = task_text.replace("## Deliverable\n\n", "## Deliverable\n\nRun the collector on a real schedule.\n\n")
-    task_text = task_text.replace("## Scope\n\n- \n\n", "## Scope\n\n- install the scheduled collector\n- validate cursor advance\n\n")
     task_text = task_text.replace(
-        "## Acceptance Criteria\n\n- \n\n",
+        "## Context\n\n<!-- TODO: fill in -->\n\n",
+        "## Context\n\nCollector rollout still needs a real target host.\n\n",
+    )
+    task_text = task_text.replace(
+        "## Deliverable\n\n<!-- TODO: fill in -->\n\n",
+        "## Deliverable\n\nRun the collector on a real schedule.\n\n",
+    )
+    task_text = task_text.replace(
+        "## Scope\n\n<!-- TODO: fill in -->\n\n",
+        "## Scope\n\n- install the scheduled collector\n- validate cursor advance\n\n",
+    )
+    task_text = task_text.replace(
+        "## Acceptance Criteria\n\n<!-- TODO: fill in -->\n\n",
         "## Acceptance Criteria\n\n- repeated runs do not duplicate sessions\n\n",
     )
     task_text = task_text.replace(
-        "## Validation\n\n- \n\n",
+        "## Validation\n\n<!-- TODO: fill in -->\n\n",
         "## Validation\n\n- .venv/bin/python -m pytest tests/test_api.py tests/test_cli.py\n\n",
     )
     task_text = task_text.replace(
-        "## Implementation Notes\n\n",
+        "## Implementation Notes\n\n<!-- TODO: fill in -->\n\n",
         "## Implementation Notes\n\nUse the systemd timer path for the first rollout.\n\n",
     )
     task_path.write_text(task_text, encoding="utf-8")
@@ -201,6 +210,73 @@ def test_codex_pm_task_new_supports_explicit_task_type(tmp_path: Path, monkeypat
     document = task_path.read_text(encoding="utf-8")
 
     assert "task_type: umbrella" in document
+
+
+def test_codex_pm_task_new_generates_markdownlint_clean_placeholders(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "spacing-guardrail",
+                "--title",
+                "Add spacing guardrail",
+                "--issue",
+                "206",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "spacing-guardrail.md"
+    document = task_path.read_text(encoding="utf-8")
+
+    assert "## Context\n\n<!-- TODO: fill in -->\n\n## Deliverable" in document
+    assert "## Scope\n\n<!-- TODO: fill in -->\n\n## Acceptance Criteria" in document
+    assert "## Validation\n\n<!-- TODO: fill in -->\n\n## Implementation Notes" in document
+
+
+def test_codex_pm_renderers_skip_placeholder_section_bodies(tmp_path: Path, monkeypatch, capsys) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "placeholder-render",
+                "--title",
+                "Check placeholder render behavior",
+                "--issue",
+                "206",
+                "--labels",
+                "ops,test",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "placeholder-render.md"
+
+    assert main(["issue-body", str(task_path)]) == 0
+    issue_body = capsys.readouterr().out
+    assert "<!-- TODO: fill in -->" not in issue_body
+    assert "## Context" not in issue_body
+    assert "## Deliverable" not in issue_body
+    assert "## Acceptance Criteria" not in issue_body
+
+    assert main(["pr-body", str(task_path), "--issue", "206"]) == 0
+    pr_body = capsys.readouterr().out
+    assert "<!-- TODO: fill in -->" not in pr_body
+    assert "Validation:" not in pr_body
 
 
 def test_codex_pm_lists_backfilled_tasks(tmp_path: Path, monkeypatch, capsys) -> None:
