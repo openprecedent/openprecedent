@@ -17,7 +17,7 @@ pub use decision::{Decision, DecisionExplanation, DecisionType};
 pub use event::{Event, EventActor, EventType};
 pub use lineage::{
     DecisionLineageBrief, DecisionLineageMatchedCase, DecisionLineageQueryReason,
-    RuntimeDecisionLineageInvocation,
+    RuntimeDecisionLineageInspection, RuntimeDecisionLineageInvocation,
 };
 pub use precedent::Precedent;
 pub use replay::ReplayResponse;

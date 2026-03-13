@@ -11,8 +11,8 @@ use openprecedent_contracts::{
     Artifact, ArtifactType, Case, CaseStatus, Decision, DecisionExplanation, DecisionLineageBrief,
     DecisionLineageMatchedCase, DecisionLineageQueryReason, DecisionType, Event, EventActor,
     EventType, OutputFormat, PathsDoctorReport, Precedent, ReplayResponse,
-    RuntimeDecisionLineageInvocation, StorageDoctorReport, VersionReport, CLI_BINARY_NAME,
-    CONTRACT_PHASE,
+    RuntimeDecisionLineageInspection, RuntimeDecisionLineageInvocation, StorageDoctorReport,
+    VersionReport, CLI_BINARY_NAME, CONTRACT_PHASE,
 };
 use openprecedent_core::{
     build_environment_report, build_paths_report, build_storage_report, build_version_report,
@@ -334,8 +334,17 @@ struct LineageInvocationCommand {
 
 #[derive(Debug, Subcommand)]
 enum LineageInvocationSubcommand {
-    List(TrailingArgs),
-    Inspect(TrailingArgs),
+    List(LineageInvocationListArgs),
+    Inspect(LineageInvocationInspectArgs),
+}
+
+#[derive(Debug, Args)]
+struct LineageInvocationListArgs {}
+
+#[derive(Debug, Args)]
+struct LineageInvocationInspectArgs {
+    #[arg(long = "invocation-id")]
+    invocation_id: String,
 }
 
 #[derive(Debug, Args)]
@@ -1258,11 +1267,40 @@ fn handle_lineage(command: LineageCommand, config: &ResolvedRuntimeConfig) -> i3
 
             render(&brief, config.format.value)
         }
-        LineageSubcommand::Invocation(command) => {
-            render_not_implemented_path(lineage_path(LineageCommand {
-                command: LineageSubcommand::Invocation(command),
-            }))
-        }
+        LineageSubcommand::Invocation(command) => match command.command {
+            LineageInvocationSubcommand::List(_) => {
+                let invocations =
+                    match list_runtime_decision_lineage_invocations(&config.invocation_log.path) {
+                        Ok(invocations) => invocations,
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+                render(&invocations, config.format.value)
+            }
+            LineageInvocationSubcommand::Inspect(args) => {
+                let store = match SqliteStore::new(&config.db.path) {
+                    Ok(store) => store,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let inspection = match inspect_runtime_decision_lineage_invocation(
+                    &store,
+                    &args.invocation_id,
+                    &config.invocation_log.path,
+                ) {
+                    Ok(inspection) => inspection,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                render(&inspection, config.format.value)
+            }
+        },
     }
 }
 
@@ -1607,6 +1645,50 @@ impl TextRenderable for DecisionLineageBrief {
             lines.push(format!("cautions: {}", self.cautions.join(" | ")));
         }
         lines.join("\n")
+    }
+}
+
+impl TextRenderable for RuntimeDecisionLineageInvocation {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!("invocation_id: {}", self.invocation_id),
+            format!("recorded_at: {}", self.recorded_at.to_rfc3339()),
+            format!("query_reason: {}", self.query_reason),
+            format!("task_summary: {}", self.task_summary),
+        ];
+        if let Some(case_id) = &self.case_id {
+            lines.push(format!("case_id: {case_id}"));
+        }
+        if let Some(session_id) = &self.session_id {
+            lines.push(format!("session_id: {session_id}"));
+        }
+        if !self.matched_case_ids.is_empty() {
+            lines.push(format!(
+                "matched_case_ids: {}",
+                self.matched_case_ids.join(", ")
+            ));
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for Vec<RuntimeDecisionLineageInvocation> {
+    fn render_text(&self) -> String {
+        self.iter()
+            .map(TextRenderable::render_text)
+            .collect::<Vec<_>>()
+            .join("\n\n")
+    }
+}
+
+impl TextRenderable for RuntimeDecisionLineageInspection {
+    fn render_text(&self) -> String {
+        [
+            self.invocation.render_text(),
+            format!("downstream_events: {}", self.downstream_events.len()),
+            format!("downstream_decisions: {}", self.downstream_decisions.len()),
+        ]
+        .join("\n")
     }
 }
 
@@ -3800,6 +3882,89 @@ fn record_runtime_decision_lineage_invocation(
     Ok(invocation)
 }
 
+fn list_runtime_decision_lineage_invocations(
+    log_path: &std::path::Path,
+) -> Result<Vec<RuntimeDecisionLineageInvocation>, String> {
+    if !log_path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let file = File::open(log_path).map_err(|error| error.to_string())?;
+    let mut invocations = Vec::new();
+    for (index, line_result) in BufReader::new(file).lines().enumerate() {
+        let line_no = index + 1;
+        let line = line_result.map_err(|error| error.to_string())?;
+        let stripped = line.trim();
+        if stripped.is_empty() {
+            continue;
+        }
+        let invocation = serde_json::from_str::<RuntimeDecisionLineageInvocation>(stripped)
+            .map_err(|_| {
+                format!("invalid runtime decision-lineage invocation log at line {line_no}")
+            })?;
+        invocations.push(invocation);
+    }
+    Ok(invocations)
+}
+
+fn inspect_runtime_decision_lineage_invocation(
+    store: &SqliteStore,
+    invocation_id: &str,
+    log_path: &std::path::Path,
+) -> Result<RuntimeDecisionLineageInspection, String> {
+    let invocation = list_runtime_decision_lineage_invocations(log_path)?
+        .into_iter()
+        .find(|item| item.invocation_id == invocation_id)
+        .ok_or_else(|| format!("invocation not found: {invocation_id}"))?;
+
+    let Some(case_id) = invocation.case_id.clone() else {
+        return Ok(RuntimeDecisionLineageInspection {
+            invocation,
+            downstream_events: Vec::new(),
+            downstream_decisions: Vec::new(),
+        });
+    };
+
+    let Some(_case) = store
+        .get_case(&case_id)
+        .map_err(|error| error.to_string())?
+    else {
+        return Ok(RuntimeDecisionLineageInspection {
+            invocation,
+            downstream_events: Vec::new(),
+            downstream_decisions: Vec::new(),
+        });
+    };
+
+    let downstream_events = store
+        .list_events(&case_id)
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .filter(|event| event.timestamp > invocation.recorded_at)
+        .collect::<Vec<_>>();
+    let downstream_event_ids = downstream_events
+        .iter()
+        .map(|event| event.event_id.clone())
+        .collect::<HashSet<_>>();
+    let downstream_decisions = store
+        .list_decisions(&case_id)
+        .map_err(|error| error.to_string())?
+        .into_iter()
+        .filter(|decision| {
+            decision
+                .evidence_event_ids
+                .iter()
+                .any(|event_id| downstream_event_ids.contains(event_id))
+        })
+        .collect::<Vec<_>>();
+
+    Ok(RuntimeDecisionLineageInspection {
+        invocation,
+        downstream_events,
+        downstream_decisions,
+    })
+}
+
 fn build_reusable_takeaway(case: &Case, decisions: &[Decision]) -> Option<String> {
     decisions
         .last()
@@ -3885,16 +4050,6 @@ const STOP_WORDS: [&str; 18] = [
     "the", "and", "for", "with", "that", "this", "from", "into", "will", "then", "case",
     "openclaw", "session", "docs", "file", "tool", "command", "agent",
 ];
-
-fn lineage_path(command: LineageCommand) -> Vec<&'static str> {
-    match command.command {
-        LineageSubcommand::Brief(_) => vec!["lineage", "brief"],
-        LineageSubcommand::Invocation(command) => match command.command {
-            LineageInvocationSubcommand::List(_) => vec!["lineage", "invocation", "list"],
-            LineageInvocationSubcommand::Inspect(_) => vec!["lineage", "invocation", "inspect"],
-        },
-    }
-}
 
 fn eval_path(command: EvalCommand) -> Vec<&'static str> {
     match command.command {

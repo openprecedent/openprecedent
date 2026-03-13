@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
+use crate::{Decision, Event};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum DecisionLineageQueryReason {
@@ -79,4 +81,13 @@ pub struct RuntimeDecisionLineageInvocation {
     #[serde(default)]
     pub cautions: Vec<String>,
     pub suggested_focus: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RuntimeDecisionLineageInspection {
+    pub invocation: RuntimeDecisionLineageInvocation,
+    #[serde(default)]
+    pub downstream_events: Vec<Event>,
+    #[serde(default)]
+    pub downstream_decisions: Vec<Decision>,
 }
