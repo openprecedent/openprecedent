@@ -3,32 +3,43 @@ type: task
 epic: public-cli-foundation
 slug: migrate-case-commands-to-rust-cli
 title: Migrate case commands to the Rust CLI
-status: backlog
+status: done
 task_type: implementation
 labels: cli,rust,interface
 issue: 177
+state_path: .codex/pm/issue-state/177-migrate-case-commands-to-rust-cli.md
 ---
 
 ## Context
 
-Planned child issue under `#172`. Expand the implementation detail when this issue becomes active.
+The Rust CLI now has global config handling and a reusable SQLite store layer.
+This slice migrates the first public domain command family, `openprecedent case`, off the Python CLI and onto the Rust binary using the new store.
 
 ## Deliverable
 
-Implement the scoped GitHub issue on a child branch that merges into `codex/issue-172-rust-public-cli`.
+Implement `case create`, `case list`, and `case show` directly in the Rust CLI, preserving the expected JSON behavior and key error semantics.
 
 ## Scope
 
-- follow the scoped work and constraints defined in the linked GitHub issue
+- replace the placeholder Rust `case` command tree with real create/list/show handling
+- connect the Rust `case` command family to the Rust SQLite store
+- preserve expected machine-readable JSON output for create, list, and show
+- preserve user-facing error cases for duplicate case ids and missing case ids
+- add Rust integration tests that exercise the `case` surface through the compiled binary
 
 ## Acceptance Criteria
 
-- satisfy the acceptance criteria in the linked GitHub issue before opening a child PR
+- the public `case` command family runs through the Rust binary
+- machine-readable output is stable enough for automation and test fixtures
+- case operations do not call the Python CLI or shell wrappers
+- Rust integration tests cover create, list, show, generated ids, and duplicate or missing-case failures
 
 ## Validation
 
-- run issue-appropriate local validation when this task becomes active
+- run `. \"$HOME/.cargo/env\" && cargo test -p openprecedent-cli`
+- run `./scripts/run-pytest.sh -q tests/test_rust_cli_workspace.py`
 
 ## Implementation Notes
 
-- This task twin was scaffolded during the Rust CLI issue decomposition and should be elaborated when implementation starts.
+- The Rust CLI now generates `case_<12 hex chars>` ids when `--case-id` is omitted, matching the current Python behavior.
+- Text rendering remains human-focused, but JSON output is the contract surface for automation.

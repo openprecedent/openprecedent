@@ -1,15 +1,18 @@
 use std::ffi::OsString;
 
+use chrono::Utc;
 use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use openprecedent_contracts::{
-    OutputFormat, PathsDoctorReport, StorageDoctorReport, VersionReport, CLI_BINARY_NAME,
-    CONTRACT_PHASE,
+    Case, CaseStatus, OutputFormat, PathsDoctorReport, StorageDoctorReport, VersionReport,
+    CLI_BINARY_NAME, CONTRACT_PHASE,
 };
 use openprecedent_core::{
     build_environment_report, build_paths_report, build_storage_report, build_version_report,
-    not_implemented, resolve_runtime_config, CliConfigOverrides,
+    not_implemented, resolve_runtime_config, CliConfigOverrides, ResolvedRuntimeConfig,
 };
+use openprecedent_store_sqlite::SqliteStore;
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Debug, Parser)]
 #[command(name = CLI_BINARY_NAME)]
@@ -55,9 +58,26 @@ struct CaseCommand {
 
 #[derive(Debug, Subcommand)]
 enum CaseSubcommand {
-    Create(TrailingArgs),
-    List(TrailingArgs),
-    Show(TrailingArgs),
+    Create(CreateCaseArgs),
+    List,
+    Show(ShowCaseArgs),
+}
+
+#[derive(Debug, Args)]
+struct CreateCaseArgs {
+    #[arg(long)]
+    title: String,
+    #[arg(long = "case-id")]
+    case_id: Option<String>,
+    #[arg(long = "user-id")]
+    user_id: Option<String>,
+    #[arg(long = "agent-id")]
+    agent_id: Option<String>,
+}
+
+#[derive(Debug, Args)]
+struct ShowCaseArgs {
+    case_id: String,
 }
 
 #[derive(Debug, Args)]
@@ -246,7 +266,7 @@ where
             &build_version_report(env!("CARGO_PKG_VERSION"), CONTRACT_PHASE),
             config.format.value,
         ),
-        Command::Case(command) => render_not_implemented_path(case_path(command)),
+        Command::Case(command) => handle_case(command, &config),
         Command::Event(command) => render_not_implemented_path(event_path(command)),
         Command::Decision(command) => render_not_implemented_path(decision_path(command)),
         Command::Replay(command) => render_not_implemented_path(replay_path(command)),
@@ -254,6 +274,71 @@ where
         Command::Capture(command) => render_not_implemented_path(capture_path(command)),
         Command::Lineage(command) => render_not_implemented_path(lineage_path(command)),
         Command::Eval(command) => render_not_implemented_path(eval_path(command)),
+    }
+}
+
+fn handle_case(command: CaseCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    let store = match SqliteStore::new(&config.db.path) {
+        Ok(store) => store,
+        Err(error) => {
+            eprintln!("{error}");
+            return 1;
+        }
+    };
+
+    match command.command {
+        CaseSubcommand::Create(args) => {
+            let case_id = args
+                .case_id
+                .unwrap_or_else(|| format!("case_{}", &Uuid::new_v4().simple().to_string()[..12]));
+            match store.get_case(&case_id) {
+                Ok(Some(_)) => {
+                    eprintln!("case already exists: {case_id}");
+                    1
+                }
+                Ok(None) => {
+                    let case = Case {
+                        case_id,
+                        title: args.title,
+                        status: CaseStatus::Started,
+                        user_id: args.user_id,
+                        agent_id: args.agent_id,
+                        started_at: Utc::now(),
+                        ended_at: None,
+                        final_summary: None,
+                    };
+                    match store.create_case(&case) {
+                        Ok(()) => render(&case, config.format.value),
+                        Err(error) => {
+                            eprintln!("{error}");
+                            1
+                        }
+                    }
+                }
+                Err(error) => {
+                    eprintln!("{error}");
+                    1
+                }
+            }
+        }
+        CaseSubcommand::List => match store.list_cases() {
+            Ok(cases) => render_case_list(&cases, config.format.value),
+            Err(error) => {
+                eprintln!("{error}");
+                1
+            }
+        },
+        CaseSubcommand::Show(args) => match store.get_case(&args.case_id) {
+            Ok(Some(case)) => render(&case, config.format.value),
+            Ok(None) => {
+                eprintln!("case not found: {}", args.case_id);
+                1
+            }
+            Err(error) => {
+                eprintln!("{error}");
+                1
+            }
+        },
     }
 }
 
@@ -285,8 +370,53 @@ where
     }
 }
 
+fn render_case_list(cases: &[Case], format: OutputFormat) -> i32 {
+    match format {
+        OutputFormat::Json => match serde_json::to_string_pretty(cases) {
+            Ok(json) => {
+                println!("{json}");
+                0
+            }
+            Err(error) => {
+                eprintln!("{error}");
+                1
+            }
+        },
+        OutputFormat::Text => {
+            for case in cases {
+                println!("{} {} {}", case.case_id, case.status, case.title);
+            }
+            0
+        }
+    }
+}
+
 trait TextRenderable {
     fn render_text(&self) -> String;
+}
+
+impl TextRenderable for Case {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!("case_id: {}", self.case_id),
+            format!("title: {}", self.title),
+            format!("status: {}", self.status),
+            format!("started_at: {}", self.started_at.to_rfc3339()),
+        ];
+        if let Some(user_id) = &self.user_id {
+            lines.push(format!("user_id: {user_id}"));
+        }
+        if let Some(agent_id) = &self.agent_id {
+            lines.push(format!("agent_id: {agent_id}"));
+        }
+        if let Some(ended_at) = &self.ended_at {
+            lines.push(format!("ended_at: {}", ended_at.to_rfc3339()));
+        }
+        if let Some(summary) = &self.final_summary {
+            lines.push(format!("final_summary: {summary}"));
+        }
+        lines.join("\n")
+    }
 }
 
 impl TextRenderable for VersionReport {
@@ -364,14 +494,6 @@ fn render_storage_line(label: &str, path: &openprecedent_contracts::StoragePathR
         path.exists,
         path.parent_exists
     )
-}
-
-fn case_path(command: CaseCommand) -> Vec<&'static str> {
-    match command.command {
-        CaseSubcommand::Create(_) => vec!["case", "create"],
-        CaseSubcommand::List(_) => vec!["case", "list"],
-        CaseSubcommand::Show(_) => vec!["case", "show"],
-    }
 }
 
 fn event_path(command: EventCommand) -> Vec<&'static str> {
