@@ -3,7 +3,7 @@ type: task
 epic: public-cli-foundation
 slug: migrate-eval-commands-to-rust-cli
 title: Migrate eval commands to the Rust CLI
-status: backlog
+status: done
 task_type: implementation
 labels: cli,rust,interface
 issue: 185
@@ -11,7 +11,7 @@ issue: 185
 
 ## Context
 
-Planned child issue under `#172`. Expand the implementation detail when this issue becomes active.
+Child issue `#185` under `#172` migrates the public evaluation command family into Rust. This slice covers fixture-suite evaluation and collected OpenClaw session evaluation.
 
 ## Deliverable
 
@@ -19,16 +19,29 @@ Implement the scoped GitHub issue on a child branch that merges into `codex/issu
 
 ## Scope
 
-- follow the scoped work and constraints defined in the linked GitHub issue
+- implement `eval fixtures` in Rust
+- implement `eval captured-openclaw-sessions` in Rust
+- preserve expected evaluation report formats where they are part of the public contract
 
 ## Acceptance Criteria
 
-- satisfy the acceptance criteria in the linked GitHub issue before opening a child PR
+- evaluation flows run through the Rust CLI
+- evaluation outputs are stable enough for automated validation
+- the public eval surface no longer depends on Python CLI execution
 
 ## Validation
 
-- run issue-appropriate local validation when this task becomes active
+- run `cargo test`
+- run `./scripts/run-pytest.sh -q tests/test_rust_cli_workspace.py`
+- run `./scripts/run-agent-preflight.sh` before opening the PR
 
 ## Implementation Notes
 
-- This task twin was scaffolded during the Rust CLI issue decomposition and should be elaborated when implementation starts.
+- Reuse the Rust capture, decision extraction, and precedent helpers instead of routing eval through the Python service.
+- Keep the JSON report shapes stable because validation harnesses can depend on them directly once the Rust CLI becomes the public surface.
+
+## Completion Notes
+
+- implemented `eval fixtures` and `eval captured-openclaw-sessions` in the Rust CLI
+- added Rust evaluation report contracts under `openprecedent-contracts`
+- added Rust contract tests for fixture-suite evaluation and collected OpenClaw session evaluation
