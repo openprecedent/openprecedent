@@ -9,6 +9,11 @@ from pathlib import Path
 def test_run_pytest_script_prefers_repo_python(tmp_path: Path) -> None:
     repo_root = Path(__file__).parent.parent
     repo_python = str(repo_root / ".venv" / "bin" / "python")
+    test_file = tmp_path / "test_runner_smoke.py"
+    test_file.write_text(
+        "def test_runner_smoke():\n    assert True\n",
+        encoding="utf-8",
+    )
     env = os.environ.copy()
     env["OPENPRECEDENT_PYTHON_BIN"] = repo_python
     env["OPENPRECEDENT_VENV_PYTHON"] = repo_python
@@ -18,11 +23,9 @@ def test_run_pytest_script_prefers_repo_python(tmp_path: Path) -> None:
     env["OPENPRECEDENT_SYSTEM_PYTEST"] = "missing-pytest"
     env["PATH"] = "/usr/bin:/bin"
     env["PYTHONPATH"] = str(repo_root / "src")
-    env["OPENPRECEDENT_REVIEW_FILE"] = str(tmp_path / ".codex-review")
-    env["OPENPRECEDENT_REVIEW_PROOF_FILE"] = str(tmp_path / ".codex-review-proof")
 
     result = subprocess.run(
-        ["./scripts/run-pytest.sh", "-q", "tests/test_preflight_script.py"],
+        ["./scripts/run-pytest.sh", "-q", str(test_file)],
         cwd=repo_root,
         env=env,
         capture_output=True,
@@ -31,7 +34,7 @@ def test_run_pytest_script_prefers_repo_python(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0, result.stderr
-    assert "3 passed" in result.stdout
+    assert "1 passed" in result.stdout
 
 
 def test_run_pytest_script_fails_with_clear_message_when_no_runner_exists(tmp_path: Path) -> None:
