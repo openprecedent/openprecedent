@@ -11,10 +11,12 @@ state_path: .codex/pm/issue-state/206-make-generated-codex-pm-task-templates-mar
 ---
 
 ## Context
+
 Recent task-twin work repeatedly failed CI because `openprecedent.codex_pm task-new` generated empty Markdown sections that were not markdownlint-clean by default.
 That turned a repository-generated artifact into a repeatable `MD022` and `MD032` failure mode whenever a new task twin was created and committed before manual cleanup.
 
 ## Deliverable
+
 Update the local Codex PM generator so fresh task twins are markdownlint-clean by default and do not leak placeholder content into rendered issue or PR bodies.
 
 ## Scope
