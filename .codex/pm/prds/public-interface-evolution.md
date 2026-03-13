@@ -2,7 +2,7 @@
 type: prd
 slug: public-interface-evolution
 title: Public interface evolution
-status: draft
+status: in_progress
 ---
 
 ## Summary
@@ -41,6 +41,8 @@ Without an intentional interface-evolution plan, OpenPrecedent risks letting tem
 
 - the repository contains a design baseline for the Rust public CLI and its migration path
 - there is a dedicated epic and issue chain for public CLI evolution
+- the issue chain is fine-grained enough to ship the migration as independently reviewable slices
+- the parent issue makes the dedicated integration branch policy explicit so implementation can converge before one final merge to `main`
 - the design explicitly defines one-way cutover to Rust CLI and removal of public Python CLI and shell wrappers
 - skill integration is planned against stable CLI commands and JSON outputs rather than scripts
 - future implementation issues can execute against the design without inventing command hierarchy or contract rules ad hoc

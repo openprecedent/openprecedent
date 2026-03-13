@@ -3,33 +3,36 @@ type: issue_state
 issue: 172
 task: .codex/pm/tasks/public-cli-foundation/design-and-adopt-rust-cli-as-stable-public-interface.md
 title: Design and adopt a Rust CLI as the stable public interface for OpenPrecedent
-status: done
-delivery_stage: pr_opened
-pr_url: https://github.com/openprecedent/openprecedent/pull/173
+status: in_progress
+delivery_stage: in_progress
 ---
 
 ## Summary
 
-Create the design baseline for OpenPrecedent's long-term public interface evolution by defining a Rust-based `openprecedent` CLI that replaces public Python CLI and public shell-wrapper exposure.
+Keep the Rust public CLI design baseline authoritative while using issue `#172` as the long-lived parent for the full migration train on the dedicated integration branch `codex/issue-172-rust-public-cli`.
 
 ## Validated Facts
 
 - the shipped MVP currently presents a Python CLI as the public executable surface
 - multiple skill and validation workflows still rely on repository-local shell scripts, which makes the effective external interface unstable
 - the current command surface already includes more than decision-lineage: case, event, replay, extraction, precedent, runtime capture, and evaluation
-- the repository currently has no Rust workspace or Rust implementation scaffold, so the first deliverable must be a contract-first design rather than an incremental code port
+- PR `#173` merged the contract-first Rust CLI design baseline into `main`
+- issue `#172` has been reopened so the migration can proceed under one explicit parent issue instead of spawning disconnected implementation tracks
+- child issues `#174` through `#187` now cover the Rust workspace, config, store, command families, skill migration, and final cutover in reviewable slices
 
 ## Open Questions
 
-- whether a future follow-up issue should separately redesign the HTTP or API surface after the CLI contract is stabilized
+- whether any additional split is needed inside the larger capture or lineage slices after implementation starts
+- when the integration branch is complete enough to begin the final cutover PR back to `main`
 
 ## Next Steps
 
-- wait for PR `#173` review and merge
-- use this document as the parent contract for later Rust CLI implementation issues under the public CLI foundation epic
-- keep future CLI execution issues scoped to implementation slices instead of reopening command-contract decisions
+- implement child issues `#174` through `#187` on branches that merge into `codex/issue-172-rust-public-cli`
+- use issue `#172` as the parent reference and branch-policy source for the Rust CLI migration train
+- merge the dedicated integration branch back to `main` only after the child issue chain reaches the cutover gate defined in the design doc
 
 ## Artifacts
 
 - `.codex/pm/prds/public-interface-evolution.md`
 - `.codex/pm/epics/public-cli-foundation.md`
+- `.codex/pm/tasks/public-cli-foundation/`
