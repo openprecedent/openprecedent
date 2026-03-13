@@ -2,6 +2,8 @@ mod artifact;
 mod case;
 mod decision;
 mod event;
+mod precedent;
+mod replay;
 
 use std::path::PathBuf;
 
@@ -12,6 +14,8 @@ pub use artifact::{Artifact, ArtifactType};
 pub use case::{Case, CaseStatus};
 pub use decision::{Decision, DecisionExplanation, DecisionType};
 pub use event::{Event, EventActor, EventType};
+pub use precedent::Precedent;
+pub use replay::ReplayResponse;
 
 pub const CLI_BINARY_NAME: &str = "openprecedent";
 pub const CONTRACT_PHASE: &str = "bootstrap";
