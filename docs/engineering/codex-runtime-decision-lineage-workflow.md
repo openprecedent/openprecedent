@@ -14,38 +14,29 @@ It gives Codex development work a stable way to:
 
 ## Workflow Surface
 
-Repository-local entrypoint:
+Public Rust CLI entrypoint:
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions."
 ```
 
-The script defaults `OPENPRECEDENT_HOME` to:
+The recommended shared runtime home is:
 
 ```bash
 $HOME/.openprecedent/runtime
 ```
 
-and then calls the existing runtime brief surface through the repository-local Python entrypoint.
+and the Rust CLI records the invocation in the shared runtime log.
 
 ## Inspectable Follow-Up
 
-To inspect the newest invocation directly:
+Inspect invocations manually:
 
 ```bash
-./scripts/run-codex-decision-lineage-workflow.sh \
-  --inspect-latest \
-  --query-reason initial_planning \
-  --task-summary "..."
-```
-
-Or inspect invocations manually:
-
-```bash
-openprecedent runtime list-decision-lineage-invocations
-openprecedent runtime inspect-decision-lineage-invocation --invocation-id <id>
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage invocation list
+openprecedent --home "$HOME/.openprecedent/runtime" --format json lineage invocation inspect --invocation-id <id>
 ```
 
 ## Validation Scenario

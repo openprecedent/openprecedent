@@ -4,15 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-if [[ -n "${OPENPRECEDENT_BIN:-}" ]]; then
-  OPENPRECEDENT_BIN="$OPENPRECEDENT_BIN"
-elif [[ -x "$ROOT_DIR/.venv/bin/openprecedent" ]]; then
-  OPENPRECEDENT_BIN="$ROOT_DIR/.venv/bin/openprecedent"
-elif [[ -x "$ROOT_DIR/../openprecedent/.venv/bin/openprecedent" ]]; then
-  OPENPRECEDENT_BIN="$ROOT_DIR/../openprecedent/.venv/bin/openprecedent"
-else
-  OPENPRECEDENT_BIN="openprecedent"
-fi
+source "$ROOT_DIR/scripts/lib/openprecedent-rust-cli.sh"
+
+OPENPRECEDENT_BIN="$(resolve_openprecedent_rust_cli "$ROOT_DIR")"
 
 if [[ -n "${OPENPRECEDENT_PYTHON_BIN:-}" ]]; then
   PYTHON_BIN="$OPENPRECEDENT_PYTHON_BIN"
@@ -46,13 +40,7 @@ export LIVE_ROOT RUNTIME_HOME OUTPUT_ROOT BUNDLE_DIR
 IFS=',' read -r -a KNOWN_FILE_ARGS <<<"$KNOWN_FILES"
 
 run_openprecedent() {
-  OPENPRECEDENT_HOME="$RUNTIME_HOME" "$OPENPRECEDENT_BIN" "$@"
-}
-
-run_workflow() {
-  OPENPRECEDENT_HOME="$RUNTIME_HOME" \
-  OPENPRECEDENT_PYTHON_BIN="$PYTHON_BIN" \
-  ./scripts/run-codex-decision-lineage-workflow.sh "$@"
+  "$OPENPRECEDENT_BIN" --home "$RUNTIME_HOME" --format json "$@"
 }
 
 "$PYTHON_BIN" scripts/import_harnesshub_codex_round.py \
@@ -75,8 +63,8 @@ for file in "${KNOWN_FILE_ARGS[@]}"; do
   fi
 done
 
-run_workflow "${WORKFLOW_ARGS[@]}" >"$OUTPUT_ROOT/10-brief.json"
-run_openprecedent runtime list-decision-lineage-invocations >"$OUTPUT_ROOT/20-invocation-list.json"
+run_openprecedent lineage brief "${WORKFLOW_ARGS[@]}" >"$OUTPUT_ROOT/10-brief.json"
+run_openprecedent lineage invocation list >"$OUTPUT_ROOT/20-invocation-list.json"
 
 "$PYTHON_BIN" - "$BUNDLE_DIR/round-manifest.json" "$OUTPUT_ROOT/20-invocation-list.json" "$OUTPUT_ROOT/21-latest-invocation-summary.json" <<'PY'
 import json
@@ -108,7 +96,7 @@ if items:
 PY
 
 if [[ -s "$OUTPUT_ROOT/.latest-invocation-id" ]]; then
-  run_openprecedent runtime inspect-decision-lineage-invocation \
+  run_openprecedent lineage invocation inspect \
     --invocation-id "$(cat "$OUTPUT_ROOT/.latest-invocation-id")" \
     >"$OUTPUT_ROOT/22-latest-invocation-inspection.json"
 fi

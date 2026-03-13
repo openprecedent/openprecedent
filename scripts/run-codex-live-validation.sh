@@ -4,20 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-if [[ -n "${OPENPRECEDENT_BIN:-}" ]]; then
-  OPENPRECEDENT_BIN="$OPENPRECEDENT_BIN"
-elif [[ -x "$ROOT_DIR/.venv/bin/openprecedent" ]]; then
-  OPENPRECEDENT_BIN="$ROOT_DIR/.venv/bin/openprecedent"
-else
-  OPENPRECEDENT_BIN="openprecedent"
-fi
+source "$ROOT_DIR/scripts/lib/openprecedent-rust-cli.sh"
 
-PYTHON_BIN="${OPENPRECEDENT_PYTHON_BIN:-$ROOT_DIR/.venv/bin/python}"
-if [[ ! -x "$PYTHON_BIN" ]]; then
-  PYTHON_BIN="python3"
-fi
-
-export PYTHONPATH="$ROOT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+OPENPRECEDENT_BIN="$(resolve_openprecedent_rust_cli "$ROOT_DIR")"
 
 LIVE_ROOT="${OPENPRECEDENT_CODEX_LIVE_ROOT:-/tmp/openprecedent-codex-live}"
 RUNTIME_HOME="${OPENPRECEDENT_CODEX_LIVE_RUNTIME_HOME:-$LIVE_ROOT/runtime-home}"
@@ -37,13 +26,7 @@ fi
 mkdir -p "$RUNTIME_HOME" "$OUTPUT_ROOT" "$PROMPTS_ROOT"
 
 run_openprecedent() {
-  OPENPRECEDENT_HOME="$RUNTIME_HOME" "$OPENPRECEDENT_BIN" "$@"
-}
-
-run_workflow() {
-  OPENPRECEDENT_HOME="$RUNTIME_HOME" \
-  OPENPRECEDENT_PYTHON_BIN="$PYTHON_BIN" \
-  ./scripts/run-codex-decision-lineage-workflow.sh "$@"
+  "$OPENPRECEDENT_BIN" --home "$RUNTIME_HOME" --format json "$@"
 }
 
 write_prompt_files() {
@@ -64,51 +47,50 @@ EOF
 }
 
 seed_history() {
-  run_openprecedent runtime import-codex-rollout \
+  run_openprecedent capture codex import-rollout \
     "$SEED_CURRENT_FIXTURE" \
     --case-id case_codex_live_current \
     --title "Codex live seed current" \
     >"$OUTPUT_ROOT/01-seed-current.json"
-  run_openprecedent extract decisions case_codex_live_current \
+  run_openprecedent decision extract case_codex_live_current \
     >"$OUTPUT_ROOT/02-seed-current-decisions.json"
 
-  run_openprecedent runtime import-codex-rollout \
+  run_openprecedent capture codex import-rollout \
     "$SEED_SEMANTIC_FIXTURE" \
     --case-id case_codex_live_semantic \
     --title "Codex live seed semantic" \
     >"$OUTPUT_ROOT/03-seed-semantic.json"
-  run_openprecedent extract decisions case_codex_live_semantic \
+  run_openprecedent decision extract case_codex_live_semantic \
     >"$OUTPUT_ROOT/04-seed-semantic-decisions.json"
 
-  run_openprecedent runtime import-codex-rollout \
+  run_openprecedent capture codex import-rollout \
     "$SEED_OPERATIONAL_FIXTURE" \
     --case-id case_codex_live_operational \
     --title "Codex live seed operational" \
     >"$OUTPUT_ROOT/05-seed-operational.json"
-  run_openprecedent extract decisions case_codex_live_operational \
+  run_openprecedent decision extract case_codex_live_operational \
     >"$OUTPUT_ROOT/06-seed-operational-decisions.json"
 }
 
 run_validation_rounds() {
-  run_workflow \
+  run_openprecedent lineage brief \
     --query-reason initial_planning \
     --task-summary "Do not edit code. Provide a short written recommendation only and keep it consistent with earlier Codex runtime decisions." \
     >"$OUTPUT_ROOT/10-initial-planning-brief.json"
 
-  run_workflow \
+  run_openprecedent lineage brief \
     --query-reason before_file_write \
     --task-summary "Stay within docs-only scope. Before writing README.md, confirm whether prior Codex lineage narrows the allowed change." \
     --current-plan "Draft a short docs-only recommendation before any edits." \
     --candidate-action "Edit README.md" \
     >"$OUTPUT_ROOT/11-before-file-write-brief.json"
 
-  run_workflow \
-    --inspect-latest \
+  run_openprecedent lineage brief \
     --query-reason after_failure \
     --task-summary "A broader implementation path was rejected. Recover with prior Codex lineage and stay within docs-only scope." \
     --current-plan "Recover from a broader path by narrowing back to documentation guidance." \
     --candidate-action "Retry broad implementation changes" \
-    >"$OUTPUT_ROOT/12-after-failure-and-inspect.json"
+    >"$OUTPUT_ROOT/12-after-failure-brief.json"
 }
 
 write_manifest() {
@@ -131,7 +113,7 @@ PY
 }
 
 write_invocation_artifacts() {
-  run_openprecedent runtime list-decision-lineage-invocations \
+  run_openprecedent lineage invocation list \
     >"$OUTPUT_ROOT/20-invocation-list.json"
 
   python3 - "$OUTPUT_ROOT/20-invocation-list.json" "$OUTPUT_ROOT/21-latest-invocation-summary.json" <<'PY'
@@ -172,7 +154,7 @@ if items:
 PY
 
   if [[ -s "$OUTPUT_ROOT/.latest-invocation-id" ]]; then
-    run_openprecedent runtime inspect-decision-lineage-invocation \
+    run_openprecedent lineage invocation inspect \
       --invocation-id "$(cat "$OUTPUT_ROOT/.latest-invocation-id")" \
       >"$OUTPUT_ROOT/22-latest-invocation-inspection.json"
   fi
@@ -190,7 +172,7 @@ Codex live validation workspace: $LIVE_ROOT
    $PROMPTS_ROOT
 
 3. During real Codex work, call:
-   ./scripts/run-codex-decision-lineage-workflow.sh --query-reason <reason> --task-summary "<summary>"
+   openprecedent --home "$RUNTIME_HOME" --format json lineage brief --query-reason <reason> --task-summary "<summary>"
 
 4. Re-run this harness with OPENPRECEDENT_CODEX_LIVE_AUTO_RUN=0 to refresh the invocation artifacts:
    ./scripts/run-codex-live-validation.sh

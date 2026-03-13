@@ -17,8 +17,8 @@ It focuses on natural OpenClaw behavior in an isolated live profile, including w
 - OpenClaw gateway port: `19080`
 - OpenPrecedent runtime surfaces under test:
   - `skills/openprecedent-decision-lineage/SKILL.md`
-  - `openprecedent runtime decision-lineage-brief`
-  - `openprecedent runtime list-decision-lineage-invocations`
+  - `openprecedent --format json lineage brief`
+  - `openprecedent --format json lineage invocation list`
 
 Why this setup was used:
 
@@ -118,7 +118,7 @@ Observed behavior:
 - OpenClaw executed:
 
 ```bash
-openprecedent runtime decision-lineage-brief \
+openprecedent --format json lineage brief \
   --query-reason initial_planning \
   --task-summary "Do not edit code. Before answering, use any relevant prior decision-lineage from OpenPrecedent if available, then provide a short written recommendation only for improving repository navigation."
 ```
@@ -185,7 +185,7 @@ This live pass establishes five concrete points:
 1. The OpenClaw skill bundle is installable and discoverable in a real isolated profile.
 2. OpenClaw does not naturally call the skill for every eligible constrained task.
 3. OpenClaw may prefer built-in `memory_search` over the OpenPrecedent skill unless the prompt or future policy pushes more strongly toward lineage retrieval.
-4. OpenClaw can successfully call `openprecedent runtime decision-lineage-brief` in a real loop.
+4. OpenClaw can successfully call `openprecedent --format json lineage brief` in a real loop.
 5. Stable runtime value now depends on wiring the skill to the intended shared OpenPrecedent database and invocation-log paths.
 
 ## Current Limits

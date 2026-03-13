@@ -9,16 +9,36 @@ from openprecedent.config import get_db_path
 from openprecedent.services import OpenPrecedentService
 
 
+def _openprecedent_bin(repo_root: Path) -> Path:
+    release_candidate = repo_root / "target" / "release" / "openprecedent"
+    if release_candidate.exists():
+        return release_candidate
+
+    debug_candidate = repo_root / "target" / "debug" / "openprecedent"
+    if debug_candidate.exists():
+        return debug_candidate
+
+    subprocess.run(
+        ["cargo", "build", "-q", "-p", "openprecedent-cli"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return debug_candidate
+
+
 def test_codex_runtime_workflow_script_returns_brief_and_logs_invocation(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     fixture_root = repo_root / "tests" / "fixtures"
     runtime_home = tmp_path / "runtime-home"
     runtime_home.mkdir()
+    openprecedent_bin = _openprecedent_bin(repo_root)
 
     env = os.environ.copy()
     env["PYTHONPATH"] = str(repo_root / "src")
     env["OPENPRECEDENT_HOME"] = str(runtime_home)
-    env["OPENPRECEDENT_PYTHON_BIN"] = str(repo_root / ".venv" / "bin" / "python")
+    env["OPENPRECEDENT_BIN"] = str(openprecedent_bin)
     old_home = os.environ.get("OPENPRECEDENT_HOME")
     old_db = os.environ.get("OPENPRECEDENT_DB")
     os.environ["OPENPRECEDENT_HOME"] = str(runtime_home)
@@ -68,11 +88,14 @@ def test_codex_runtime_workflow_script_returns_brief_and_logs_invocation(tmp_pat
 
     list_result = subprocess.run(
         [
-            str(repo_root / ".venv" / "bin" / "python"),
-            "-c",
-            "from openprecedent.cli import run; run()",
-            "runtime",
-            "list-decision-lineage-invocations",
+            str(openprecedent_bin),
+            "--home",
+            str(runtime_home),
+            "--format",
+            "json",
+            "lineage",
+            "invocation",
+            "list",
         ],
         cwd=repo_root,
         env=env,

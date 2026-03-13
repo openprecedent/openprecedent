@@ -1077,7 +1077,7 @@ def test_openclaw_skill_bundle_exists() -> None:
     assert content.startswith("---\n")
     assert 'name: openprecedent-decision-lineage' in content
     assert '"bins":["openprecedent"]' in content
-    assert "openprecedent runtime decision-lineage-brief" in content
+    assert "openprecedent --format json lineage brief" in content
     assert "Do not wait for the user to explicitly say \"use OpenPrecedent\"." in content
     assert "keep it consistent with earlier repository decisions if relevant" in content
 
@@ -1149,12 +1149,12 @@ def test_codex_runtime_decision_lineage_skill_exists() -> None:
 
     assert content.startswith("---\n")
     assert "name: codex-runtime-decision-lineage" in content
-    assert "./scripts/run-codex-decision-lineage-workflow.sh" in content
-    assert "--inspect-latest" in content
+    assert "lineage brief" in content
+    assert "cargo build -q -p openprecedent-cli" in content
     assert "Codex-driven development work" in content
     assert "minimal Codex-facing runtime workflow" in workflow
-    assert "openprecedent runtime list-decision-lineage-invocations" in workflow
-    assert "python3 -m openprecedent.cli runtime" not in workflow
+    assert "lineage invocation list" in workflow
+    assert "repository-local Python entrypoint" not in workflow
 
 
 def test_codex_runtime_startup_docs_exist() -> None:
@@ -1169,10 +1169,10 @@ def test_codex_runtime_startup_docs_exist() -> None:
     readme = readme_path.read_text(encoding="utf-8")
     usage = usage_path.read_text(encoding="utf-8")
 
-    assert "./scripts/run-codex-live-validation.sh" in guide
+    assert "openprecedent --home \"$HOME/.openprecedent/runtime\" --format json lineage brief" in guide
     assert "For Humans" in guide
     assert "For Agents" in guide
-    assert "three runtime invocations were recorded" in validation
+    assert "lineage invocation inspect" in validation
     assert "Codex runtime startup guide" in readme
     assert "codex-runtime-startup-guide.md" in usage
     assert "codex-runtime-startup-validation.md" in usage

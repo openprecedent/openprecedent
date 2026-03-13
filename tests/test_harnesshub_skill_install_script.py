@@ -36,6 +36,8 @@ def test_install_harnesshub_skill_copies_bundle_and_rewrites_repo_root(tmp_path:
     assert str(repo_root) in reference_content
     assert "compose it with `harness-issue-execution`" in skill_content
     assert "Step 0: Probe Availability" in skill_content
+    assert "--format json lineage brief" in skill_content
+    assert "command -v openprecedent" in skill_content
     assert "continue the task normally" in reference_content
 
 
