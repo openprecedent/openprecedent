@@ -11,6 +11,7 @@ Notable operational entrypoints:
 - `run-pytest.sh` resolves the repository-local pytest runner before falling back to global Python or `pytest`
 - `run-codex-session-start.sh` restores active issue and PR context and restates the repository's default direct-fix workflow at session start
 - `run-codex-review-checkpoint.sh` creates or refreshes the local review note and the current-HEAD review proof before invoking native Codex `/review`
+- `python3 -m openprecedent.codex_pm reconcile-task-statuses` diagnoses local task drift against remote issue state before PR creation
 - `export_harnesshub_codex_round.py` exports one completed HarnessHub Codex development round as a minimal importable searchable-history bundle
 - `import_harnesshub_codex_round.py` imports one exported HarnessHub round bundle into the shared runtime and extracts decisions
 - `sync_harnesshub_shared_runtime.py` backfills and incrementally auto-seeds the shared runtime from completed HarnessHub rounds

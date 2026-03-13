@@ -34,6 +34,16 @@ python3 -m openprecedent.codex_pm pr-create .codex/pm/tasks/<epic>/<task>.md --t
 ```
 
 This command forces the upstream target repo and explicit fork head reference instead of relying on whatever repository context `gh` infers from the local clone.
+It now also fails fast if the matching task twin is not already marked `done` before PR creation.
+
+To diagnose or reconcile local task drift against remote GitHub issue state, use:
+
+```bash
+python3 -m openprecedent.codex_pm reconcile-task-statuses
+python3 -m openprecedent.codex_pm reconcile-task-statuses --issue <number> --apply
+```
+
+Use `--apply` only for the safe reconciliation path that marks local tasks `done` when the linked remote issue is already closed.
 
 ## Codex Review Hook
 
@@ -91,6 +101,7 @@ For a normal local readiness pass before push, run:
 This checks the local review note, blocks reused merged branches, runs `pytest`, runs `markdownlint` when available locally, and performs a local PR closure sync check when a PR body is available through `gh`.
 It also checks that your branch contains the configured base ref, which defaults to `upstream/main`.
 For issue-scoped branches, it also runs a lightweight issue-state check. By default this only warns if an `in_progress` issue is missing a state document.
+The intended workflow is to correct task status before PR creation rather than relying on push-time or CI-time closure sync failures.
 
 For direct local test runs, prefer:
 
