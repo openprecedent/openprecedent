@@ -846,15 +846,25 @@ def test_cli_dedupes_openclaw_transcript_across_manual_import_and_collector(
     assert [case["case_id"] for case in cases] == ["case_manual_sample_cli"]
 
 
-def test_run_collector_script_prefers_repo_venv_binary(tmp_path: Path) -> None:
+def test_run_collector_script_uses_explicit_rust_binary(tmp_path: Path) -> None:
     sessions_dir = tmp_path / "sessions"
     sessions_dir.mkdir()
     (sessions_dir / "sessions.json").write_text("[]", encoding="utf-8")
 
     db_path = tmp_path / "openprecedent.db"
     state_path = tmp_path / "collector-state.json"
+    repo_root = Path(__file__).parent.parent
+    openprecedent_bin = repo_root / "target" / "debug" / "openprecedent"
+    if not openprecedent_bin.exists():
+        subprocess.run(
+            ["cargo", "build", "-q", "-p", "openprecedent-cli"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
     env = os.environ.copy()
-    env.pop("OPENPRECEDENT_BIN", None)
+    env["OPENPRECEDENT_BIN"] = str(openprecedent_bin)
     env["OPENPRECEDENT_DB"] = str(db_path)
     env["OPENPRECEDENT_COLLECTOR_STATE"] = str(state_path)
     env["OPENCLAW_SESSIONS_ROOT"] = str(sessions_dir)
@@ -863,7 +873,7 @@ def test_run_collector_script_prefers_repo_venv_binary(tmp_path: Path) -> None:
 
     result = subprocess.run(
         ["./scripts/run-collector.sh"],
-        cwd=Path(__file__).parent.parent,
+        cwd=repo_root,
         env=env,
         capture_output=True,
         text=True,

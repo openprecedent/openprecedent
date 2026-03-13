@@ -16,7 +16,7 @@ For the first validated live rollout and its observed caveats, see
 
 ## Wrapper Script
 
-Use [`scripts/run-collector.sh`](/workspace/02-projects/incubation/openprecedent/scripts/run-collector.sh) as the single entrypoint for scheduled collection.
+Use the Rust CLI as the supported collection surface. [`scripts/run-collector.sh`](/workspace/02-projects/incubation/openprecedent/scripts/run-collector.sh) remains only as a repository-local convenience wrapper for scheduled jobs.
 
 The wrapper prefers the repository-local `.venv/bin/openprecedent` binary when it exists, then falls back to `openprecedent` on `PATH`. This keeps scheduled runs aligned with the checked-out repository environment without requiring a separate global install.
 
@@ -31,7 +31,7 @@ Default environment variables:
 The script runs:
 
 ```bash
-openprecedent runtime collect-openclaw-sessions --limit 1
+openprecedent capture openclaw collect-sessions --limit 1
 ```
 
 against the configured session root and collector state file.
@@ -88,7 +88,7 @@ The rendered crontab writes the absolute home-directory session path directly in
 After the collector has imported a few sessions, generate a real-session report with:
 
 ```bash
-openprecedent eval collected-openclaw-sessions \
+openprecedent eval captured-openclaw-sessions \
   --sessions-root "$HOME/.openclaw/agents/main/sessions" \
   --state-file "$(pwd)/runtime/openprecedent-collector-state.json" \
   --report-file "$(pwd)/runtime/collected-eval-report.json"
@@ -105,4 +105,4 @@ This report summarizes:
 - unsupported OpenClaw session record types that were skipped
 - whether each case produced file writes, recovery decisions, and usable precedents
 
-Use `--json` for machine-readable output to stdout.
+Use `--format json` for machine-readable output to stdout.

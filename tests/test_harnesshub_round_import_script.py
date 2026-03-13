@@ -9,9 +9,15 @@ from pathlib import Path
 
 def test_import_harnesshub_round_bundle_populates_runtime_and_extracts_decisions(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
-    python_bin = repo_root / ".venv" / "bin" / "python"
-    if not python_bin.exists():
-        python_bin = repo_root.parent / "openprecedent" / ".venv" / "bin" / "python"
+    openprecedent_bin = repo_root / "target" / "debug" / "openprecedent"
+    if not openprecedent_bin.exists():
+        subprocess.run(
+            ["cargo", "build", "-q", "-p", "openprecedent-cli"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
 
     bundle_dir = tmp_path / "bundle"
     bundle_dir.mkdir()
@@ -99,8 +105,8 @@ def test_import_harnesshub_round_bundle_populates_runtime_and_extracts_decisions
             str(bundle_dir),
             "--runtime-home",
             str(runtime_home),
-            "--python-bin",
-            str(python_bin),
+            "--openprecedent-bin",
+            str(openprecedent_bin),
         ],
         cwd=repo_root,
         env=env,
@@ -115,7 +121,7 @@ def test_import_harnesshub_round_bundle_populates_runtime_and_extracts_decisions
     assert summary["decision_count"] >= 1
 
     list_result = subprocess.run(
-        [str(python_bin.parent / "openprecedent"), "case", "list"],
+        [str(openprecedent_bin), "--home", str(runtime_home), "--format", "json", "case", "list"],
         cwd=repo_root,
         env=env,
         capture_output=True,
