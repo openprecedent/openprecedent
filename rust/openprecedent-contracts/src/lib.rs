@@ -1,6 +1,7 @@
 mod artifact;
 mod case;
 mod decision;
+mod eval;
 mod event;
 mod lineage;
 mod precedent;
@@ -14,6 +15,10 @@ use serde::{Deserialize, Serialize};
 pub use artifact::{Artifact, ArtifactType};
 pub use case::{Case, CaseStatus};
 pub use decision::{Decision, DecisionExplanation, DecisionType};
+pub use eval::{
+    CollectedSessionEvaluationReport, CollectedSessionEvaluationResult, EvaluationCaseResult,
+    EvaluationReport,
+};
 pub use event::{Event, EventActor, EventType};
 pub use lineage::{
     DecisionLineageBrief, DecisionLineageMatchedCase, DecisionLineageQueryReason,

@@ -8,15 +8,16 @@ use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use openprecedent_capture_codex as capture_codex;
 use openprecedent_capture_openclaw as capture_openclaw;
 use openprecedent_contracts::{
-    Artifact, ArtifactType, Case, CaseStatus, Decision, DecisionExplanation, DecisionLineageBrief,
-    DecisionLineageMatchedCase, DecisionLineageQueryReason, DecisionType, Event, EventActor,
-    EventType, OutputFormat, PathsDoctorReport, Precedent, ReplayResponse,
-    RuntimeDecisionLineageInspection, RuntimeDecisionLineageInvocation, StorageDoctorReport,
-    VersionReport, CLI_BINARY_NAME, CONTRACT_PHASE,
+    Artifact, ArtifactType, Case, CaseStatus, CollectedSessionEvaluationReport,
+    CollectedSessionEvaluationResult, Decision, DecisionExplanation, DecisionLineageBrief,
+    DecisionLineageMatchedCase, DecisionLineageQueryReason, DecisionType, EvaluationCaseResult,
+    EvaluationReport, Event, EventActor, EventType, OutputFormat, PathsDoctorReport, Precedent,
+    ReplayResponse, RuntimeDecisionLineageInspection, RuntimeDecisionLineageInvocation,
+    StorageDoctorReport, VersionReport, CLI_BINARY_NAME, CONTRACT_PHASE,
 };
 use openprecedent_core::{
     build_environment_report, build_paths_report, build_storage_report, build_version_report,
-    not_implemented, resolve_runtime_config, CliConfigOverrides, ResolvedRuntimeConfig,
+    resolve_runtime_config, CliConfigOverrides, ResolvedRuntimeConfig,
 };
 use openprecedent_store_sqlite::SqliteStore;
 use serde::Deserialize;
@@ -355,8 +356,30 @@ struct EvalCommand {
 
 #[derive(Debug, Subcommand)]
 enum EvalSubcommand {
-    Fixtures(TrailingArgs),
-    CapturedOpenclawSessions(TrailingArgs),
+    Fixtures(EvalFixturesArgs),
+    #[command(visible_alias = "collected-openclaw-sessions")]
+    CapturedOpenclawSessions(EvalCapturedOpenclawSessionsArgs),
+}
+
+#[derive(Debug, Args)]
+struct EvalFixturesArgs {
+    path: std::path::PathBuf,
+}
+
+#[derive(Debug, Args)]
+struct EvalCapturedOpenclawSessionsArgs {
+    #[arg(long = "sessions-root")]
+    sessions_root: Option<std::path::PathBuf>,
+    #[arg(long = "state-file")]
+    state_file: Option<std::path::PathBuf>,
+    #[arg(long)]
+    limit: Option<usize>,
+    #[arg(long = "user-id")]
+    user_id: Option<String>,
+    #[arg(long = "agent-id", default_value = "openclaw")]
+    agent_id: String,
+    #[arg(long = "report-file")]
+    report_file: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, Args)]
@@ -433,7 +456,7 @@ where
         Command::Precedent(command) => handle_precedent(command, &config),
         Command::Capture(command) => handle_capture(command, &config),
         Command::Lineage(command) => handle_lineage(command, &config),
-        Command::Eval(command) => render_not_implemented_path(eval_path(command)),
+        Command::Eval(command) => handle_eval(command, &config),
     }
 }
 
@@ -1304,10 +1327,69 @@ fn handle_lineage(command: LineageCommand, config: &ResolvedRuntimeConfig) -> i3
     }
 }
 
-fn render_not_implemented_path(path: Vec<&'static str>) -> i32 {
-    let error = not_implemented(&path);
-    eprintln!("{error}");
-    1
+fn handle_eval(command: EvalCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    let store = match SqliteStore::new(&config.db.path) {
+        Ok(store) => store,
+        Err(error) => {
+            eprintln!("{error}");
+            return 1;
+        }
+    };
+
+    match command.command {
+        EvalSubcommand::Fixtures(args) => {
+            let report = match evaluate_openclaw_fixture_suite(&store, &args.path) {
+                Ok(report) => report,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            render(&report, config.format.value)
+        }
+        EvalSubcommand::CapturedOpenclawSessions(args) => {
+            let sessions_root = args
+                .sessions_root
+                .unwrap_or_else(capture_openclaw::default_sessions_root);
+            let state_path = args
+                .state_file
+                .unwrap_or_else(|| config.state_file.path.clone());
+            let report = match evaluate_captured_openclaw_sessions(
+                &store,
+                &sessions_root,
+                &state_path,
+                args.limit,
+                args.user_id.as_deref(),
+                Some(args.agent_id.as_str()),
+            ) {
+                Ok(report) => report,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            if let Some(report_path) = args.report_file {
+                if let Some(parent) = report_path.parent() {
+                    if let Err(error) = std::fs::create_dir_all(parent) {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                }
+                let payload = match serde_json::to_string_pretty(&report) {
+                    Ok(payload) => payload,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                if let Err(error) = std::fs::write(&report_path, payload) {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            }
+            render(&report, config.format.value)
+        }
+    }
 }
 
 fn render<T>(payload: &T, format: OutputFormat) -> i32
@@ -1689,6 +1771,129 @@ impl TextRenderable for RuntimeDecisionLineageInspection {
             format!("downstream_decisions: {}", self.downstream_decisions.len()),
         ]
         .join("\n")
+    }
+}
+
+impl TextRenderable for EvaluationReport {
+    fn render_text(&self) -> String {
+        let mut lines = vec![format!(
+            "Evaluation: {}/{} passed, {} failed",
+            self.passed_cases, self.total_cases, self.failed_cases
+        )];
+        for result in &self.results {
+            let status = if result.passed { "PASS" } else { "FAIL" };
+            lines.push(format!("- {status} {}", result.case_id));
+            lines.push(format!(
+                "  decisions: expected={} actual={}",
+                result
+                    .expected_decision_types
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(","),
+                result
+                    .actual_decision_types
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ));
+            if !result.expected_precedent_case_ids.is_empty() {
+                lines.push(format!(
+                    "  precedents: expected={} actual={}",
+                    result.expected_precedent_case_ids.join(","),
+                    result.actual_precedent_case_ids.join(",")
+                ));
+            }
+            if !result.missing_decision_types.is_empty() {
+                lines.push(format!(
+                    "  missing decisions: {}",
+                    result
+                        .missing_decision_types
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect::<Vec<_>>()
+                        .join(",")
+                ));
+            }
+            if !result.missing_precedent_case_ids.is_empty() {
+                lines.push(format!(
+                    "  missing precedents: {}",
+                    result.missing_precedent_case_ids.join(",")
+                ));
+            }
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for CollectedSessionEvaluationReport {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!(
+                "Collected evaluation: {} cases, {} completed, {} failed",
+                self.evaluated_cases, self.completed_cases, self.failed_cases
+            ),
+            format!(
+                "Average events={:.2}, average decisions={:.2}",
+                self.average_event_count, self.average_decision_count
+            ),
+        ];
+        if !self.decision_type_counts.is_empty() {
+            lines.push(format!(
+                "Decision types: {}",
+                self.decision_type_counts
+                    .iter()
+                    .map(|(decision_type, count)| format!("{decision_type}={count}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        if !self.unsupported_record_type_counts.is_empty() {
+            lines.push(format!(
+                "Unsupported record types: {}",
+                self.unsupported_record_type_counts
+                    .iter()
+                    .map(|(record_type, count)| format!("{record_type}={count}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        if !self.missing_session_ids.is_empty() {
+            lines.push(format!(
+                "Missing sessions: {}",
+                self.missing_session_ids.join(",")
+            ));
+        }
+        for result in &self.results {
+            lines.push(format!(
+                "- {} status={} events={} decisions={} precedents={}",
+                result.case_id,
+                result.status,
+                result.event_count,
+                result.decision_count,
+                result.precedent_count
+            ));
+            if !result.unsupported_record_type_counts.is_empty() {
+                lines.push(format!(
+                    "  unsupported record types: {}",
+                    result
+                        .unsupported_record_type_counts
+                        .iter()
+                        .map(|(record_type, count)| format!("{record_type}={count}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ));
+            }
+            if let Some(top_precedent_case_id) = &result.top_precedent_case_id {
+                lines.push(format!(
+                    "  top precedent: {} (score={})",
+                    top_precedent_case_id,
+                    result.top_precedent_score.unwrap_or_default()
+                ));
+            }
+        }
+        lines.join("\n")
     }
 }
 
@@ -3965,6 +4170,438 @@ fn inspect_runtime_decision_lineage_invocation(
     })
 }
 
+#[derive(Debug, Deserialize)]
+struct EvaluationCaseSpec {
+    case_id: String,
+    title: String,
+    trace_path: String,
+    #[serde(default = "default_evaluation_source_format")]
+    source_format: String,
+    expected_decision_types: Vec<DecisionType>,
+    #[serde(default)]
+    expected_precedent_case_ids: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct EvaluationSuiteSpec {
+    cases: Vec<EvaluationCaseSpec>,
+}
+
+fn default_evaluation_source_format() -> String {
+    "openclaw_trace".to_string()
+}
+
+fn evaluate_openclaw_fixture_suite(
+    store: &SqliteStore,
+    suite_path: &std::path::Path,
+) -> Result<EvaluationReport, String> {
+    let suite: EvaluationSuiteSpec = serde_json::from_str(
+        &std::fs::read_to_string(suite_path).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())?;
+    let base_dir = suite_path
+        .parent()
+        .ok_or_else(|| format!("suite path has no parent: {}", suite_path.display()))?;
+
+    let existing_case_ids = suite
+        .cases
+        .iter()
+        .filter_map(|case_spec| match store.get_case(&case_spec.case_id) {
+            Ok(Some(_)) => Some(Ok(case_spec.case_id.clone())),
+            Ok(None) => None,
+            Err(error) => Some(Err(error.to_string())),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if !existing_case_ids.is_empty() {
+        let mut duplicated = existing_case_ids;
+        duplicated.sort();
+        return Err(format!(
+            "fixture evaluation requires an isolated database; existing evaluation case ids found: {}",
+            duplicated.join(", ")
+        ));
+    }
+
+    for case_spec in &suite.cases {
+        let trace_path = base_dir.join(&case_spec.trace_path);
+        match case_spec.source_format.as_str() {
+            "openclaw_trace" => {
+                import_openclaw_trace_fixture(
+                    store,
+                    &trace_path,
+                    &case_spec.case_id,
+                    &case_spec.title,
+                )?;
+            }
+            "openclaw_session" => {
+                import_openclaw_session(
+                    store,
+                    &trace_path,
+                    &case_spec.case_id,
+                    &case_spec.title,
+                    None,
+                    None,
+                )?;
+            }
+            other => return Err(format!("unsupported evaluation source_format '{}'", other)),
+        }
+        extract_and_store_decisions(store, &case_spec.case_id)?;
+    }
+
+    let mut results = Vec::new();
+    for case_spec in &suite.cases {
+        let actual_decisions = store
+            .list_decisions(&case_spec.case_id)
+            .map_err(|error| error.to_string())?;
+        let actual_decision_types = actual_decisions
+            .iter()
+            .map(|decision| decision.decision_type)
+            .collect::<Vec<_>>();
+        let missing_decision_types = case_spec
+            .expected_decision_types
+            .iter()
+            .copied()
+            .filter(|item| !actual_decision_types.contains(item))
+            .collect::<Vec<_>>();
+        let extra_decision_types = actual_decision_types
+            .iter()
+            .copied()
+            .filter(|item| !case_spec.expected_decision_types.contains(item))
+            .collect::<Vec<_>>();
+        let precedents = find_precedents_for_case(store, &case_spec.case_id, 5)?;
+        let actual_precedent_case_ids = precedents
+            .iter()
+            .map(|precedent| precedent.case_id.clone())
+            .collect::<Vec<_>>();
+        let missing_precedent_case_ids = case_spec
+            .expected_precedent_case_ids
+            .iter()
+            .filter(|item| !actual_precedent_case_ids.contains(item))
+            .cloned()
+            .collect::<Vec<_>>();
+        let passed = missing_decision_types.is_empty() && missing_precedent_case_ids.is_empty();
+
+        results.push(EvaluationCaseResult {
+            case_id: case_spec.case_id.clone(),
+            expected_decision_types: case_spec.expected_decision_types.clone(),
+            actual_decision_types,
+            missing_decision_types,
+            extra_decision_types,
+            expected_precedent_case_ids: case_spec.expected_precedent_case_ids.clone(),
+            actual_precedent_case_ids,
+            missing_precedent_case_ids,
+            passed,
+        });
+    }
+
+    let passed_cases = results.iter().filter(|result| result.passed).count();
+    Ok(EvaluationReport {
+        total_cases: results.len(),
+        passed_cases,
+        failed_cases: results.len() - passed_cases,
+        results,
+    })
+}
+
+fn evaluate_captured_openclaw_sessions(
+    store: &SqliteStore,
+    sessions_root: &std::path::Path,
+    state_path: &std::path::Path,
+    limit: Option<usize>,
+    user_id: Option<&str>,
+    agent_id: Option<&str>,
+) -> Result<CollectedSessionEvaluationReport, String> {
+    let state =
+        capture_openclaw::load_collection_state(state_path).map_err(|error| error.to_string())?;
+    let imported_session_ids = state
+        .imported_session_ids
+        .iter()
+        .cloned()
+        .collect::<HashSet<_>>();
+    let references = capture_openclaw::list_sessions(
+        sessions_root,
+        std::cmp::max(imported_session_ids.len(), 1000),
+    )
+    .map_err(|error| error.to_string())?;
+    let mut selected_references = references
+        .into_iter()
+        .filter(|item| imported_session_ids.contains(&item.session_id))
+        .collect::<Vec<_>>();
+    if let Some(limit) = limit {
+        selected_references.truncate(limit);
+    }
+
+    let mut decision_type_counts = BTreeMap::new();
+    let mut unsupported_record_type_counts = BTreeMap::new();
+    let mut results = Vec::new();
+    let mut missing_session_ids = Vec::new();
+
+    for reference in &selected_references {
+        let case_id = capture_openclaw::case_id_for_session(&reference.session_id);
+        let case = match store
+            .get_case(&case_id)
+            .map_err(|error| error.to_string())?
+        {
+            Some(case) => case,
+            None => {
+                import_openclaw_session(
+                    store,
+                    std::path::Path::new(&reference.transcript_path),
+                    &case_id,
+                    reference
+                        .label
+                        .as_deref()
+                        .unwrap_or(&format!("OpenClaw session {}", reference.session_id)),
+                    user_id,
+                    agent_id,
+                )?
+                .case
+            }
+        };
+        let unsupported = summarize_unsupported_openclaw_session_record_types(
+            std::path::Path::new(&reference.transcript_path),
+        )?;
+        for (record_type, count) in &unsupported {
+            *unsupported_record_type_counts
+                .entry(record_type.clone())
+                .or_insert(0) += *count;
+        }
+
+        let events = store
+            .list_events(&case_id)
+            .map_err(|error| error.to_string())?;
+        let decisions = extract_and_store_decisions(store, &case_id)?;
+        let precedents = find_precedents_for_case(store, &case_id, 3)?;
+        for decision in &decisions {
+            *decision_type_counts
+                .entry(decision.decision_type.to_string())
+                .or_insert(0) += 1;
+        }
+
+        results.push(CollectedSessionEvaluationResult {
+            session_id: reference.session_id.clone(),
+            case_id: case_id.clone(),
+            title: case.title.clone(),
+            transcript_path: reference.transcript_path.clone(),
+            status: case.status.to_string(),
+            event_count: events.len(),
+            decision_count: decisions.len(),
+            precedent_count: precedents.len(),
+            top_precedent_case_id: precedents.first().map(|item| item.case_id.clone()),
+            top_precedent_score: precedents.first().map(|item| item.similarity_score),
+            has_file_write: events
+                .iter()
+                .any(|event| event.event_type == EventType::FileWrite),
+            has_recovery: events.iter().any(|event| {
+                event.event_type == EventType::CommandCompleted
+                    && event
+                        .payload
+                        .as_object()
+                        .and_then(|payload| payload.get("exit_code"))
+                        .and_then(|value| value.as_i64())
+                        .is_some_and(|exit_code| exit_code != 0)
+            }),
+            final_summary: case.final_summary.clone(),
+            unsupported_record_type_counts: unsupported,
+        });
+    }
+
+    let selected_session_ids = selected_references
+        .iter()
+        .map(|item| item.session_id.clone())
+        .collect::<HashSet<_>>();
+    for session_id in &state.imported_session_ids {
+        if !selected_session_ids.contains(session_id) {
+            missing_session_ids.push(session_id.clone());
+        }
+    }
+
+    let event_total = results.iter().map(|item| item.event_count).sum::<usize>();
+    let decision_total = results
+        .iter()
+        .map(|item| item.decision_count)
+        .sum::<usize>();
+    let result_count = results.len();
+
+    Ok(CollectedSessionEvaluationReport {
+        generated_at: Utc::now(),
+        sessions_root: sessions_root.display().to_string(),
+        state_path: state_path.display().to_string(),
+        total_sessions: if limit.is_none() {
+            state.imported_session_ids.len()
+        } else {
+            selected_references.len()
+        },
+        evaluated_cases: results.len(),
+        completed_cases: results
+            .iter()
+            .filter(|item| item.status == CaseStatus::Completed.to_string())
+            .count(),
+        failed_cases: results
+            .iter()
+            .filter(|item| item.status == CaseStatus::Failed.to_string())
+            .count(),
+        cases_with_precedents: results
+            .iter()
+            .filter(|item| item.precedent_count > 0)
+            .count(),
+        cases_with_file_writes: results.iter().filter(|item| item.has_file_write).count(),
+        cases_with_recovery: results.iter().filter(|item| item.has_recovery).count(),
+        average_event_count: if result_count == 0 {
+            0.0
+        } else {
+            event_total as f64 / result_count as f64
+        },
+        average_decision_count: if result_count == 0 {
+            0.0
+        } else {
+            decision_total as f64 / result_count as f64
+        },
+        decision_type_counts,
+        unsupported_record_type_counts,
+        missing_session_ids,
+        results,
+    })
+}
+
+fn import_openclaw_trace_fixture(
+    store: &SqliteStore,
+    path: &std::path::Path,
+    case_id: &str,
+    title: &str,
+) -> Result<(), String> {
+    ensure_case(store, case_id, title, None, Some("openclaw"))?;
+    let file = File::open(path).map_err(|error| error.to_string())?;
+    for (index, line_result) in BufReader::new(file).lines().enumerate() {
+        let line_no = index + 1;
+        let line = line_result.map_err(|error| error.to_string())?;
+        let stripped = line.trim();
+        if stripped.is_empty() {
+            continue;
+        }
+        let raw_item = match serde_json::from_str::<Value>(stripped) {
+            Ok(Value::Object(item)) => item,
+            Ok(_) => {
+                return Err(format!(
+                    "line {line_no}: openclaw trace line must be a JSON object"
+                ))
+            }
+            Err(error) => return Err(error.to_string()),
+        };
+        let event = normalize_openclaw_trace_line(raw_item, line_no, store, case_id)?;
+        store
+            .append_event(&event)
+            .map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+fn extract_and_store_decisions(
+    store: &SqliteStore,
+    case_id: &str,
+) -> Result<Vec<Decision>, String> {
+    let events = store
+        .list_events(case_id)
+        .map_err(|error| error.to_string())?;
+    let decisions = extract_decisions(case_id, &events);
+    store
+        .replace_decisions(case_id, &decisions)
+        .map_err(|error| error.to_string())?;
+    Ok(decisions)
+}
+
+fn find_precedents_for_case(
+    store: &SqliteStore,
+    case_id: &str,
+    limit: usize,
+) -> Result<Vec<Precedent>, String> {
+    let current_case = store
+        .get_case(case_id)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| format!("case not found: {case_id}"))?;
+    let current_events = store
+        .list_events(case_id)
+        .map_err(|error| error.to_string())?;
+    let current_decisions = store
+        .list_decisions(case_id)
+        .map_err(|error| error.to_string())?;
+    let current_fingerprint =
+        build_case_fingerprint(&current_case, &current_events, &current_decisions);
+
+    let mut candidates: Vec<(i64, Precedent)> = Vec::new();
+    for other_case in store.list_cases().map_err(|error| error.to_string())? {
+        if other_case.case_id == case_id {
+            continue;
+        }
+        let other_events = store
+            .list_events(&other_case.case_id)
+            .map_err(|error| error.to_string())?;
+        let other_decisions = store
+            .list_decisions(&other_case.case_id)
+            .map_err(|error| error.to_string())?;
+        let other_fingerprint =
+            build_case_fingerprint(&other_case, &other_events, &other_decisions);
+        let (score, similarities, differences) =
+            compare_fingerprints(&current_fingerprint, &other_fingerprint);
+        if score <= 0 {
+            continue;
+        }
+        candidates.push((
+            score,
+            Precedent {
+                case_id: other_case.case_id.clone(),
+                title: other_case.title.clone(),
+                summary: build_case_summary(&other_case, &other_events, &other_decisions),
+                similarity_score: score,
+                similarities,
+                differences,
+                reusable_takeaway: build_reusable_takeaway(&other_case, &other_decisions),
+                historical_outcome: other_case.final_summary.clone(),
+            },
+        ));
+    }
+    candidates.sort_by(|left, right| {
+        right
+            .0
+            .cmp(&left.0)
+            .then_with(|| left.1.case_id.cmp(&right.1.case_id))
+    });
+    Ok(candidates
+        .into_iter()
+        .take(limit)
+        .map(|(_, precedent)| precedent)
+        .collect())
+}
+
+fn summarize_unsupported_openclaw_session_record_types(
+    transcript_path: &std::path::Path,
+) -> Result<BTreeMap<String, usize>, String> {
+    let file = File::open(transcript_path).map_err(|error| error.to_string())?;
+    let mut counts = BTreeMap::new();
+    for (index, line_result) in BufReader::new(file).lines().enumerate() {
+        let line_no = index + 1;
+        let line = line_result.map_err(|error| error.to_string())?;
+        let stripped = line.trim();
+        if stripped.is_empty() {
+            continue;
+        }
+        let raw_item = match serde_json::from_str::<Value>(stripped) {
+            Ok(Value::Object(item)) => item,
+            Ok(_) => {
+                return Err(format!(
+                    "line {line_no}: openclaw session line must be a JSON object"
+                ))
+            }
+            Err(error) => return Err(error.to_string()),
+        };
+        let (_, unsupported_record_type) =
+            normalize_openclaw_session_line(raw_item, line_no, transcript_path)?;
+        if let Some(unsupported_record_type) = unsupported_record_type {
+            *counts.entry(unsupported_record_type).or_insert(0) += 1;
+        }
+    }
+    Ok(counts)
+}
+
 fn build_reusable_takeaway(case: &Case, decisions: &[Decision]) -> Option<String> {
     decisions
         .last()
@@ -4050,10 +4687,3 @@ const STOP_WORDS: [&str; 18] = [
     "the", "and", "for", "with", "that", "this", "from", "into", "will", "then", "case",
     "openclaw", "session", "docs", "file", "tool", "command", "agent",
 ];
-
-fn eval_path(command: EvalCommand) -> Vec<&'static str> {
-    match command.command {
-        EvalSubcommand::Fixtures(_) => vec!["eval", "fixtures"],
-        EvalSubcommand::CapturedOpenclawSessions(_) => vec!["eval", "captured-openclaw-sessions"],
-    }
-}
