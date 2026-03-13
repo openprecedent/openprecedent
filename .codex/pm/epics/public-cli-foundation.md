@@ -7,6 +7,7 @@ prd: public-interface-evolution
 ---
 
 ## Outcome
+
 Establish a Rust-based `openprecedent` CLI as the sole stable public interface for OpenPrecedent, replacing public Python CLI exposure and repository-local shell-script command surfaces.
 
 ## Scope
