@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: resolve-local-test-runner-before-reporting-missing-pytest
 title: Resolve repository-local test runner before reporting missing pytest
-status: in_progress
+status: done
 task_type: implementation
 labels: ops,test
 issue: 164
