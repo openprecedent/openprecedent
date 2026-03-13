@@ -102,6 +102,7 @@ For a normal local readiness pass before push, run:
 This checks the local review note, blocks reused merged branches, runs `pytest`, runs `markdownlint` when available locally, and performs a local PR closure sync check when a PR body is available through `gh`.
 It also checks that your branch contains the configured base ref, which defaults to `upstream/main`.
 For issue-scoped branches, it also runs a lightweight issue-state check. By default this only warns if an `in_progress` issue is missing a state document.
+When the current diff includes Rust-affecting files such as `Cargo.toml`, `Cargo.lock`, or files under `rust/`, preflight also runs `cargo test`.
 The intended workflow is to correct task status before PR creation rather than relying on push-time or CI-time closure sync failures.
 
 For direct local test runs, prefer:

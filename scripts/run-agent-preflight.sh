@@ -21,6 +21,8 @@ REVIEW_PROOF_FILE="${OPENPRECEDENT_REVIEW_PROOF_FILE:-$ROOT_DIR/.codex-review-pr
 PYTEST_ARGS="${OPENPRECEDENT_PREFLIGHT_PYTEST_ARGS:-tests --ignore=tests/test_preflight_script.py}"
 BASE_REF="${OPENPRECEDENT_PREFLIGHT_BASE_REF:-upstream/main}"
 ENFORCE_ISSUE_STATE="${OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE:-0}"
+FORCE_RUST_TESTS="${OPENPRECEDENT_FORCE_RUST_TESTS:-0}"
+SKIP_RUST_TESTS="${OPENPRECEDENT_SKIP_RUST_TESTS:-0}"
 
 check_review_note() {
   if [[ ! -f "$REVIEW_FILE" ]]; then
@@ -125,6 +127,38 @@ check_branch_freshness() {
   python3 "$ROOT_DIR/scripts/check_branch_freshness.py" --base-ref "$BASE_REF" --allow-missing-base-ref
 }
 
+should_run_rust_tests() {
+  if [[ "$SKIP_RUST_TESTS" == "1" ]]; then
+    return 1
+  fi
+
+  if [[ "$FORCE_RUST_TESTS" == "1" ]]; then
+    return 0
+  fi
+
+  if ! git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  git diff --name-only "$BASE_REF"...HEAD | grep -Eq '^(Cargo\.toml|Cargo\.lock|rust/)'
+}
+
+run_rust_tests_if_needed() {
+  if ! should_run_rust_tests; then
+    echo "Skipping Rust tests: no Rust-affecting changes detected"
+    return 0
+  fi
+
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "Preflight failed: Rust-affecting changes detected but cargo is unavailable"
+    echo "Install Rust or set OPENPRECEDENT_SKIP_RUST_TESTS=1 only if you are intentionally bypassing the local guardrail."
+    exit 1
+  fi
+
+  echo "Running Rust tests"
+  cargo test
+}
+
 run_markdownlint_if_available() {
   if command -v markdownlint-cli2 >/dev/null 2>&1; then
     markdownlint-cli2 "**/*.md"
@@ -209,6 +243,8 @@ check_merged_branch_reuse
 
 echo "Running pytest"
 PYTHONPATH=src OPENPRECEDENT_PYTHON_BIN="$PYTHON_BIN" ./scripts/run-pytest.sh $PYTEST_ARGS
+
+run_rust_tests_if_needed
 
 echo "Running markdownlint if available"
 run_markdownlint_if_available
