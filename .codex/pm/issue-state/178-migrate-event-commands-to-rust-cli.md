@@ -3,7 +3,7 @@ type: issue_state
 issue: 178
 task: .codex/pm/tasks/public-cli-foundation/migrate-event-commands-to-rust-cli.md
 title: Migrate event commands to the Rust CLI
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -25,8 +25,8 @@ Migrate the public `openprecedent event` command family from the Python CLI into
 
 ## Next Steps
 
-- run local preflight, commit the `#178` slice, open a child PR against `codex/issue-172-rust-public-cli`, and merge it
-- start `#179` after the Rust event commands land in the integration branch
+- keep this slice as merged history on `codex/issue-172-rust-public-cli`
+- include the event command family in the final integration PR that closes `#172`
 
 ## Artifacts
 

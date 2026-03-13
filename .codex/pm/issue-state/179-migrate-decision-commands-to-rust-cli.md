@@ -3,7 +3,7 @@ type: issue_state
 issue: 179
 task: .codex/pm/tasks/public-cli-foundation/migrate-decision-commands-to-rust-cli.md
 title: Migrate decision commands to the Rust CLI
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -24,8 +24,8 @@ Migrate derived decision extraction and listing from the Python CLI into the Rus
 
 ## Next Steps
 
-- run local preflight, commit the `#179` slice, open a child PR against `codex/issue-172-rust-public-cli`, and merge it
-- start `#180` after the Rust decision commands land in the integration branch
+- keep this slice as merged history on `codex/issue-172-rust-public-cli`
+- include the decision command family in the final integration PR that closes `#172`
 
 ## Artifacts
 

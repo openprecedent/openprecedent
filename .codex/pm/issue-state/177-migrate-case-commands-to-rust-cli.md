@@ -3,7 +3,7 @@ type: issue_state
 issue: 177
 task: .codex/pm/tasks/public-cli-foundation/migrate-case-commands-to-rust-cli.md
 title: Migrate case commands to the Rust CLI
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -23,8 +23,8 @@ Migrate the public `openprecedent case` command family from the Python CLI into 
 
 ## Next Steps
 
-- run repository preflight, commit the `#177` implementation, open a child PR against `codex/issue-172-rust-public-cli`, and merge it
-- start `#178` after the Rust case commands land in the integration branch
+- keep this slice as merged history on `codex/issue-172-rust-public-cli`
+- include the case command family in the final integration PR that closes `#172`
 
 ## Artifacts
 

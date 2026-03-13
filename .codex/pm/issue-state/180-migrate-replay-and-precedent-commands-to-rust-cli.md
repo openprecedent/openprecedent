@@ -3,7 +3,7 @@ type: issue_state
 issue: 180
 task: .codex/pm/tasks/public-cli-foundation/migrate-replay-and-precedent-commands-to-rust-cli.md
 title: Migrate replay and precedent commands to the Rust CLI
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -24,8 +24,8 @@ Migrate replay and precedent lookup from the Python CLI into the Rust public CLI
 
 ## Next Steps
 
-- run local preflight, commit the `#180` slice, open a child PR against `codex/issue-172-rust-public-cli`, and merge it
-- start `#181` after replay/precedent land in the integration branch
+- keep this slice as merged history on `codex/issue-172-rust-public-cli`
+- include the replay and precedent surfaces in the final integration PR that closes `#172`
 
 ## Artifacts
 

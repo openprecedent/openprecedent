@@ -2,7 +2,7 @@
 type: epic
 slug: public-cli-foundation
 title: Public CLI foundation
-status: in_progress
+status: done
 prd: public-interface-evolution
 ---
 
@@ -48,3 +48,4 @@ Establish a Rust-based `openprecedent` CLI as the sole stable public interface f
 This epic is about the product-facing command surface, not about preserving the current MVP implementation topology.
 The CLI should be treated as a long-term external contract that survives internal language and architecture evolution.
 All child issue PRs under this epic should merge into `codex/issue-172-rust-public-cli` until the full migration train is integrated and ready for the final merge back to `main`.
+That child issue chain is now fully integrated on `codex/issue-172-rust-public-cli`; the remaining closure step is the final merge of that special-purpose integration branch back to `main`.
