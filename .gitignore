@@ -35,6 +35,7 @@ runtime/*.log
 build/
 tmp/
 .cache/
+target/
 
 # Local runtime data
 openprecedent.db
