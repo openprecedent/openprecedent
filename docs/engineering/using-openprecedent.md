@@ -348,6 +348,19 @@ An installable OpenClaw skill is also included in this repository:
 That skill is designed for progressive disclosure.
 It teaches OpenClaw when to call `openprecedent runtime decision-lineage-brief`, how to choose `query_reason`, and how to use the returned brief as judgment context rather than operational instructions.
 
+A separate OpenPrecedent-maintained HarnessHub validation skill is also included for the current real-project study:
+
+- [SKILL.md](/workspace/02-projects/incubation/openprecedent/skills/openprecedent-harnesshub-validation/SKILL.md)
+
+That HarnessHub skill is maintained here in OpenPrecedent, then installed into a local HarnessHub workspace as a private `.codex/skills/` bundle so the study can keep one canonical skill source without making HarnessHub publicly depend on OpenPrecedent.
+
+To install or refresh it into a local HarnessHub checkout:
+
+```bash
+python3 scripts/install_harnesshub_skill.py \
+  --target-repo-root /workspace/02-projects/active/HarnessHub
+```
+
 ### Runtime decision-lineage validation baseline
 
 The current trigger-policy baseline for the OpenClaw-facing decision-lineage skill is documented here:
