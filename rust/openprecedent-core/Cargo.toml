@@ -7,4 +7,6 @@ authors.workspace = true
 
 [dependencies]
 openprecedent-contracts = { path = "../openprecedent-contracts" }
+serde.workspace = true
 thiserror.workspace = true
+toml.workspace = true
