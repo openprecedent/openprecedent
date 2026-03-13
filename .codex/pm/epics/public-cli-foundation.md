@@ -2,7 +2,7 @@
 type: epic
 slug: public-cli-foundation
 title: Public CLI foundation
-status: backlog
+status: in_progress
 prd: public-interface-evolution
 ---
 
@@ -28,8 +28,23 @@ Establish a Rust-based `openprecedent` CLI as the sole stable public interface f
 ## Child Issues
 
 - `#172` Design and adopt a Rust CLI as the stable public interface for OpenPrecedent
+- `#174` Bootstrap the Rust workspace and openprecedent binary skeleton
+- `#175` Implement global config, path resolution, doctor, and version contracts in the Rust CLI
+- `#176` Implement the Rust SQLite store and schema compatibility layer for the public CLI
+- `#177` Migrate case commands to the Rust CLI
+- `#178` Migrate event commands to the Rust CLI
+- `#179` Migrate decision commands to the Rust CLI
+- `#180` Migrate replay and precedent commands to the Rust CLI
+- `#181` Migrate OpenClaw capture commands to the Rust CLI
+- `#182` Migrate Codex capture commands to the Rust CLI
+- `#183` Migrate the lineage brief command to the Rust CLI
+- `#184` Migrate lineage invocation inspection commands to the Rust CLI
+- `#185` Migrate eval commands to the Rust CLI
+- `#186` Migrate skills and validation workflows from scripts to the Rust CLI
+- `#187` Cut over to the Rust CLI and remove public Python and script entrypoints
 
 ## Notes
 
 This epic is about the product-facing command surface, not about preserving the current MVP implementation topology.
 The CLI should be treated as a long-term external contract that survives internal language and architecture evolution.
+All child issue PRs under this epic should merge into `codex/issue-172-rust-public-cli` until the full migration train is integrated and ready for the final merge back to `main`.
