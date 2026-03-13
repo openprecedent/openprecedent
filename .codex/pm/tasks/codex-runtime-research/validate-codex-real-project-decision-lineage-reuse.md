@@ -11,11 +11,13 @@ state_path: .codex/pm/issue-state/131-validate-codex-real-project-decision-linea
 ---
 
 ## Context
+
 OpenPrecedent added Codex support so the project could test real decision-lineage reuse on the agent workflow that now produces the densest development history.
 HarnessHub is the active external-project validation target for that question.
 The issue remains open because the research thread still needs one tracked local twin on `main` that captures the current evidence and remaining closeout path.
 
 ## Deliverable
+
 Track the current state of the HarnessHub real-project validation in the local PM workspace so later sessions can recover the active research context without rediscovering the study setup.
 
 ## Scope
@@ -38,5 +40,6 @@ Track the current state of the HarnessHub real-project validation in the local P
 - keep the documented study context consistent with the existing HarnessHub validation artifacts
 
 ## Implementation Notes
+
 - Earlier study records may refer to the same target project by the earlier ClawPack naming.
 - This task is research tracking, not a signal that the validation conclusion is still absent.

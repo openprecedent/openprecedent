@@ -11,11 +11,13 @@ state_path: .codex/pm/issue-state/204-restore-local-pm-twins-for-remaining-open-
 ---
 
 ## Context
+
 `reconcile-task-statuses` currently reports no local-vs-remote status drift for tracked task twins, but the repository still has a narrower PM consistency gap.
 Some still-open GitHub issues either lack tracked local task twins on `main`, lack tracked issue-state files, or both.
 That weakens session-start restoration and makes the local PM view less trustworthy than the actual GitHub issue list.
 
 ## Deliverable
+
 Restore the missing local task twin and issue-state coverage for the remaining open GitHub issues and confirm the resulting local PM state matches remote issue status.
 
 ## Scope
@@ -41,5 +43,6 @@ Restore the missing local task twin and issue-state coverage for the remaining o
 - run `./scripts/run-agent-preflight.sh`
 
 ## Implementation Notes
+
 - This issue is about restoring missing local PM assets, not about changing the underlying product roadmap.
 - If an issue is intentionally long-lived, preserve that semantics in local status and issue-state rather than forcing artificial closure.
