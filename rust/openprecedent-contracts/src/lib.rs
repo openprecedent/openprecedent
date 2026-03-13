@@ -2,6 +2,7 @@ mod artifact;
 mod case;
 mod decision;
 mod event;
+mod lineage;
 mod precedent;
 mod replay;
 
@@ -14,6 +15,10 @@ pub use artifact::{Artifact, ArtifactType};
 pub use case::{Case, CaseStatus};
 pub use decision::{Decision, DecisionExplanation, DecisionType};
 pub use event::{Event, EventActor, EventType};
+pub use lineage::{
+    DecisionLineageBrief, DecisionLineageMatchedCase, DecisionLineageQueryReason,
+    RuntimeDecisionLineageInvocation,
+};
 pub use precedent::Precedent;
 pub use replay::ReplayResponse;
 
