@@ -6,9 +6,9 @@ use std::io::{BufRead, BufReader};
 use chrono::{DateTime, Utc};
 use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use openprecedent_contracts::{
-    Case, CaseStatus, Decision, DecisionExplanation, DecisionType, Event, EventActor, EventType,
-    OutputFormat, PathsDoctorReport, StorageDoctorReport, VersionReport, CLI_BINARY_NAME,
-    CONTRACT_PHASE,
+    Artifact, ArtifactType, Case, CaseStatus, Decision, DecisionExplanation, DecisionType, Event,
+    EventActor, EventType, OutputFormat, PathsDoctorReport, Precedent, ReplayResponse,
+    StorageDoctorReport, VersionReport, CLI_BINARY_NAME, CONTRACT_PHASE,
 };
 use openprecedent_core::{
     build_environment_report, build_paths_report, build_storage_report, build_version_report,
@@ -141,7 +141,12 @@ struct ReplayCommand {
 
 #[derive(Debug, Subcommand)]
 enum ReplaySubcommand {
-    Case(TrailingArgs),
+    Case(ReplayCaseArgs),
+}
+
+#[derive(Debug, Args)]
+struct ReplayCaseArgs {
+    case_id: String,
 }
 
 #[derive(Debug, Args)]
@@ -152,7 +157,14 @@ struct PrecedentCommand {
 
 #[derive(Debug, Subcommand)]
 enum PrecedentSubcommand {
-    Find(TrailingArgs),
+    Find(PrecedentFindArgs),
+}
+
+#[derive(Debug, Args)]
+struct PrecedentFindArgs {
+    case_id: String,
+    #[arg(long, default_value_t = 3)]
+    limit: usize,
 }
 
 #[derive(Debug, Args)]
@@ -298,8 +310,8 @@ where
         Command::Case(command) => handle_case(command, &config),
         Command::Event(command) => handle_event(command, &config),
         Command::Decision(command) => handle_decision(command, &config),
-        Command::Replay(command) => render_not_implemented_path(replay_path(command)),
-        Command::Precedent(command) => render_not_implemented_path(precedent_path(command)),
+        Command::Replay(command) => handle_replay(command, &config),
+        Command::Precedent(command) => handle_precedent(command, &config),
         Command::Capture(command) => render_not_implemented_path(capture_path(command)),
         Command::Lineage(command) => render_not_implemented_path(lineage_path(command)),
         Command::Eval(command) => render_not_implemented_path(eval_path(command)),
@@ -551,6 +563,168 @@ fn handle_decision(command: DecisionCommand, config: &ResolvedRuntimeConfig) -> 
     }
 }
 
+fn handle_replay(command: ReplayCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    let store = match SqliteStore::new(&config.db.path) {
+        Ok(store) => store,
+        Err(error) => {
+            eprintln!("{error}");
+            return 1;
+        }
+    };
+
+    match command.command {
+        ReplaySubcommand::Case(args) => {
+            let case = match store.get_case(&args.case_id) {
+                Ok(Some(case)) => case,
+                Ok(None) => {
+                    eprintln!("case not found: {}", args.case_id);
+                    return 1;
+                }
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let events = match store.list_events(&args.case_id) {
+                Ok(events) => events,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let decisions = match store.list_decisions(&args.case_id) {
+                Ok(decisions) => decisions,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let artifacts = match derive_artifacts(&store, &args.case_id, &events) {
+                Ok(artifacts) => artifacts,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let summary = case
+                .final_summary
+                .clone()
+                .or_else(|| Some(build_case_summary(&case, &events, &decisions)));
+            let replay = ReplayResponse {
+                case,
+                events,
+                decisions,
+                artifacts,
+                summary,
+            };
+            render_replay_response(&replay, config.format.value)
+        }
+    }
+}
+
+fn handle_precedent(command: PrecedentCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    let store = match SqliteStore::new(&config.db.path) {
+        Ok(store) => store,
+        Err(error) => {
+            eprintln!("{error}");
+            return 1;
+        }
+    };
+
+    match command.command {
+        PrecedentSubcommand::Find(args) => {
+            let current_case = match store.get_case(&args.case_id) {
+                Ok(Some(case)) => case,
+                Ok(None) => {
+                    eprintln!("case not found: {}", args.case_id);
+                    return 1;
+                }
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let current_events = match store.list_events(&args.case_id) {
+                Ok(events) => events,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let current_decisions = match store.list_decisions(&args.case_id) {
+                Ok(decisions) => decisions,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let current_fingerprint =
+                build_case_fingerprint(&current_case, &current_events, &current_decisions);
+
+            let mut candidates: Vec<(i64, Precedent)> = Vec::new();
+            let cases = match store.list_cases() {
+                Ok(cases) => cases,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            for other_case in cases {
+                if other_case.case_id == args.case_id {
+                    continue;
+                }
+                let other_events = match store.list_events(&other_case.case_id) {
+                    Ok(events) => events,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let other_decisions = match store.list_decisions(&other_case.case_id) {
+                    Ok(decisions) => decisions,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let other_fingerprint =
+                    build_case_fingerprint(&other_case, &other_events, &other_decisions);
+                let (score, similarities, differences) =
+                    compare_fingerprints(&current_fingerprint, &other_fingerprint);
+                if score <= 0 {
+                    continue;
+                }
+                candidates.push((
+                    score,
+                    Precedent {
+                        case_id: other_case.case_id.clone(),
+                        title: other_case.title.clone(),
+                        summary: build_case_summary(&other_case, &other_events, &other_decisions),
+                        similarity_score: score,
+                        similarities,
+                        differences,
+                        reusable_takeaway: build_reusable_takeaway(&other_case, &other_decisions),
+                        historical_outcome: other_case.final_summary.clone(),
+                    },
+                ));
+            }
+
+            candidates.sort_by(|left, right| {
+                right
+                    .0
+                    .cmp(&left.0)
+                    .then_with(|| left.1.case_id.cmp(&right.1.case_id))
+            });
+            let precedents = candidates
+                .into_iter()
+                .take(args.limit)
+                .map(|(_, precedent)| precedent)
+                .collect::<Vec<_>>();
+            render_precedent_list(&precedents, config.format.value)
+        }
+    }
+}
+
 fn render_not_implemented_path(path: Vec<&'static str>) -> i32 {
     let error = not_implemented(&path);
     eprintln!("{error}");
@@ -648,6 +822,46 @@ fn render_decision_list(decisions: &[Decision], format: OutputFormat) -> i32 {
     }
 }
 
+fn render_replay_response(replay: &ReplayResponse, format: OutputFormat) -> i32 {
+    match format {
+        OutputFormat::Json => match serde_json::to_string_pretty(replay) {
+            Ok(json) => {
+                println!("{json}");
+                0
+            }
+            Err(error) => {
+                eprintln!("{error}");
+                1
+            }
+        },
+        OutputFormat::Text => {
+            println!("{}", replay.render_text());
+            0
+        }
+    }
+}
+
+fn render_precedent_list(precedents: &[Precedent], format: OutputFormat) -> i32 {
+    match format {
+        OutputFormat::Json => match serde_json::to_string_pretty(precedents) {
+            Ok(json) => {
+                println!("{json}");
+                0
+            }
+            Err(error) => {
+                eprintln!("{error}");
+                1
+            }
+        },
+        OutputFormat::Text => {
+            for precedent in precedents {
+                println!("{}", precedent.render_text());
+            }
+            0
+        }
+    }
+}
+
 trait TextRenderable {
     fn render_text(&self) -> String;
 }
@@ -721,6 +935,85 @@ impl TextRenderable for Decision {
         }
         if let Some(result) = &self.explanation.result {
             lines.push(format!("  result: {result}"));
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for Artifact {
+    fn render_text(&self) -> String {
+        let mut lines = vec![format!("- {}: {}", self.artifact_type, self.uri_or_path)];
+        if let Some(summary) = &self.summary {
+            lines.push(format!("    summary: {summary}"));
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for ReplayResponse {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!("Case {}: {}", self.case.case_id, self.case.title),
+            format!("Status: {}", self.case.status),
+            "Events:".to_string(),
+        ];
+        for event in &self.events {
+            lines.push(format!(
+                "  [{}] {} ({})",
+                event.sequence_no, event.event_type, event.actor
+            ));
+        }
+        lines.push("Decisions:".to_string());
+        for decision in &self.decisions {
+            lines.push(format!(
+                "  [{}] {}: {}",
+                decision.sequence_no, decision.decision_type, decision.title
+            ));
+            lines.push(format!(
+                "      why: {}",
+                decision.explanation.selection_reason
+            ));
+            if let Some(result) = &decision.explanation.result {
+                lines.push(format!("      result: {result}"));
+            }
+        }
+        lines.push("Artifacts:".to_string());
+        for artifact in &self.artifacts {
+            lines.push(format!(
+                "  - {}: {}",
+                artifact.artifact_type, artifact.uri_or_path
+            ));
+            if let Some(summary) = &artifact.summary {
+                lines.push(format!("      summary: {summary}"));
+            }
+        }
+        if let Some(summary) = &self.summary {
+            lines.push(format!("Summary: {summary}"));
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for Precedent {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!(
+                "{} (score={}): {}",
+                self.case_id, self.similarity_score, self.title
+            ),
+            format!("  summary: {}", self.summary),
+        ];
+        if !self.similarities.is_empty() {
+            lines.push(format!("  similarities: {}", self.similarities.join(", ")));
+        }
+        if !self.differences.is_empty() {
+            lines.push(format!("  differences: {}", self.differences.join(", ")));
+        }
+        if let Some(takeaway) = &self.reusable_takeaway {
+            lines.push(format!("  reusable_takeaway: {takeaway}"));
+        }
+        if let Some(outcome) = &self.historical_outcome {
+            lines.push(format!("  historical_outcome: {outcome}"));
         }
         lines.join("\n")
     }
@@ -1195,6 +1488,373 @@ fn semantic_aliases(token: &str) -> &'static [&'static str] {
     }
 }
 
+fn derive_artifacts(
+    store: &SqliteStore,
+    case_id: &str,
+    events: &[Event],
+) -> Result<Vec<Artifact>, openprecedent_store_sqlite::SqliteStoreError> {
+    let mut derived = Vec::new();
+    let mut seen_ids = HashSet::new();
+
+    for event in events {
+        let payload = event.payload.as_object();
+        let artifact = match event.event_type {
+            EventType::FileWrite => payload
+                .and_then(|payload| payload.get("path"))
+                .and_then(string_or_none)
+                .map(|path| Artifact {
+                    artifact_id: format!("artifact_{}", event.event_id),
+                    case_id: case_id.to_string(),
+                    artifact_type: ArtifactType::File,
+                    uri_or_path: path,
+                    summary: payload
+                        .and_then(|payload| payload.get("summary"))
+                        .and_then(string_or_none),
+                }),
+            EventType::CommandCompleted => payload
+                .and_then(|payload| payload.get("command"))
+                .and_then(string_or_none)
+                .map(|command| Artifact {
+                    artifact_id: format!("artifact_{}", event.event_id),
+                    case_id: case_id.to_string(),
+                    artifact_type: ArtifactType::CommandOutput,
+                    uri_or_path: command,
+                    summary: payload
+                        .and_then(|payload| payload.get("stdout"))
+                        .and_then(string_or_none)
+                        .or_else(|| {
+                            payload
+                                .and_then(|payload| payload.get("stderr"))
+                                .and_then(string_or_none)
+                        }),
+                }),
+            EventType::MessageUser | EventType::MessageAgent => payload
+                .and_then(|payload| payload.get("message"))
+                .and_then(string_or_none)
+                .map(|message| Artifact {
+                    artifact_id: format!("artifact_{}", event.event_id),
+                    case_id: case_id.to_string(),
+                    artifact_type: ArtifactType::Message,
+                    uri_or_path: format!("{}:{}", event.event_type, event.event_id),
+                    summary: Some(message),
+                }),
+            _ => None,
+        };
+
+        let Some(artifact) = artifact else {
+            continue;
+        };
+        if seen_ids.contains(&artifact.artifact_id) {
+            continue;
+        }
+        store.upsert_artifact(&artifact)?;
+        seen_ids.insert(artifact.artifact_id.clone());
+        derived.push(artifact);
+    }
+
+    Ok(derived)
+}
+
+fn build_case_summary(case: &Case, events: &[Event], decisions: &[Decision]) -> String {
+    format!(
+        "{}: {} events, {} decisions, status={}",
+        case.title,
+        events.len(),
+        decisions.len(),
+        case.status
+    )
+}
+
+#[derive(Debug)]
+struct CaseFingerprint {
+    status: String,
+    has_file_write: bool,
+    has_recovery: bool,
+    tool_count: i64,
+    tool_names: HashSet<String>,
+    file_paths: HashSet<String>,
+    file_read_paths: HashSet<String>,
+    keywords: HashSet<String>,
+    decision_keywords: HashSet<String>,
+    decision_types: HashSet<String>,
+}
+
+fn build_case_fingerprint(
+    case: &Case,
+    events: &[Event],
+    decisions: &[Decision],
+) -> CaseFingerprint {
+    let mut tool_names = HashSet::new();
+    let mut file_paths = HashSet::new();
+    let mut file_read_paths = HashSet::new();
+    let mut tool_count = 0_i64;
+    let mut has_file_write = false;
+    let mut has_recovery = false;
+
+    for event in events {
+        let payload = event.payload.as_object();
+        if event.event_type == EventType::ToolCalled {
+            tool_count += 1;
+        }
+        if event.event_type == EventType::FileWrite {
+            has_file_write = true;
+        }
+        if event.event_type == EventType::CommandCompleted {
+            if let Some(exit_code) = payload
+                .and_then(|payload| payload.get("exit_code"))
+                .and_then(|value| value.as_i64())
+            {
+                if exit_code != 0 {
+                    has_recovery = true;
+                }
+            }
+        }
+
+        if let Some(tool_name) = payload
+            .and_then(|payload| payload.get("tool_name"))
+            .and_then(string_or_none)
+        {
+            tool_names.insert(tool_name);
+        }
+        if let Some(path) = payload
+            .and_then(|payload| payload.get("path"))
+            .and_then(string_or_none)
+        {
+            let name = std::path::Path::new(&path)
+                .file_name()
+                .and_then(|item| item.to_str())
+                .unwrap_or(&path)
+                .to_string();
+            file_paths.insert(name.clone());
+            if event.event_type == EventType::FileRead {
+                file_read_paths.insert(name);
+            }
+        }
+    }
+
+    CaseFingerprint {
+        status: case.status.to_string(),
+        has_file_write,
+        has_recovery,
+        tool_count,
+        tool_names,
+        file_paths,
+        file_read_paths,
+        keywords: case_keywords(case, events, decisions),
+        decision_keywords: decision_keywords(decisions),
+        decision_types: decisions
+            .iter()
+            .map(|decision| decision.decision_type.to_string())
+            .collect(),
+    }
+}
+
+fn compare_fingerprints(
+    current: &CaseFingerprint,
+    other: &CaseFingerprint,
+) -> (i64, Vec<String>, Vec<String>) {
+    let mut score = 0_i64;
+    let mut similarities = Vec::new();
+    let mut differences = Vec::new();
+
+    if current.status == other.status {
+        score += 1;
+        similarities.push("same status".to_string());
+    } else {
+        differences.push("different status".to_string());
+    }
+
+    for (key, left, right) in [
+        (
+            "has_file_write",
+            current.has_file_write,
+            other.has_file_write,
+        ),
+        ("has_recovery", current.has_recovery, other.has_recovery),
+    ] {
+        if left == right {
+            if left {
+                score += 1;
+                similarities.push(format!("same {key}"));
+            }
+        } else {
+            differences.push(format!("different {key}"));
+        }
+    }
+
+    if current.decision_types == other.decision_types {
+        score += 6;
+        similarities.push("same decision shape".to_string());
+    } else {
+        let shared_decisions = intersection_sorted(&current.decision_types, &other.decision_types);
+        if !shared_decisions.is_empty() {
+            score += (shared_decisions.len() as i64 * 2).min(6);
+            similarities.push(format!(
+                "shared decision types: {}",
+                shared_decisions.join(",")
+            ));
+        } else {
+            differences.push("different decision shape".to_string());
+        }
+    }
+
+    let shared_decision_keywords =
+        intersection_sorted(&current.decision_keywords, &other.decision_keywords);
+    if !shared_decision_keywords.is_empty() {
+        score += (shared_decision_keywords.len() as i64 * 2).min(8);
+        similarities.push(format!(
+            "shared decision language: {}",
+            shared_decision_keywords
+                .iter()
+                .take(4)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+    } else {
+        differences.push("different decision language".to_string());
+    }
+
+    let tool_delta = (current.tool_count - other.tool_count).abs();
+    if tool_delta == 0 {
+        score += 1;
+        similarities.push("same tool call count".to_string());
+    } else if tool_delta == 1 {
+        similarities.push("nearby tool call count".to_string());
+    } else {
+        differences.push("different tool call count".to_string());
+    }
+
+    let shared_tools = intersection_sorted(&current.tool_names, &other.tool_names);
+    if !shared_tools.is_empty() {
+        score += 1;
+        similarities.push(format!(
+            "shared tools: {}",
+            shared_tools
+                .iter()
+                .take(3)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+    } else {
+        differences.push("different tools".to_string());
+    }
+
+    let shared_paths = intersection_sorted(&current.file_paths, &other.file_paths);
+    if !shared_paths.is_empty() {
+        score += 1;
+        similarities.push(format!(
+            "shared file targets: {}",
+            shared_paths
+                .iter()
+                .take(3)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+    }
+
+    let shared_read_paths = intersection_sorted(&current.file_read_paths, &other.file_read_paths);
+    if !shared_read_paths.is_empty() {
+        score += (shared_read_paths.len() as i64).min(2);
+        similarities.push(format!(
+            "shared read targets: {}",
+            shared_read_paths
+                .iter()
+                .take(3)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+    }
+
+    let shared_keywords = intersection_sorted(&current.keywords, &other.keywords);
+    if !shared_keywords.is_empty() {
+        score += (shared_keywords.len() as i64).min(4);
+        similarities.push(format!(
+            "shared keywords: {}",
+            shared_keywords
+                .iter()
+                .take(4)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(",")
+        ));
+    } else {
+        differences.push("different task keywords".to_string());
+    }
+
+    let clarification = DecisionType::ClarificationResolved.to_string();
+    let clarification_mismatch = current.decision_types.contains(&clarification)
+        ^ other.decision_types.contains(&clarification);
+    if clarification_mismatch {
+        score -= 1;
+        differences.push("different clarification pattern".to_string());
+    }
+
+    if similarities.is_empty() {
+        similarities.push("similar case structure".to_string());
+    }
+
+    (score, similarities, differences)
+}
+
+fn case_keywords(case: &Case, events: &[Event], decisions: &[Decision]) -> HashSet<String> {
+    let mut texts = vec![case.title.clone()];
+    if let Some(summary) = &case.final_summary {
+        texts.push(summary.clone());
+    }
+
+    for event in events {
+        if let Some(payload) = event.payload.as_object() {
+            for key in ["message", "path", "tool_name", "command"] {
+                if let Some(value) = payload.get(key).and_then(string_or_none) {
+                    texts.push(value);
+                }
+            }
+        }
+    }
+    for decision in decisions {
+        texts.push(decision.title.clone());
+        texts.push(decision.chosen_action.clone());
+        if let Some(outcome) = &decision.outcome {
+            texts.push(outcome.clone());
+        }
+    }
+
+    let mut keywords = HashSet::new();
+    for text in texts {
+        keywords.extend(tokenize_keywords(&text));
+    }
+    keywords
+}
+
+fn decision_keywords(decisions: &[Decision]) -> HashSet<String> {
+    let mut keywords = HashSet::new();
+    for decision in decisions {
+        keywords.extend(tokenize_keywords(&decision.title));
+        keywords.extend(tokenize_keywords(&decision.chosen_action));
+        if let Some(outcome) = &decision.outcome {
+            keywords.extend(tokenize_keywords(outcome));
+        }
+    }
+    keywords
+}
+
+fn build_reusable_takeaway(case: &Case, decisions: &[Decision]) -> Option<String> {
+    decisions
+        .last()
+        .map(|decision| decision.chosen_action.clone())
+        .or_else(|| case.final_summary.clone())
+}
+
+fn intersection_sorted(left: &HashSet<String>, right: &HashSet<String>) -> Vec<String> {
+    let mut values = left.intersection(right).cloned().collect::<Vec<_>>();
+    values.sort();
+    values
+}
+
 fn looks_like_task_frame(message: &str) -> bool {
     let normalized = normalize_message_intent(message);
     normalized.starts_with("i will ")
@@ -1267,18 +1927,6 @@ const STOP_WORDS: [&str; 18] = [
     "the", "and", "for", "with", "that", "this", "from", "into", "will", "then", "case",
     "openclaw", "session", "docs", "file", "tool", "command", "agent",
 ];
-
-fn replay_path(command: ReplayCommand) -> Vec<&'static str> {
-    match command.command {
-        ReplaySubcommand::Case(_) => vec!["replay", "case"],
-    }
-}
-
-fn precedent_path(command: PrecedentCommand) -> Vec<&'static str> {
-    match command.command {
-        PrecedentSubcommand::Find(_) => vec!["precedent", "find"],
-    }
-}
 
 fn capture_path(command: CaptureCommand) -> Vec<&'static str> {
     match command.runtime {
