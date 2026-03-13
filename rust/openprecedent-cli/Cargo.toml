@@ -12,6 +12,7 @@ path = "src/main.rs"
 [dependencies]
 chrono.workspace = true
 clap.workspace = true
+openprecedent-capture-codex = { path = "../openprecedent-capture-codex" }
 openprecedent-contracts = { path = "../openprecedent-contracts" }
 openprecedent-core = { path = "../openprecedent-core" }
 openprecedent-capture-openclaw = { path = "../openprecedent-capture-openclaw" }
