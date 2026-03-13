@@ -3,7 +3,9 @@ type: issue_state
 issue: 174
 task: .codex/pm/tasks/public-cli-foundation/bootstrap-rust-workspace-and-openprecedent-binary-skeleton.md
 title: Bootstrap the Rust workspace and openprecedent binary skeleton
-status: in_progress
+status: done
+delivery_stage: pr_opened
+pr_url: https://github.com/openprecedent/openprecedent/pull/188
 ---
 
 ## Summary
@@ -25,8 +27,8 @@ Bootstrap the Rust workspace and the `openprecedent` binary so later command sli
 
 ## Next Steps
 
-- open a child PR for `#174` that targets `codex/issue-172-rust-public-cli`
-- merge the workspace bootstrap into the dedicated integration branch before starting `#175`
+- review and merge PR `#188` into `codex/issue-172-rust-public-cli`
+- start `#175` from the refreshed integration branch after the workspace bootstrap lands
 
 ## Artifacts
 
