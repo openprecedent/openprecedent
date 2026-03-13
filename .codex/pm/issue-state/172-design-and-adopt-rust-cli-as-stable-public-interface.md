@@ -4,6 +4,8 @@ issue: 172
 task: .codex/pm/tasks/public-cli-foundation/design-and-adopt-rust-cli-as-stable-public-interface.md
 title: Design and adopt a Rust CLI as the stable public interface for OpenPrecedent
 status: done
+delivery_stage: pr_opened
+pr_url: https://github.com/openprecedent/openprecedent/pull/173
 ---
 
 ## Summary
@@ -23,7 +25,7 @@ Create the design baseline for OpenPrecedent's long-term public interface evolut
 
 ## Next Steps
 
-- land the design baseline through issue `#172`
+- wait for PR `#173` review and merge
 - use this document as the parent contract for later Rust CLI implementation issues under the public CLI foundation epic
 - keep future CLI execution issues scoped to implementation slices instead of reopening command-contract decisions
 
