@@ -1,7 +1,17 @@
+mod artifact;
+mod case;
+mod decision;
+mod event;
+
 use std::path::PathBuf;
 
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
+
+pub use artifact::{Artifact, ArtifactType};
+pub use case::{Case, CaseStatus};
+pub use decision::{Decision, DecisionExplanation, DecisionType};
+pub use event::{Event, EventActor, EventType};
 
 pub const CLI_BINARY_NAME: &str = "openprecedent";
 pub const CONTRACT_PHASE: &str = "bootstrap";
