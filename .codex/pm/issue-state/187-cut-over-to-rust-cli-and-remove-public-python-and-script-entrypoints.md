@@ -3,7 +3,7 @@ type: issue_state
 issue: 187
 task: .codex/pm/tasks/public-cli-foundation/cut-over-to-rust-cli-and-remove-public-python-and-script-entrypoints.md
 title: Cut over to the Rust CLI and remove public Python and script entrypoints
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -23,9 +23,9 @@ This issue is executing the final public cutover: the packaged Python `openprece
 
 ## Next Steps
 
-- refresh review proof and preflight on the final cutover commit set
-- mark the task `done`
 - open the child PR against `codex/issue-172-rust-public-cli`
+- merge the completed cutover slice into the integration branch
+- merge the fully integrated Rust CLI train back to `main`
 
 ## Artifacts
 
