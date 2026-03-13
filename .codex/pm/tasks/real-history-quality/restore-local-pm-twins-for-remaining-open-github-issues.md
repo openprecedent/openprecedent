@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: restore-local-pm-twins-for-remaining-open-github-issues
 title: Restore local PM twins for remaining open GitHub issues
-status: in_progress
+status: done
 task_type: implementation
 labels: ops,docs
 issue: 204
