@@ -3,7 +3,7 @@ type: task
 epic: public-cli-foundation
 slug: migrate-codex-capture-commands-to-rust-cli
 title: Migrate Codex capture commands to the Rust CLI
-status: backlog
+status: done
 task_type: implementation
 labels: cli,rust,interface
 issue: 182
@@ -11,7 +11,7 @@ issue: 182
 
 ## Context
 
-Planned child issue under `#172`. Expand the implementation detail when this issue becomes active.
+Child issue `#182` under `#172` migrates the public Codex rollout import workflow into Rust. This slice covers the stable `capture codex import-rollout` surface and the normalization behavior that downstream replay, decision extraction, and precedent retrieval depend on.
 
 ## Deliverable
 
@@ -19,16 +19,30 @@ Implement the scoped GitHub issue on a child branch that merges into `codex/issu
 
 ## Scope
 
-- follow the scoped work and constraints defined in the linked GitHub issue
+- implement `capture codex import-rollout` in Rust
+- preserve current rollout normalization semantics, including unsupported-record counting and tool-output noise stripping
+- keep imported events compatible with existing replay, decision extraction, and precedent ranking behavior
+- add Rust contract tests that exercise the current Codex rollout fixtures
 
 ## Acceptance Criteria
 
-- satisfy the acceptance criteria in the linked GitHub issue before opening a child PR
+- Codex rollout capture runs through the Rust CLI without falling back to Python or shell wrappers
+- imported data remains compatible with the shared SQLite schema and downstream Rust replay, decision, and precedent commands
+- Rust tests cover the normal rollout path and noisy rollout normalization path
 
 ## Validation
 
-- run issue-appropriate local validation when this task becomes active
+- run `cargo test`
+- run `./scripts/run-pytest.sh -q tests/test_rust_cli_workspace.py`
+- run `./scripts/run-agent-preflight.sh` before opening the PR
 
 ## Implementation Notes
 
-- This task twin was scaffolded during the Rust CLI issue decomposition and should be elaborated when implementation starts.
+- Prefer moving Codex rollout normalization helpers into the dedicated `openprecedent-capture-codex` crate instead of embedding more runtime-specific parsing directly into the CLI binary.
+- Preserve the JSON output contract because later lineage and skill migrations will invoke this command directly.
+
+## Completion Notes
+
+- implemented `capture codex import-rollout` in the Rust CLI
+- moved Codex rollout normalization and unsupported-record classification into the dedicated `openprecedent-capture-codex` crate
+- added Rust contract tests for the standard rollout path, noisy rollout normalization, and precedent ranking with Codex fixtures
