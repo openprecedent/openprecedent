@@ -3,7 +3,7 @@ type: task
 epic: public-cli-foundation
 slug: migrate-openclaw-capture-commands-to-rust-cli
 title: Migrate OpenClaw capture commands to the Rust CLI
-status: backlog
+status: in_progress
 task_type: implementation
 labels: cli,rust,interface
 issue: 181
@@ -11,24 +11,34 @@ issue: 181
 
 ## Context
 
-Planned child issue under `#172`. Expand the implementation detail when this issue becomes active.
+Child issue `#181` under `#172` migrates the public OpenClaw capture workflows into Rust. This slice covers session discovery, single-session import, bulk collection, and direct JSONL import for OpenClaw traces.
 
 ## Deliverable
 
-Implement the scoped GitHub issue on a child branch that merges into `codex/issue-172-rust-public-cli`.
+Implement the `capture openclaw` command family in Rust on a child branch that merges into `codex/issue-172-rust-public-cli`.
 
 ## Scope
 
-- follow the scoped work and constraints defined in the linked GitHub issue
+- implement `capture openclaw list-sessions`
+- implement `capture openclaw import-session`
+- implement `capture openclaw collect-sessions`
+- implement `capture openclaw import-jsonl`
+- preserve session-state compatibility and current OpenClaw normalization behavior closely enough for existing fixtures
 
 ## Acceptance Criteria
 
-- satisfy the acceptance criteria in the linked GitHub issue before opening a child PR
+- OpenClaw capture workflows run through the Rust CLI without Python or shell wrappers
+- existing session index and transcript fixtures remain usable
+- imported data remains compatible with the shared SQLite schema and downstream replay/precedent commands
+- Rust tests cover session listing, import, and collection behavior
 
 ## Validation
 
-- run issue-appropriate local validation when this task becomes active
+- run `cargo test`
+- run `./scripts/run-pytest.sh -q tests/test_rust_cli_workspace.py`
+- run `./scripts/run-agent-preflight.sh` before opening the PR
 
 ## Implementation Notes
 
-- This task twin was scaffolded during the Rust CLI issue decomposition and should be elaborated when implementation starts.
+- Prefer reusing or expanding the dedicated `openprecedent-capture-openclaw` crate instead of further bloating the CLI binary.
+- Keep the JSON output contract stable because later live-validation and skill migrations will depend on it.
