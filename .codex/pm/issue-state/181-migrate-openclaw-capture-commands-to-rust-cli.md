@@ -3,34 +3,33 @@ type: issue_state
 issue: 181
 task: .codex/pm/tasks/public-cli-foundation/migrate-openclaw-capture-commands-to-rust-cli.md
 title: Migrate OpenClaw capture commands to the Rust CLI
-status: in_progress
+status: done
 ---
 
 ## Summary
 
-Migrate OpenClaw session discovery and import workflows from the Python CLI into the Rust public CLI.
+OpenClaw session discovery and import workflows now run through the Rust public CLI, including direct JSONL import, single-session import, and bulk collection with state tracking.
 
 ## Validated Facts
 
 - issues `#177` through `#180` already moved case, event, decision, replay, and precedent into Rust and merged into the integration branch
-- Python currently exposes four OpenClaw-facing workflows: session listing, single-session import, bulk collection, and direct JSONL import
-- the OpenClaw import path is larger than earlier slices because it includes transcript normalization, collector state, and duplicate-session detection
-- later Rust CLI cutover work depends on OpenClaw capture no longer going through Python or shell wrappers
+- the Rust CLI now exposes `capture openclaw list-sessions`, `import-session`, `collect-sessions`, and `import-jsonl`
+- session discovery supports both `sessions.json` indexes and fallback directory scanning of `*.jsonl` transcripts
+- single-session import and bulk collection preserve duplicate-session detection through stored OpenClaw session IDs and collector state files
+- Rust contract tests now cover session listing, direct trace import, sample transcript import, and duplicate-aware bulk collection
 
 ## Open Questions
 
-- how much of the current normalization logic should move into the dedicated `openprecedent-capture-openclaw` crate versus staying in CLI-level orchestration
+- some normalization helpers still live in the CLI crate and may be moved later if capture logic needs stronger reuse across future surfaces
 
 ## Next Steps
 
-- model the Rust output contracts for OpenClaw session references and collection results
-- implement Rust session listing
-- port single-session import and direct JSONL import
-- port bulk collection and state-file behavior
-- add contract tests and open a child PR against `codex/issue-172-rust-public-cli`
+- merge this child issue into `codex/issue-172-rust-public-cli`
+- continue with `#182` for the Codex capture migration slice
 
 ## Artifacts
 
 - `rust/openprecedent-capture-openclaw/`
 - `rust/openprecedent-cli/src/main.rs`
+- `rust/openprecedent-cli/tests/openclaw_capture_contract.rs`
 - `.codex/pm/tasks/public-cli-foundation/migrate-openclaw-capture-commands-to-rust-cli.md`

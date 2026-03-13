@@ -3,7 +3,7 @@ type: task
 epic: public-cli-foundation
 slug: migrate-openclaw-capture-commands-to-rust-cli
 title: Migrate OpenClaw capture commands to the Rust CLI
-status: in_progress
+status: done
 task_type: implementation
 labels: cli,rust,interface
 issue: 181
@@ -42,3 +42,9 @@ Implement the `capture openclaw` command family in Rust on a child branch that m
 
 - Prefer reusing or expanding the dedicated `openprecedent-capture-openclaw` crate instead of further bloating the CLI binary.
 - Keep the JSON output contract stable because later live-validation and skill migrations will depend on it.
+
+## Completion Notes
+
+- implemented `capture openclaw list-sessions`, `import-session`, `collect-sessions`, and `import-jsonl` in the Rust CLI
+- expanded the dedicated `openprecedent-capture-openclaw` crate with session discovery and collector-state helpers
+- added Rust contract tests for session listing, direct trace import, single-session import, and duplicate-aware collection
