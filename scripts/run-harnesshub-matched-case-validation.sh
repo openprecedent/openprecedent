@@ -46,7 +46,7 @@ run_openprecedent() {
 "$PYTHON_BIN" scripts/import_harnesshub_codex_round.py \
   --bundle-dir "$BUNDLE_DIR" \
   --runtime-home "$RUNTIME_HOME" \
-  --python-bin "$PYTHON_BIN" \
+  --openprecedent-bin "$OPENPRECEDENT_BIN" \
   --skip-if-case-exists \
   >"$OUTPUT_ROOT/01-import-summary.json"
 
