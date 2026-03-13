@@ -9,7 +9,7 @@ delivery_stage: done
 
 ## Summary
 
-Issue `#172` served as the long-lived parent for the full Rust CLI migration train on `codex/issue-172-rust-public-cli`, and that integration branch now contains the completed public cutover needed for the final merge back to `main`.
+Issue `#172` started as the Rust public CLI design issue, later served as the parent integration issue for the migration train, and is now in final closeout with a repository-local implementation summary that documents what the shipped Rust CLI actually provides on `main`.
 
 ## Validated Facts
 
@@ -17,10 +17,12 @@ Issue `#172` served as the long-lived parent for the full Rust CLI migration tra
 - multiple skill and validation workflows still rely on repository-local shell scripts, which makes the effective external interface unstable
 - the current command surface already includes more than decision-lineage: case, event, replay, extraction, precedent, runtime capture, and evaluation
 - PR `#173` merged the contract-first Rust CLI design baseline into `main`
-- issue `#172` has been reopened so the migration can proceed under one explicit parent issue instead of spawning disconnected implementation tracks
+- issue `#172` was reopened so the migration could proceed under one explicit parent issue instead of spawning disconnected implementation tracks
 - child issues `#174` through `#187` now cover the Rust workspace, config, store, command families, skill migration, and final cutover in reviewable slices
 - child issues `#174` through `#187` have merged into `codex/issue-172-rust-public-cli`
 - the integration branch now exposes the Rust `openprecedent` CLI as the supported public command surface and removes the public Python CLI and public shell-script entrypoints
+- PR `#202` merged the completed migration train back into `main`
+- the repository now contains a dedicated engineering implementation summary for the shipped Rust CLI
 - integrated validation passed through `cargo test`, targeted Python regression coverage, and `./scripts/run-agent-preflight.sh`
 
 ## Open Questions
@@ -29,7 +31,7 @@ Issue `#172` served as the long-lived parent for the full Rust CLI migration tra
 
 ## Next Steps
 
-- merge `codex/issue-172-rust-public-cli` back to `main` through the final parent PR that closes issue `#172`
+- merge the closeout documentation PR that closes issue `#172`
 
 ## Artifacts
 
