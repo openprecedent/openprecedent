@@ -1,16 +1,18 @@
 use std::collections::{BTreeMap, HashSet};
 use std::ffi::OsString;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, Write};
 
 use chrono::{DateTime, Utc};
 use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use openprecedent_capture_codex as capture_codex;
 use openprecedent_capture_openclaw as capture_openclaw;
 use openprecedent_contracts::{
-    Artifact, ArtifactType, Case, CaseStatus, Decision, DecisionExplanation, DecisionType, Event,
-    EventActor, EventType, OutputFormat, PathsDoctorReport, Precedent, ReplayResponse,
-    StorageDoctorReport, VersionReport, CLI_BINARY_NAME, CONTRACT_PHASE,
+    Artifact, ArtifactType, Case, CaseStatus, Decision, DecisionExplanation, DecisionLineageBrief,
+    DecisionLineageMatchedCase, DecisionLineageQueryReason, DecisionType, Event, EventActor,
+    EventType, OutputFormat, PathsDoctorReport, Precedent, ReplayResponse,
+    RuntimeDecisionLineageInvocation, StorageDoctorReport, VersionReport, CLI_BINARY_NAME,
+    CONTRACT_PHASE,
 };
 use openprecedent_core::{
     build_environment_report, build_paths_report, build_storage_report, build_version_report,
@@ -300,8 +302,28 @@ struct LineageCommand {
 
 #[derive(Debug, Subcommand)]
 enum LineageSubcommand {
-    Brief(TrailingArgs),
+    Brief(LineageBriefArgs),
     Invocation(LineageInvocationCommand),
+}
+
+#[derive(Debug, Args)]
+struct LineageBriefArgs {
+    #[arg(long = "query-reason", value_enum)]
+    query_reason: DecisionLineageQueryReason,
+    #[arg(long = "task-summary")]
+    task_summary: String,
+    #[arg(long = "current-plan")]
+    current_plan: Option<String>,
+    #[arg(long = "candidate-action")]
+    candidate_action: Option<String>,
+    #[arg(long = "known-file")]
+    known_files: Vec<String>,
+    #[arg(long = "case-id")]
+    case_id: Option<String>,
+    #[arg(long = "session-id")]
+    session_id: Option<String>,
+    #[arg(long, default_value_t = 3)]
+    limit: usize,
 }
 
 #[derive(Debug, Args)]
@@ -401,7 +423,7 @@ where
         Command::Replay(command) => handle_replay(command, &config),
         Command::Precedent(command) => handle_precedent(command, &config),
         Command::Capture(command) => handle_capture(command, &config),
-        Command::Lineage(command) => render_not_implemented_path(lineage_path(command)),
+        Command::Lineage(command) => handle_lineage(command, &config),
         Command::Eval(command) => render_not_implemented_path(eval_path(command)),
     }
 }
@@ -1206,6 +1228,44 @@ fn handle_capture(command: CaptureCommand, config: &ResolvedRuntimeConfig) -> i3
     }
 }
 
+fn handle_lineage(command: LineageCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    match command.command {
+        LineageSubcommand::Brief(args) => {
+            let store = match SqliteStore::new(&config.db.path) {
+                Ok(store) => store,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+
+            let brief = match build_decision_lineage_brief(&store, &args) {
+                Ok(brief) => brief,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+
+            if let Err(error) = record_runtime_decision_lineage_invocation(
+                &args,
+                &brief,
+                &config.invocation_log.path,
+            ) {
+                eprintln!("{error}");
+                return 1;
+            }
+
+            render(&brief, config.format.value)
+        }
+        LineageSubcommand::Invocation(command) => {
+            render_not_implemented_path(lineage_path(LineageCommand {
+                command: LineageSubcommand::Invocation(command),
+            }))
+        }
+    }
+}
+
 fn render_not_implemented_path(path: Vec<&'static str>) -> i32 {
     let error = not_implemented(&path);
     eprintln!("{error}");
@@ -1495,6 +1555,56 @@ impl TextRenderable for Precedent {
         }
         if let Some(outcome) = &self.historical_outcome {
             lines.push(format!("  historical_outcome: {outcome}"));
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for DecisionLineageBrief {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!("query_reason: {}", self.query_reason),
+            format!("task_summary: {}", self.task_summary),
+        ];
+        if let Some(task_frame) = &self.task_frame {
+            lines.push(format!("task_frame: {task_frame}"));
+        }
+        if let Some(suggested_focus) = &self.suggested_focus {
+            lines.push(format!("suggested_focus: {suggested_focus}"));
+        }
+        lines.push("matched_cases:".to_string());
+        for matched in &self.matched_cases {
+            lines.push(format!(
+                "  - {} (score={}): {}",
+                matched.case_id, matched.similarity_score, matched.title
+            ));
+        }
+        if !self.accepted_constraints.is_empty() {
+            lines.push(format!(
+                "accepted_constraints: {}",
+                self.accepted_constraints.join(" | ")
+            ));
+        }
+        if !self.success_criteria.is_empty() {
+            lines.push(format!(
+                "success_criteria: {}",
+                self.success_criteria.join(" | ")
+            ));
+        }
+        if !self.rejected_options.is_empty() {
+            lines.push(format!(
+                "rejected_options: {}",
+                self.rejected_options.join(" | ")
+            ));
+        }
+        if !self.authority_signals.is_empty() {
+            lines.push(format!(
+                "authority_signals: {}",
+                self.authority_signals.join(" | ")
+            ));
+        }
+        if !self.cautions.is_empty() {
+            lines.push(format!("cautions: {}", self.cautions.join(" | ")));
         }
         lines.join("\n")
     }
@@ -3501,6 +3611,193 @@ fn decision_keywords(decisions: &[Decision]) -> HashSet<String> {
         }
     }
     keywords
+}
+
+fn build_decision_lineage_brief(
+    store: &SqliteStore,
+    args: &LineageBriefArgs,
+) -> Result<DecisionLineageBrief, String> {
+    let query_tokens = decision_lineage_query_tokens(args);
+    if query_tokens.is_empty() {
+        return Err("decision-lineage brief requires non-empty task context".to_string());
+    }
+
+    let mut ranked_cases: Vec<(i64, Case, Vec<Event>, Vec<Decision>)> = Vec::new();
+    for case in store.list_cases().map_err(|error| error.to_string())? {
+        let events = store
+            .list_events(&case.case_id)
+            .map_err(|error| error.to_string())?;
+        let decisions = store
+            .list_decisions(&case.case_id)
+            .map_err(|error| error.to_string())?;
+        if decisions.is_empty() {
+            continue;
+        }
+
+        let case_keywords = case_keywords(&case, &events, &decisions);
+        let decision_keywords = decision_keywords(&decisions);
+        let semantic_overlap = query_tokens.intersection(&decision_keywords).count() as i64;
+        let contextual_overlap = query_tokens.intersection(&case_keywords).count() as i64;
+        let score = semantic_overlap * 3 + contextual_overlap;
+        if score <= 0 {
+            continue;
+        }
+        ranked_cases.push((score, case, events, decisions));
+    }
+
+    ranked_cases.sort_by(|left, right| {
+        right
+            .0
+            .cmp(&left.0)
+            .then_with(|| left.1.case_id.cmp(&right.1.case_id))
+    });
+
+    let mut matched_cases = Vec::new();
+    let mut relevant_decisions = Vec::new();
+    for (score, case, events, decisions) in ranked_cases.into_iter().take(args.limit.max(1)) {
+        matched_cases.push(DecisionLineageMatchedCase {
+            case_id: case.case_id.clone(),
+            title: case.title.clone(),
+            similarity_score: score,
+            summary: build_case_summary(&case, &events, &decisions),
+        });
+        relevant_decisions.extend(decisions);
+    }
+
+    let task_frame = first_decision_text(&relevant_decisions, DecisionType::TaskFrameDefined);
+    let accepted_constraints =
+        decision_texts(&relevant_decisions, DecisionType::ConstraintAdopted, 5);
+    let success_criteria = decision_texts(&relevant_decisions, DecisionType::SuccessCriteriaSet, 5);
+    let rejected_options = decision_texts(&relevant_decisions, DecisionType::OptionRejected, 5);
+    let authority_signals =
+        decision_texts(&relevant_decisions, DecisionType::AuthorityConfirmed, 5);
+
+    let suggested_focus = task_frame
+        .clone()
+        .or_else(|| accepted_constraints.first().cloned())
+        .or_else(|| success_criteria.first().cloned());
+    let cautions = rejected_options
+        .iter()
+        .chain(accepted_constraints.iter())
+        .filter(|text| {
+            let normalized = normalize_message_intent(text);
+            normalized.contains("do not")
+                || normalized.contains("don't")
+                || normalized.contains("instead of")
+        })
+        .take(3)
+        .cloned()
+        .collect::<Vec<_>>();
+
+    Ok(DecisionLineageBrief {
+        query_reason: args.query_reason,
+        task_summary: args.task_summary.clone(),
+        suggested_focus,
+        matched_cases,
+        task_frame,
+        accepted_constraints,
+        success_criteria,
+        rejected_options,
+        authority_signals,
+        cautions,
+    })
+}
+
+fn decision_lineage_query_tokens(args: &LineageBriefArgs) -> HashSet<String> {
+    let mut texts = vec![args.task_summary.clone()];
+    if let Some(current_plan) = &args.current_plan {
+        texts.push(current_plan.clone());
+    }
+    if let Some(candidate_action) = &args.candidate_action {
+        texts.push(candidate_action.clone());
+    }
+    texts.extend(args.known_files.clone());
+
+    let mut tokens = HashSet::new();
+    for text in texts {
+        tokens.extend(tokenize_keywords(&text));
+    }
+    tokens
+}
+
+fn decision_texts(
+    decisions: &[Decision],
+    decision_type: DecisionType,
+    limit: usize,
+) -> Vec<String> {
+    let mut values = Vec::new();
+    let mut seen = HashSet::new();
+    for decision in decisions {
+        if decision.decision_type != decision_type {
+            continue;
+        }
+        let text = decision
+            .outcome
+            .clone()
+            .unwrap_or_else(|| decision.chosen_action.clone());
+        let normalized = normalize_message_intent(&text);
+        if normalized.is_empty() || !seen.insert(normalized) {
+            continue;
+        }
+        values.push(text);
+        if values.len() >= limit {
+            break;
+        }
+    }
+    values
+}
+
+fn first_decision_text(decisions: &[Decision], decision_type: DecisionType) -> Option<String> {
+    decision_texts(decisions, decision_type, 1)
+        .into_iter()
+        .next()
+}
+
+fn record_runtime_decision_lineage_invocation(
+    args: &LineageBriefArgs,
+    brief: &DecisionLineageBrief,
+    log_path: &std::path::Path,
+) -> Result<RuntimeDecisionLineageInvocation, String> {
+    let invocation = RuntimeDecisionLineageInvocation {
+        invocation_id: format!("rtinv_{}", &Uuid::new_v4().simple().to_string()[..12]),
+        recorded_at: Utc::now(),
+        query_reason: args.query_reason,
+        task_summary: args.task_summary.clone(),
+        current_plan: args.current_plan.clone(),
+        candidate_action: args.candidate_action.clone(),
+        known_files: args.known_files.clone(),
+        case_id: args.case_id.clone(),
+        session_id: args.session_id.clone(),
+        matched_case_ids: brief
+            .matched_cases
+            .iter()
+            .map(|item| item.case_id.clone())
+            .collect(),
+        task_frame: brief.task_frame.clone(),
+        accepted_constraints: brief.accepted_constraints.clone(),
+        success_criteria: brief.success_criteria.clone(),
+        rejected_options: brief.rejected_options.clone(),
+        authority_signals: brief.authority_signals.clone(),
+        cautions: brief.cautions.clone(),
+        suggested_focus: brief.suggested_focus.clone(),
+    };
+
+    if let Some(parent) = log_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let mut handle = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log_path)
+        .map_err(|error| error.to_string())?;
+    writeln!(
+        handle,
+        "{}",
+        serde_json::to_string(&invocation).map_err(|error| error.to_string())?
+    )
+    .map_err(|error| error.to_string())?;
+
+    Ok(invocation)
 }
 
 fn build_reusable_takeaway(case: &Case, decisions: &[Decision]) -> Option<String> {
