@@ -10,6 +10,7 @@ The repository already includes:
 - a local Git pre-push hook that requires a Codex review note
 - `scripts/run-codex-review-checkpoint.sh` as the preferred local checkpoint for invoking native Codex `/review`
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
+- `scripts/run-pytest.sh` for repository-local pytest resolution before falling back to global commands
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
 - `scripts/run-openclaw-live-validation.sh` for preparing a reusable live OpenClaw validation workspace and summarizing runtime evidence
@@ -70,6 +71,15 @@ For a normal local readiness pass before push, run:
 This checks the local review note, blocks reused merged branches, runs `pytest`, runs `markdownlint` when available locally, and performs a local PR closure sync check when a PR body is available through `gh`.
 It also checks that your branch contains the configured base ref, which defaults to `upstream/main`.
 For issue-scoped branches, it also runs a lightweight issue-state check. By default this only warns if an `in_progress` issue is missing a state document.
+
+For direct local test runs, prefer:
+
+```bash
+./scripts/run-pytest.sh -q tests/test_preflight_script.py
+```
+
+The wrapper resolves `OPENPRECEDENT_PYTHON_BIN`, repository-local `.venv` entrypoints, and only then falls back to global Python or `pytest` binaries.
+Do not treat a missing global `pytest` as a blocker until that local resolution path has been exhausted.
 
 Set `OPENPRECEDENT_PREFLIGHT_RUN_E2E=1` if you also want the standard E2E path included in the same pass.
 Set `OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE=1` if you want preflight to fail until the issue state document exists.
