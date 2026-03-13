@@ -4,6 +4,8 @@ issue: 170
 task: .codex/pm/tasks/codex-runtime-research/strengthen-private-harnesshub-skill-entry-for-openprecedent-lineage-usage.md
 title: Strengthen private HarnessHub skill entry for OpenPrecedent lineage usage
 status: done
+delivery_stage: pr_opened
+pr_url: https://github.com/openprecedent/openprecedent/pull/171
 ---
 
 ## Summary
@@ -23,10 +25,8 @@ Maintain the HarnessHub validation skill in OpenPrecedent as the canonical sourc
 
 ## Next Steps
 
-- add the canonical skill source under `skills/openprecedent-harnesshub-validation/`
-- add the installer that writes into a local HarnessHub checkout
-- verify the installed bundle rewrites OpenPrecedent repo-root placeholders correctly
-- update OpenPrecedent docs to point maintainers at the canonical source and install path
+- wait for PR `#171` review and merge
+- if the trial later needs stronger automation than install-time sync, evaluate a follow-up sync wrapper rather than reintroducing direct HarnessHub-side edits to the copied skill bundle
 
 ## Artifacts
 
