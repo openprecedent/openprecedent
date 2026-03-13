@@ -3,13 +3,13 @@ type: issue_state
 issue: 172
 task: .codex/pm/tasks/public-cli-foundation/design-and-adopt-rust-cli-as-stable-public-interface.md
 title: Design and adopt a Rust CLI as the stable public interface for OpenPrecedent
-status: in_progress
-delivery_stage: in_progress
+status: done
+delivery_stage: done
 ---
 
 ## Summary
 
-Keep the Rust public CLI design baseline authoritative while using issue `#172` as the long-lived parent for the full migration train on the dedicated integration branch `codex/issue-172-rust-public-cli`.
+Issue `#172` served as the long-lived parent for the full Rust CLI migration train on `codex/issue-172-rust-public-cli`, and that integration branch now contains the completed public cutover needed for the final merge back to `main`.
 
 ## Validated Facts
 
@@ -19,17 +19,17 @@ Keep the Rust public CLI design baseline authoritative while using issue `#172` 
 - PR `#173` merged the contract-first Rust CLI design baseline into `main`
 - issue `#172` has been reopened so the migration can proceed under one explicit parent issue instead of spawning disconnected implementation tracks
 - child issues `#174` through `#187` now cover the Rust workspace, config, store, command families, skill migration, and final cutover in reviewable slices
+- child issues `#174` through `#187` have merged into `codex/issue-172-rust-public-cli`
+- the integration branch now exposes the Rust `openprecedent` CLI as the supported public command surface and removes the public Python CLI and public shell-script entrypoints
+- integrated validation passed through `cargo test`, targeted Python regression coverage, and `./scripts/run-agent-preflight.sh`
 
 ## Open Questions
 
-- whether any additional split is needed inside the larger capture or lineage slices after implementation starts
-- when the integration branch is complete enough to begin the final cutover PR back to `main`
+- none
 
 ## Next Steps
 
-- implement child issues `#174` through `#187` on branches that merge into `codex/issue-172-rust-public-cli`
-- use issue `#172` as the parent reference and branch-policy source for the Rust CLI migration train
-- merge the dedicated integration branch back to `main` only after the child issue chain reaches the cutover gate defined in the design doc
+- merge `codex/issue-172-rust-public-cli` back to `main` through the final parent PR that closes issue `#172`
 
 ## Artifacts
 
