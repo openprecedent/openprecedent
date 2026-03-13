@@ -1,17 +1,21 @@
 use std::ffi::OsString;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
 use openprecedent_contracts::{
-    Case, CaseStatus, OutputFormat, PathsDoctorReport, StorageDoctorReport, VersionReport,
-    CLI_BINARY_NAME, CONTRACT_PHASE,
+    Case, CaseStatus, Event, EventActor, EventType, OutputFormat, PathsDoctorReport,
+    StorageDoctorReport, VersionReport, CLI_BINARY_NAME, CONTRACT_PHASE,
 };
 use openprecedent_core::{
     build_environment_report, build_paths_report, build_storage_report, build_version_report,
     not_implemented, resolve_runtime_config, CliConfigOverrides, ResolvedRuntimeConfig,
 };
 use openprecedent_store_sqlite::SqliteStore;
+use serde::Deserialize;
 use serde::Serialize;
+use serde_json::{Map, Value};
 use uuid::Uuid;
 
 #[derive(Debug, Parser)]
@@ -88,8 +92,26 @@ struct EventCommand {
 
 #[derive(Debug, Subcommand)]
 enum EventSubcommand {
-    Append(TrailingArgs),
-    ImportJsonl(TrailingArgs),
+    Append(AppendEventArgs),
+    ImportJsonl(ImportJsonlArgs),
+}
+
+#[derive(Debug, Args)]
+struct AppendEventArgs {
+    case_id: String,
+    event_type: String,
+    actor: String,
+    #[arg(long, default_value = "{}")]
+    payload: String,
+    #[arg(long = "event-id")]
+    event_id: Option<String>,
+}
+
+#[derive(Debug, Args)]
+struct ImportJsonlArgs {
+    path: std::path::PathBuf,
+    #[arg(long = "case-id")]
+    case_id: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -267,7 +289,7 @@ where
             config.format.value,
         ),
         Command::Case(command) => handle_case(command, &config),
-        Command::Event(command) => render_not_implemented_path(event_path(command)),
+        Command::Event(command) => handle_event(command, &config),
         Command::Decision(command) => render_not_implemented_path(decision_path(command)),
         Command::Replay(command) => render_not_implemented_path(replay_path(command)),
         Command::Precedent(command) => render_not_implemented_path(precedent_path(command)),
@@ -342,6 +364,141 @@ fn handle_case(command: CaseCommand, config: &ResolvedRuntimeConfig) -> i32 {
     }
 }
 
+fn handle_event(command: EventCommand, config: &ResolvedRuntimeConfig) -> i32 {
+    let store = match SqliteStore::new(&config.db.path) {
+        Ok(store) => store,
+        Err(error) => {
+            eprintln!("{error}");
+            return 1;
+        }
+    };
+
+    match command.command {
+        EventSubcommand::Append(args) => {
+            let payload = match serde_json::from_str::<Value>(&args.payload) {
+                Ok(Value::Object(payload)) => payload,
+                Ok(_) => {
+                    eprintln!("event payload must be a JSON object");
+                    return 1;
+                }
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+
+            let event_type = match args.event_type.parse::<EventType>() {
+                Ok(value) => value,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+            let actor = match args.actor.parse::<EventActor>() {
+                Ok(value) => value,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+
+            if let Some(code) = ensure_case_exists(&store, &args.case_id) {
+                return code;
+            }
+
+            let event = Event {
+                event_id: args.event_id.unwrap_or_else(|| {
+                    format!("evt_{}", &Uuid::new_v4().simple().to_string()[..12])
+                }),
+                case_id: args.case_id.clone(),
+                event_type,
+                actor,
+                timestamp: Utc::now(),
+                sequence_no: match store.next_event_sequence(&args.case_id) {
+                    Ok(sequence_no) => sequence_no,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                },
+                parent_event_id: None,
+                payload: Value::Object(payload),
+            };
+
+            match store.append_event(&event) {
+                Ok(()) => render(&event, config.format.value),
+                Err(error) => {
+                    eprintln!("{error}");
+                    1
+                }
+            }
+        }
+        EventSubcommand::ImportJsonl(args) => {
+            let file = match File::open(&args.path) {
+                Ok(file) => file,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return 1;
+                }
+            };
+
+            let mut imported = Vec::new();
+            for (index, line_result) in BufReader::new(file).lines().enumerate() {
+                let line_number = index + 1;
+                let line = match line_result {
+                    Ok(line) => line,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let stripped = line.trim();
+                if stripped.is_empty() {
+                    continue;
+                }
+
+                let input = match serde_json::from_str::<ImportedEventRecord>(stripped) {
+                    Ok(input) => input,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                let case_id = match input.case_id.clone().or_else(|| args.case_id.clone()) {
+                    Some(case_id) if !case_id.is_empty() => case_id,
+                    _ => {
+                        eprintln!("line {line_number}: case_id is required");
+                        return 1;
+                    }
+                };
+
+                if let Some(code) = ensure_case_exists(&store, &case_id) {
+                    return code;
+                }
+
+                let event = match imported_event_to_event(input, &store, &case_id) {
+                    Ok(event) => event,
+                    Err(error) => {
+                        eprintln!("line {line_number}: {error}");
+                        return 1;
+                    }
+                };
+
+                match store.append_event(&event) {
+                    Ok(()) => imported.push(event),
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                }
+            }
+
+            render_event_list(&imported, config.format.value)
+        }
+    }
+}
+
 fn render_not_implemented_path(path: Vec<&'static str>) -> i32 {
     let error = not_implemented(&path);
     eprintln!("{error}");
@@ -391,6 +548,30 @@ fn render_case_list(cases: &[Case], format: OutputFormat) -> i32 {
     }
 }
 
+fn render_event_list(events: &[Event], format: OutputFormat) -> i32 {
+    match format {
+        OutputFormat::Json => match serde_json::to_string_pretty(events) {
+            Ok(json) => {
+                println!("{json}");
+                0
+            }
+            Err(error) => {
+                eprintln!("{error}");
+                1
+            }
+        },
+        OutputFormat::Text => {
+            for event in events {
+                println!(
+                    "[{}] {} {} {}",
+                    event.sequence_no, event.event_id, event.event_type, event.actor
+                );
+            }
+            0
+        }
+    }
+}
+
 trait TextRenderable {
     fn render_text(&self) -> String;
 }
@@ -414,6 +595,24 @@ impl TextRenderable for Case {
         }
         if let Some(summary) = &self.final_summary {
             lines.push(format!("final_summary: {summary}"));
+        }
+        lines.join("\n")
+    }
+}
+
+impl TextRenderable for Event {
+    fn render_text(&self) -> String {
+        let mut lines = vec![
+            format!("event_id: {}", self.event_id),
+            format!("case_id: {}", self.case_id),
+            format!("event_type: {}", self.event_type),
+            format!("actor: {}", self.actor),
+            format!("timestamp: {}", self.timestamp.to_rfc3339()),
+            format!("sequence_no: {}", self.sequence_no),
+            format!("payload: {}", self.payload),
+        ];
+        if let Some(parent_event_id) = &self.parent_event_id {
+            lines.push(format!("parent_event_id: {parent_event_id}"));
         }
         lines.join("\n")
     }
@@ -496,18 +695,91 @@ fn render_storage_line(label: &str, path: &openprecedent_contracts::StoragePathR
     )
 }
 
-fn event_path(command: EventCommand) -> Vec<&'static str> {
-    match command.command {
-        EventSubcommand::Append(_) => vec!["event", "append"],
-        EventSubcommand::ImportJsonl(_) => vec!["event", "import-jsonl"],
-    }
-}
-
 fn decision_path(command: DecisionCommand) -> Vec<&'static str> {
     match command.command {
         DecisionSubcommand::Extract(_) => vec!["decision", "extract"],
         DecisionSubcommand::List(_) => vec!["decision", "list"],
     }
+}
+
+fn ensure_case_exists(store: &SqliteStore, case_id: &str) -> Option<i32> {
+    match store.get_case(case_id) {
+        Ok(Some(_)) => None,
+        Ok(None) => {
+            eprintln!("case not found: {case_id}");
+            Some(1)
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            Some(1)
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct ImportedEventRecord {
+    case_id: Option<String>,
+    event_id: Option<String>,
+    event_type: String,
+    actor: String,
+    timestamp: Option<String>,
+    parent_event_id: Option<String>,
+    sequence_no: Option<i64>,
+    #[serde(default)]
+    payload: Value,
+}
+
+fn imported_event_to_event(
+    input: ImportedEventRecord,
+    store: &SqliteStore,
+    case_id: &str,
+) -> Result<Event, String> {
+    let ImportedEventRecord {
+        case_id: _,
+        event_id,
+        event_type,
+        actor,
+        timestamp,
+        parent_event_id,
+        sequence_no,
+        payload,
+    } = input;
+
+    let event_type = event_type
+        .parse::<EventType>()
+        .map_err(|error| error.to_string())?;
+    let actor = actor
+        .parse::<EventActor>()
+        .map_err(|error| error.to_string())?;
+    let timestamp = match timestamp {
+        Some(value) => DateTime::parse_from_rfc3339(&value)
+            .map(|value| value.with_timezone(&Utc))
+            .map_err(|error| error.to_string())?,
+        None => Utc::now(),
+    };
+    let payload = match payload {
+        Value::Object(payload) => Value::Object(payload),
+        Value::Null => Value::Object(Map::new()),
+        _ => return Err("payload must be a JSON object".to_string()),
+    };
+    let sequence_no = match sequence_no {
+        Some(sequence_no) => sequence_no,
+        None => store
+            .next_event_sequence(case_id)
+            .map_err(|error| error.to_string())?,
+    };
+
+    Ok(Event {
+        event_id: event_id
+            .unwrap_or_else(|| format!("evt_{}", &Uuid::new_v4().simple().to_string()[..12])),
+        case_id: case_id.to_string(),
+        event_type,
+        actor,
+        timestamp,
+        sequence_no,
+        parent_event_id,
+        payload,
+    })
 }
 
 fn replay_path(command: ReplayCommand) -> Vec<&'static str> {
