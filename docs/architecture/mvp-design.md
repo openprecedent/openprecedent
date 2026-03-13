@@ -12,7 +12,7 @@ It is intentionally implementation-grounded:
 - local-first, single-agent workflow
 - OpenClaw as the first integrated runtime
 - SQLite-backed storage
-- Python service layer and CLI
+- Rust CLI and Python service internals
 - replay, explanation, and precedent retrieval over captured case history
 
 This is not a future platform blueprint. It is the current MVP system boundary.
@@ -146,7 +146,7 @@ CLI -> Service : import transcript / collect unseen session
 Service -> Store : create case + append normalized events
 Store -> DB : persist cases and events
 
-User -> CLI : extract decisions <case_id>
+User -> CLI : decision extract <case_id>
 CLI -> Service : extract_decisions(case_id)
 Service -> Store : replace derived decisions
 Store -> DB : persist decisions
@@ -261,7 +261,7 @@ Precedent ..> Case : references historical case
 
 ## Executable Interfaces
 
-The current MVP executable surface is the local CLI backed by a Python service layer.
+The current MVP executable surface is the local Rust CLI.
 
 ### Case and event operations
 
@@ -274,22 +274,22 @@ The current MVP executable surface is the local CLI backed by a Python service l
 ### Replay, decision, and precedent operations
 
 - `openprecedent replay case`
-- `openprecedent extract decisions`
-- `openprecedent decisions show`
+- `openprecedent decision extract`
+- `openprecedent decision list`
 - `openprecedent precedent find`
 
 ### OpenClaw runtime operations
 
-- `openprecedent runtime list-openclaw-sessions`
-- `openprecedent runtime import-openclaw`
-- `openprecedent runtime import-openclaw-session`
-- `openprecedent runtime collect-openclaw-sessions`
-- `openprecedent runtime decision-lineage-brief`
+- `openprecedent capture openclaw list-sessions`
+- `openprecedent capture openclaw import-jsonl`
+- `openprecedent capture openclaw import-session`
+- `openprecedent capture openclaw collect-sessions`
+- `openprecedent lineage brief`
 
 ### Evaluation operations
 
 - `openprecedent eval fixtures`
-- `openprecedent eval collected-openclaw-sessions`
+- `openprecedent eval captured-openclaw-sessions`
 
 ## Shipped MVP v1 Event Coverage
 

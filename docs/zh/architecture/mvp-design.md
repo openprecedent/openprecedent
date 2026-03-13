@@ -142,7 +142,7 @@ CLI -> Service : 导入 transcript / 收集未见过的 session
 Service -> Store : 创建 case 并追加归一化 events
 Store -> DB : 持久化 cases 与 events
 
-User -> CLI : extract decisions <case_id>
+User -> CLI : decision extract <case_id>
 CLI -> Service : extract_decisions(case_id)
 Service -> Store : 替换派生 decisions
 Store -> DB : 持久化 decisions
@@ -270,22 +270,22 @@ Precedent ..> Case : 引用历史 case
 ### Replay、decision 与 precedent 操作
 
 - `openprecedent replay case`
-- `openprecedent extract decisions`
-- `openprecedent decisions show`
+- `openprecedent decision extract`
+- `openprecedent decision list`
 - `openprecedent precedent find`
 
 ### OpenClaw runtime 操作
 
-- `openprecedent runtime list-openclaw-sessions`
-- `openprecedent runtime import-openclaw`
-- `openprecedent runtime import-openclaw-session`
-- `openprecedent runtime collect-openclaw-sessions`
-- `openprecedent runtime decision-lineage-brief`
+- `openprecedent capture openclaw list-sessions`
+- `openprecedent capture openclaw import-jsonl`
+- `openprecedent capture openclaw import-session`
+- `openprecedent capture openclaw collect-sessions`
+- `openprecedent lineage brief`
 
 ### Evaluation 操作
 
 - `openprecedent eval fixtures`
-- `openprecedent eval collected-openclaw-sessions`
+- `openprecedent eval captured-openclaw-sessions`
 
 ## 已交付的 MVP v1 Event 覆盖范围
 

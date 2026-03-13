@@ -2,14 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/scripts/lib/openprecedent-rust-cli.sh"
 
-if [[ -n "${OPENPRECEDENT_BIN:-}" ]]; then
-  OPENPRECEDENT_BIN="$OPENPRECEDENT_BIN"
-elif [[ -x "$ROOT_DIR/.venv/bin/openprecedent" ]]; then
-  OPENPRECEDENT_BIN="$ROOT_DIR/.venv/bin/openprecedent"
-else
-  OPENPRECEDENT_BIN="openprecedent"
-fi
+OPENPRECEDENT_BIN="$(resolve_openprecedent_rust_cli "$ROOT_DIR")"
 
 LIVE_ROOT="${OPENPRECEDENT_LIVE_ROOT:-/tmp/openprecedent-openclaw-live}"
 PROFILE="${OPENPRECEDENT_LIVE_PROFILE:-opv80}"
@@ -64,8 +59,7 @@ PY
 }
 
 run_openprecedent() {
-  OPENPRECEDENT_HOME="$RUNTIME_HOME" \
-  "$OPENPRECEDENT_BIN" "$@"
+  "$OPENPRECEDENT_BIN" --home "$RUNTIME_HOME" --format json "$@"
 }
 
 seed_prior_history() {
@@ -97,13 +91,13 @@ seed_prior_history() {
 ]
 EOF
 
-  run_openprecedent runtime import-openclaw-session \
+  run_openprecedent capture openclaw import-session \
     --session-id "$SEED_SESSION_ID" \
     --sessions-root "$SEED_ROOT" \
     --case-id "$SEED_CASE_ID" \
     > "$OUTPUT_ROOT/01-seed-import.json"
 
-  run_openprecedent extract decisions "$SEED_CASE_ID" \
+  run_openprecedent decision extract "$SEED_CASE_ID" \
     > "$OUTPUT_ROOT/02-seed-extract.json"
 
   : > "$SEED_MARKER"

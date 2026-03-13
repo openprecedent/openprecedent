@@ -10,6 +10,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from scripts.lib.openprecedent_rust_cli import resolve_openprecedent_bin
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -22,7 +28,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--python-bin",
-        help="Python binary used to run the local OpenPrecedent scripts. Defaults to .venv/bin/python or python3.",
+        help="Python binary used for repository-local Python helper scripts. Defaults to .venv/bin/python or python3.",
+    )
+    parser.add_argument(
+        "--openprecedent-bin",
+        help="Rust OpenPrecedent CLI binary used for imported round ingestion.",
     )
     parser.add_argument(
         "--export-output-root",
@@ -172,6 +182,7 @@ def main() -> int:
     repo_root = Path(args.repo_root).expanduser().resolve()
     runtime_home = resolve_runtime_home(args.runtime_home)
     python_bin = resolve_python_bin(args.python_bin)
+    openprecedent_bin = resolve_openprecedent_bin(ROOT_DIR, args.openprecedent_bin)
     export_output_root = (
         Path(args.export_output_root).expanduser().resolve()
         if args.export_output_root
@@ -242,8 +253,8 @@ def main() -> int:
                 str(bundle_dir),
                 "--runtime-home",
                 str(runtime_home),
-                "--python-bin",
-                python_bin,
+                "--openprecedent-bin",
+                openprecedent_bin,
                 "--skip-if-case-exists",
             ],
             capture_output=True,
