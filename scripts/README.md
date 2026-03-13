@@ -17,5 +17,6 @@ Notable operational entrypoints:
 - `sync_harnesshub_shared_runtime.py` backfills and incrementally auto-seeds the shared runtime from completed HarnessHub rounds
 - `run-harnesshub-decision-lineage-workflow.sh` auto-syncs completed HarnessHub rounds into the shared runtime before running the standard decision-lineage workflow
 - `run-harnesshub-matched-case-validation.sh` imports one prior HarnessHub round bundle, runs a later semantically related runtime query, and writes matched-case summary artifacts
+- `install_harnesshub_skill.py` installs the OpenPrecedent-maintained private HarnessHub validation skill into a local HarnessHub workspace
 - `triage_pr_checks.py` summarizes and classifies current PR check results for faster CI diagnosis
 - `install-collector-assets.sh` renders `systemd` / `cron` assets against the current repo path
