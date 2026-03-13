@@ -3,7 +3,9 @@ type: issue_state
 issue: 175
 task: .codex/pm/tasks/public-cli-foundation/implement-global-config-path-resolution-doctor-and-version-contracts-in-rust-cli.md
 title: Implement global config, path resolution, doctor, and version contracts in the Rust CLI
-status: in_progress
+status: done
+delivery_stage: pr_opened
+pr_url: https://github.com/openprecedent/openprecedent/pull/189
 ---
 
 ## Summary
@@ -24,7 +26,7 @@ Implement the cross-cutting Rust CLI contract for config and diagnostics so late
 
 ## Next Steps
 
-- commit the `#175` implementation, open a child PR that targets `codex/issue-172-rust-public-cli`, and merge it
+- review and merge PR `#189` into `codex/issue-172-rust-public-cli`
 - start `#176` from the refreshed integration branch after the config and doctor contract lands
 
 ## Artifacts
