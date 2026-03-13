@@ -1203,6 +1203,23 @@ def test_agents_mentions_default_direct_fix_behavior() -> None:
     assert "default to directly diagnosing and fixing it through implementation, verification, and workflow closure" in content
 
 
+def test_tooling_setup_mentions_task_status_reconciliation() -> None:
+    path = Path(__file__).parent.parent / "docs" / "engineering" / "tooling-setup.md"
+
+    content = path.read_text(encoding="utf-8")
+
+    assert "reconcile-task-statuses" in content
+    assert "fails fast if the matching task twin is not already marked `done`" in content
+
+
+def test_agents_mentions_pre_pr_task_done_requirement() -> None:
+    path = Path(__file__).parent.parent / "AGENTS.md"
+
+    content = path.read_text(encoding="utf-8")
+
+    assert "Before creating a PR that closes an issue, mark the matching local task twin `done`" in content
+
+
 def test_harness_reuse_guide_exists() -> None:
     path = Path(__file__).parent.parent / "docs" / "engineering" / "harness-reuse-guide.md"
 

@@ -701,6 +701,129 @@ def test_codex_pm_pr_create_fails_when_upstream_repo_does_not_match(
     assert "upstream remote points to someone-else/openprecedent" in capsys.readouterr().err
 
 
+def test_codex_pm_pr_create_fails_when_task_is_not_done(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "task-status-guardrail",
+                "--title",
+                "Enforce task status correctness before PR creation",
+                "--issue",
+                "168",
+                "--status",
+                "in_progress",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "task-status-guardrail.md"
+
+    assert main(["pr-create", str(task_path)]) == 1
+    assert "must be marked done before creating a PR that closes #168" in capsys.readouterr().err
+
+
+def test_codex_pm_reconcile_task_statuses_marks_closed_remote_issues_done(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "task-status-drift",
+                "--title",
+                "Reconcile task status drift",
+                "--issue",
+                "168",
+                "--status",
+                "backlog",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        if cmd[:3] == ["gh", "issue", "list"]:
+            return subprocess.CompletedProcess(
+                cmd,
+                0,
+                stdout='[{"number": 168, "state": "CLOSED"}]\n',
+                stderr="",
+            )
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert main(["reconcile-task-statuses", "--issue", "168", "--apply"]) == 0
+    output = capsys.readouterr().out
+    assert "issue #168 reconciled" in output
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "task-status-drift.md"
+    assert "status: done" in task_path.read_text(encoding="utf-8")
+
+
+def test_codex_pm_reconcile_task_statuses_reports_open_remote_issue_marked_done(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "task-status-drift-open",
+                "--title",
+                "Detect open remote issue drift",
+                "--issue",
+                "168",
+                "--status",
+                "done",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        if cmd[:3] == ["gh", "issue", "list"]:
+            return subprocess.CompletedProcess(
+                cmd,
+                0,
+                stdout='[{"number": 168, "state": "OPEN"}]\n',
+                stderr="",
+            )
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert main(["reconcile-task-statuses", "--issue", "168"]) == 0
+    output = capsys.readouterr().out
+    assert "remote issue is still open but local task is marked done" in output
+
+
 def test_codex_pm_issue_state_init_creates_state_doc_and_updates_task(
     tmp_path: Path,
     monkeypatch,

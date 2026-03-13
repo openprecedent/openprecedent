@@ -29,6 +29,7 @@ Improve the quality of replay, evaluation, and precedent behavior on real or ano
 - `#28` Improve precedent ranking quality on larger real-case history
 - `#166` Add a standard Codex session-start workflow for issue continuity and default direct-fix behavior
 - `#164` Resolve repository-local test runner before reporting missing pytest
+- `#168` Enforce local task status correctness before PR creation and reconcile remote drift
 
 ## Notes
 

@@ -31,6 +31,7 @@ The first implementation target is a local single-agent workflow. The current go
 - Track agent development as GitHub issues broken down to the smallest deliverable unit that can be completed and reviewed independently.
 - When an agent starts work on one issue, create a fresh branch from the latest `upstream/main` for that issue only.
 - After completing one issue, open exactly one PR for that issue instead of batching multiple issues into the same PR.
+- Before creating a PR that closes an issue, mark the matching local task twin `done`; do not rely on push-time or CI-time closure sync to catch an incorrect task status.
 - Link the PR to its issue in the PR body using a closing reference such as `Closes #24` so the issue is closed automatically when the PR is merged.
 - After a PR is merged, continue the next task on a new branch and a new PR linked to the next issue.
 - When starting or resuming a Codex session, run `./scripts/run-codex-session-start.sh` to restore the active branch, issue, task, and PR context before doing substantive work.

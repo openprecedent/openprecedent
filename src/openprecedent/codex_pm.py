@@ -79,6 +79,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     issue_state_check = subparsers.add_parser("issue-state-check")
     issue_state_check.add_argument("--branch")
+    reconcile_task_statuses = subparsers.add_parser("reconcile-task-statuses")
+    reconcile_task_statuses.add_argument("--issue", action="append", type=int, default=[])
+    reconcile_task_statuses.add_argument("--apply", action="store_true")
+    reconcile_task_statuses.add_argument("--json", action="store_true", dest="as_json")
 
     subparsers.add_parser("standup").add_argument("--json", action="store_true", dest="as_json")
     session_start = subparsers.add_parser("session-start")
@@ -253,6 +257,13 @@ def main(argv: list[str] | None = None) -> int:
         stream = sys.stdout if ok else sys.stderr
         print(message, file=stream)
         return 0 if ok else 1
+    if args.action == "reconcile-task-statuses":
+        result = _reconcile_task_statuses(issue_numbers=args.issue, apply=args.apply)
+        if args.as_json:
+            print(json.dumps(result, ensure_ascii=True, indent=2, sort_keys=True))
+        else:
+            print(_render_task_reconciliation(result))
+        return 0 if not result["errors"] else 1
     if args.action == "standup":
         documents = _load_tasks()
         summary = {
@@ -732,6 +743,123 @@ def _render_pr_body(document: PMDocument, *, issue: int | None, tests: list[str]
     return "\n".join(lines).rstrip()
 
 
+def _remote_issue_states(issue_numbers: list[int]) -> tuple[dict[int, str], list[str]]:
+    unique_issues = sorted(set(issue_numbers))
+    if not unique_issues:
+        return {}, []
+
+    result = subprocess.run(
+        [
+            "gh",
+            "issue",
+            "list",
+            "--repo",
+            "openprecedent/openprecedent",
+            "--state",
+            "all",
+            "--limit",
+            str(max(200, len(unique_issues))),
+            "--json",
+            "number,state",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip() or "failed to query GitHub issues"
+        return {}, [f"Task reconciliation failed: {message}"]
+
+    items = json.loads(result.stdout or "[]")
+    state_map = {
+        int(item["number"]): str(item["state"]).upper()
+        for item in items
+        if isinstance(item.get("number"), int) and item.get("state")
+    }
+    missing = [issue for issue in unique_issues if issue not in state_map]
+    errors = [f"Task reconciliation failed: remote issue #{issue} was not returned by gh issue list." for issue in missing]
+    return state_map, errors
+
+
+def _reconcile_task_statuses(*, issue_numbers: list[int], apply: bool) -> dict[str, object]:
+    documents = [
+        document
+        for document in _load_tasks()
+        if document.metadata.get("issue", "").isdigit()
+        and (not issue_numbers or _parse_issue_number(document.metadata.get("issue", "")) in issue_numbers)
+    ]
+    target_issue_numbers = [
+        _parse_issue_number(document.metadata.get("issue", ""))
+        for document in documents
+        if _parse_issue_number(document.metadata.get("issue", "")) is not None
+    ]
+    remote_states, errors = _remote_issue_states(target_issue_numbers)
+    findings: list[dict[str, object]] = []
+
+    for document in documents:
+        issue = _parse_issue_number(document.metadata.get("issue", ""))
+        if issue is None:
+            continue
+        remote_state = remote_states.get(issue)
+        if remote_state is None:
+            continue
+        local_status = document.metadata.get("status", "backlog")
+        expected_status = "done" if remote_state == "CLOSED" else None
+        drift_reason = None
+        if expected_status == "done" and local_status != "done":
+            drift_reason = "remote issue is closed but local task is not done"
+            if apply:
+                document.metadata["status"] = "done"
+                _persist_document(document)
+                local_status = "done"
+        elif remote_state == "OPEN" and local_status == "done":
+            drift_reason = "remote issue is still open but local task is marked done"
+
+        if drift_reason is not None:
+            findings.append(
+                {
+                    "issue": issue,
+                    "path": str(document.path),
+                    "remote_state": remote_state,
+                    "local_status": local_status,
+                    "expected_status": expected_status,
+                    "drift_reason": drift_reason,
+                    "applied": apply and expected_status == "done",
+                }
+            )
+
+    return {
+        "checked_tasks": len(documents),
+        "findings": findings,
+        "errors": errors,
+    }
+
+
+def _render_task_reconciliation(result: dict[str, object]) -> str:
+    lines = [f"Checked tasks: {result['checked_tasks']}"]
+    for finding in result["findings"]:
+        status_note = "reconciled" if finding.get("applied") else "drift detected"
+        lines.append(
+            f"- issue #{finding['issue']} {status_note}: {finding['drift_reason']} ({finding['path']})"
+        )
+    for error in result["errors"]:
+        lines.append(f"- {error}")
+    if not result["findings"] and not result["errors"]:
+        lines.append("- no task status drift detected")
+    return "\n".join(lines)
+
+
+def _assert_task_ready_for_pr(document: PMDocument, closing_issue: int | None) -> None:
+    task_type = document.metadata.get("task_type", "implementation")
+    if closing_issue is None or task_type == "umbrella":
+        return
+    if document.metadata.get("status") != "done":
+        raise ValueError(
+            "PR creation failed: matching task twin must be marked done before creating a PR that closes "
+            f"#{closing_issue}. Update {document.path} first."
+        )
+
+
 def _create_pr(
     document: PMDocument,
     *,
@@ -743,6 +871,8 @@ def _create_pr(
     head_owner: str | None,
     head_branch: str | None,
 ) -> str:
+    closing_issue = issue or _parse_issue_number(document.metadata.get("issue", ""))
+    _assert_task_ready_for_pr(document, closing_issue)
     branch = head_branch or _current_branch()
     if not branch:
         raise ValueError("PR creation failed: current branch is unavailable.")
