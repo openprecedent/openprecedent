@@ -4,6 +4,10 @@
 
 This guide explains how to use the current OpenPrecedent MVP in practice.
 
+For the planned long-term public-interface replacement, see:
+
+- [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/rust-public-cli-design.md)
+
 It is written for two audiences:
 
 - humans who want to run the current local workflow themselves

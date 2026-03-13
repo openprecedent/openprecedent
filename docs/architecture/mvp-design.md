@@ -17,6 +17,10 @@ It is intentionally implementation-grounded:
 
 This is not a future platform blueprint. It is the current MVP system boundary.
 
+For the planned post-MVP replacement of the public executable surface with a Rust CLI, see:
+
+- [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/rust-public-cli-design.md)
+
 ## Decision-Lineage Direction
 
 As of 2026-03-10, OpenPrecedent has a shipped MVP extractor, but the product direction for `decision` is now explicitly narrower than the current implementation.
