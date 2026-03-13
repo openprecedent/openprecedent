@@ -3,7 +3,7 @@ type: issue_state
 issue: 204
 task: .codex/pm/tasks/real-history-quality/restore-local-pm-twins-for-remaining-open-github-issues.md
 title: Restore local PM twins for remaining open GitHub issues
-status: in_progress
+status: done
 ---
 
 ## Summary
