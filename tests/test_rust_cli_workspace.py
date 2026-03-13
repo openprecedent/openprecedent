@@ -46,3 +46,10 @@ def test_rust_cli_skeleton_uses_openprecedent_binary_name() -> None:
 
     assert 'name = "openprecedent"' in cli_cargo_toml
     assert 'pub const CLI_BINARY_NAME: &str = "openprecedent";' in contracts_rs
+
+
+def test_pyproject_no_longer_exposes_python_openprecedent_console_script() -> None:
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert 'openprecedent = "openprecedent.cli:run"' not in pyproject
+    assert 'openprecedent-pm = "openprecedent.codex_pm:run"' in pyproject

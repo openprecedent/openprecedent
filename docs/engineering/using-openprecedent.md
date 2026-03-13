@@ -19,8 +19,8 @@ This is a usage guide for the shipped MVP, not a future platform manual.
 
 OpenPrecedent is currently a local-first decision replay and precedent layer with:
 
-- a Python service layer
-- a local CLI
+- a stable Rust public CLI
+- a Python service layer retained for repository internals
 - SQLite persistence
 - OpenClaw transcript import and collection
 - rule-based decision extraction
@@ -34,14 +34,13 @@ The current MVP is strongest in one environment:
 
 ## Before You Start
 
-Use a local Python 3.12 environment and install the package in editable mode.
+Build or install the Rust `openprecedent` CLI first.
 
 Example:
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -e .
+cargo build -q -p openprecedent-cli
+export PATH="$(pwd)/target/debug:$PATH"
 ```
 
 After that, the main entry point is:
@@ -50,10 +49,10 @@ After that, the main entry point is:
 openprecedent --help
 ```
 
-If you prefer not to activate the environment, use:
+If you prefer not to update `PATH`, use the binary directly:
 
 ```bash
-.venv/bin/openprecedent --help
+./target/debug/openprecedent --help
 ```
 
 ## The Two Practical Usage Modes

@@ -59,7 +59,7 @@ Command used:
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
 OPENPRECEDENT_COLLECTOR_STATE=/tmp/openprecedent-openclaw-journey/collector-state.json \
-.venv/bin/openprecedent runtime list-openclaw-sessions \
+.venv/bin/openprecedent capture openclaw list-sessions \
   --sessions-root /tmp/openprecedent-openclaw-journey/sessions
 ```
 
@@ -81,7 +81,7 @@ Command used:
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
 OPENPRECEDENT_COLLECTOR_STATE=/tmp/openprecedent-openclaw-journey/collector-state.json \
-.venv/bin/openprecedent runtime collect-openclaw-sessions \
+.venv/bin/openprecedent capture openclaw collect-sessions \
   --sessions-root /tmp/openprecedent-openclaw-journey/sessions \
   --limit 1
 ```
@@ -105,7 +105,7 @@ Commands used:
 
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
-.venv/bin/openprecedent runtime import-openclaw-session \
+.venv/bin/openprecedent capture openclaw import-session \
   --session-id search-read-session \
   --sessions-root /tmp/openprecedent-openclaw-journey/sessions \
   --case-id case_openclaw_search_read
@@ -113,7 +113,7 @@ OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
 
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
-.venv/bin/openprecedent runtime import-openclaw-session \
+.venv/bin/openprecedent capture openclaw import-session \
   --session-id sample-session \
   --sessions-root /tmp/openprecedent-openclaw-journey/sessions \
   --case-id case_openclaw_sample
@@ -138,17 +138,17 @@ Commands used:
 
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
-.venv/bin/openprecedent extract decisions openclaw_fileopssession
+.venv/bin/openprecedent decision extract openclaw_fileopssession
 ```
 
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
-.venv/bin/openprecedent extract decisions case_openclaw_search_read
+.venv/bin/openprecedent decision extract case_openclaw_search_read
 ```
 
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
-.venv/bin/openprecedent extract decisions case_openclaw_sample
+.venv/bin/openprecedent decision extract case_openclaw_sample
 ```
 
 Observed result:
@@ -176,7 +176,7 @@ Command used:
 
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
-.venv/bin/openprecedent replay case case_openclaw_search_read --json
+.venv/bin/openprecedent --format json replay case case_openclaw_search_read
 ```
 
 Observed result:
@@ -224,7 +224,7 @@ Command used:
 
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/eval-fixtures.db \
-.venv/bin/openprecedent eval fixtures tests/fixtures/evaluation/real_session_suite.json --json
+.venv/bin/openprecedent --format json eval fixtures tests/fixtures/evaluation/real_session_suite.json
 ```
 
 Observed result:
@@ -245,9 +245,8 @@ Command used:
 ```bash
 OPENPRECEDENT_DB=/tmp/openprecedent-openclaw-journey/openprecedent.db \
 OPENPRECEDENT_COLLECTOR_STATE=/tmp/openprecedent-openclaw-journey/collector-state.json \
-.venv/bin/openprecedent eval collected-openclaw-sessions \
-  --sessions-root /tmp/openprecedent-openclaw-journey/sessions \
-  --json
+.venv/bin/openprecedent --format json eval captured-openclaw-sessions \
+  --sessions-root /tmp/openprecedent-openclaw-journey/sessions
 ```
 
 Observed result:

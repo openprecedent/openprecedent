@@ -48,17 +48,17 @@ This is intentionally trajectory-first. We do not parse gateway stdout/stderr lo
 
 The current CLI entry points are:
 
-- `openprecedent runtime list-openclaw-sessions`
-- `openprecedent runtime import-openclaw-session --latest --case-id <id>`
-- `openprecedent runtime import-openclaw-session --session-id <id> --case-id <id>`
-- `openprecedent runtime import-openclaw-session --session-file <path> --case-id <id>`
-- `openprecedent runtime collect-openclaw-sessions`
+- `openprecedent capture openclaw list-sessions`
+- `openprecedent capture openclaw import-session --latest --case-id <id>`
+- `openprecedent capture openclaw import-session --session-id <id> --case-id <id>`
+- `openprecedent capture openclaw import-session --session-file <path> --case-id <id>`
+- `openprecedent capture openclaw collect-sessions`
 
 ## Automated Collection
 
 For background collection, use:
 
-- `openprecedent runtime collect-openclaw-sessions --limit 1`
+- `openprecedent capture openclaw collect-sessions --limit 1`
 
 This command:
 
