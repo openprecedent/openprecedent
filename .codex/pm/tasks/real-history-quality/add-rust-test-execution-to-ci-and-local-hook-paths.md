@@ -11,11 +11,13 @@ state_path: .codex/pm/issue-state/208-add-rust-test-execution-to-ci-and-local-ho
 ---
 
 ## Context
+
 OpenPrecedent now ships a Rust workspace and public CLI, but CI still centers on Python and markdown workflows.
 That leaves `cargo test` insufficiently enforced as a first-class CI contract and allows Rust regressions to slip to later discovery.
 The repository also lacks a local Rust guardrail in preflight and the pre-push hook when Rust files change.
 
 ## Deliverable
+
 Add explicit Rust test execution to CI and to the local hook and preflight path for Rust-affecting changes.
 
 ## Scope
