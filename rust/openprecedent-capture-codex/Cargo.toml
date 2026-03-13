@@ -6,4 +6,8 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
-openprecedent-core = { path = "../openprecedent-core" }
+chrono.workspace = true
+openprecedent-contracts = { path = "../openprecedent-contracts" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

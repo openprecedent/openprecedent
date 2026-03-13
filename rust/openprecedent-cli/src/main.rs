@@ -1,10 +1,11 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 use chrono::{DateTime, Utc};
 use clap::{ArgAction, Args, CommandFactory, FromArgMatches, Parser, Subcommand};
+use openprecedent_capture_codex as capture_codex;
 use openprecedent_capture_openclaw as capture_openclaw;
 use openprecedent_contracts::{
     Artifact, ArtifactType, Case, CaseStatus, Decision, DecisionExplanation, DecisionType, Event,
@@ -25,6 +26,8 @@ use uuid::Uuid;
 struct CaptureImportOutput {
     case: Case,
     imported_event_count: usize,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    unsupported_record_type_counts: BTreeMap<String, usize>,
     events: Vec<Event>,
 }
 
@@ -273,7 +276,20 @@ struct CodexCaptureCommand {
 
 #[derive(Debug, Subcommand)]
 enum CodexCaptureSubcommand {
-    ImportRollout(TrailingArgs),
+    ImportRollout(CodexImportRolloutArgs),
+}
+
+#[derive(Debug, Args)]
+struct CodexImportRolloutArgs {
+    path: std::path::PathBuf,
+    #[arg(long = "case-id")]
+    case_id: String,
+    #[arg(long)]
+    title: String,
+    #[arg(long = "user-id")]
+    user_id: Option<String>,
+    #[arg(long = "agent-id", default_value = "codex")]
+    agent_id: String,
 }
 
 #[derive(Debug, Args)]
@@ -1060,6 +1076,7 @@ fn handle_capture(command: CaptureCommand, config: &ResolvedRuntimeConfig) -> i3
                 let output = CaptureImportOutput {
                     case,
                     imported_event_count: imported.len(),
+                    unsupported_record_type_counts: BTreeMap::new(),
                     events: imported,
                 };
                 match serde_json::to_string_pretty(&output) {
@@ -1074,11 +1091,118 @@ fn handle_capture(command: CaptureCommand, config: &ResolvedRuntimeConfig) -> i3
                 }
             }
         },
-        CaptureRuntime::Codex(command) => {
-            render_not_implemented_path(capture_path(CaptureCommand {
-                runtime: CaptureRuntime::Codex(command),
-            }))
-        }
+        CaptureRuntime::Codex(command) => match command.command {
+            CodexCaptureSubcommand::ImportRollout(args) => {
+                let store = match SqliteStore::new(&config.db.path) {
+                    Ok(store) => store,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                let case = match ensure_case(
+                    &store,
+                    &args.case_id,
+                    &args.title,
+                    args.user_id.as_deref(),
+                    Some(args.agent_id.as_str()),
+                ) {
+                    Ok(case) => case,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+
+                let file = match File::open(&args.path) {
+                    Ok(file) => file,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                };
+                let rollout_id_prefix = capture_codex::rollout_id_prefix(&args.path);
+                let mut imported = Vec::new();
+                let mut unsupported = BTreeMap::new();
+                for (index, line_result) in BufReader::new(file).lines().enumerate() {
+                    let line_number = index + 1;
+                    let line = match line_result {
+                        Ok(line) => line,
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+                    let stripped = line.trim();
+                    if stripped.is_empty() {
+                        continue;
+                    }
+                    let raw_item = match serde_json::from_str::<Value>(stripped) {
+                        Ok(Value::Object(item)) => item,
+                        Ok(_) => {
+                            eprintln!(
+                                "line {line_number}: codex rollout line must be a JSON object"
+                            );
+                            return 1;
+                        }
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+
+                    let event = match capture_codex::normalize_rollout_line(
+                        raw_item.clone(),
+                        line_number,
+                        &rollout_id_prefix,
+                    ) {
+                        Ok(event) => event,
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+                    let Some(mut event) = event else {
+                        *unsupported
+                            .entry(capture_codex::record_type(&raw_item))
+                            .or_insert(0) += 1;
+                        continue;
+                    };
+
+                    event.case_id = args.case_id.clone();
+                    event.sequence_no = match store.next_event_sequence(&args.case_id) {
+                        Ok(sequence) => sequence,
+                        Err(error) => {
+                            eprintln!("{error}");
+                            return 1;
+                        }
+                    };
+                    if let Err(error) = store.append_event(&event) {
+                        eprintln!("{error}");
+                        return 1;
+                    }
+                    imported.push(event);
+                }
+
+                let output = CaptureImportOutput {
+                    case,
+                    imported_event_count: imported.len(),
+                    unsupported_record_type_counts: unsupported,
+                    events: imported,
+                };
+                match serde_json::to_string_pretty(&output) {
+                    Ok(json) => {
+                        println!("{json}");
+                        0
+                    }
+                    Err(error) => {
+                        eprintln!("{error}");
+                        1
+                    }
+                }
+            }
+        },
     }
 }
 
@@ -3464,28 +3588,6 @@ const STOP_WORDS: [&str; 18] = [
     "the", "and", "for", "with", "that", "this", "from", "into", "will", "then", "case",
     "openclaw", "session", "docs", "file", "tool", "command", "agent",
 ];
-
-fn capture_path(command: CaptureCommand) -> Vec<&'static str> {
-    match command.runtime {
-        CaptureRuntime::Openclaw(command) => match command.command {
-            OpenclawCaptureSubcommand::ListSessions(_) => {
-                vec!["capture", "openclaw", "list-sessions"]
-            }
-            OpenclawCaptureSubcommand::ImportSession(_) => {
-                vec!["capture", "openclaw", "import-session"]
-            }
-            OpenclawCaptureSubcommand::CollectSessions(_) => {
-                vec!["capture", "openclaw", "collect-sessions"]
-            }
-            OpenclawCaptureSubcommand::ImportJsonl(_) => {
-                vec!["capture", "openclaw", "import-jsonl"]
-            }
-        },
-        CaptureRuntime::Codex(command) => match command.command {
-            CodexCaptureSubcommand::ImportRollout(_) => vec!["capture", "codex", "import-rollout"],
-        },
-    }
-}
 
 fn lineage_path(command: LineageCommand) -> Vec<&'static str> {
     match command.command {
