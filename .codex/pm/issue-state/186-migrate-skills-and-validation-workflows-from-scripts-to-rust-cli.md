@@ -3,7 +3,7 @@ type: issue_state
 issue: 186
 task: .codex/pm/tasks/public-cli-foundation/migrate-skills-and-validation-workflows-from-scripts-to-rust-cli.md
 title: Migrate skills and validation workflows from scripts to the Rust CLI
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -24,9 +24,8 @@ Skill-driven usage and the main Codex/HarnessHub validation harnesses now call t
 
 ## Next Steps
 
-- mark the task twin `done`
-- open the child PR against `codex/issue-172-rust-public-cli`
-- merge this slice, then continue with `#187` for the public cutover and Python/script removal phase
+- keep this slice as merged history on `codex/issue-172-rust-public-cli`
+- include the skill and validation workflow migration in the final integration PR that closes `#172`
 
 ## Artifacts
 

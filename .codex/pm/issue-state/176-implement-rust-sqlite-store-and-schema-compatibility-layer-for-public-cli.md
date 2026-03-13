@@ -3,7 +3,7 @@ type: issue_state
 issue: 176
 task: .codex/pm/tasks/public-cli-foundation/implement-rust-sqlite-store-and-schema-compatibility-layer-for-public-cli.md
 title: Implement the Rust SQLite store and schema compatibility layer for the public CLI
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -24,8 +24,8 @@ Port SQLite schema ownership and the reusable persistence layer into Rust so lat
 
 ## Next Steps
 
-- commit the `#176` implementation, open a child PR against `codex/issue-172-rust-public-cli`, and merge it
-- start `#177` from the refreshed integration branch after the Rust store layer lands
+- keep this slice as merged history on `codex/issue-172-rust-public-cli`
+- include the Rust store layer in the final integration PR that closes `#172`
 
 ## Artifacts
 
