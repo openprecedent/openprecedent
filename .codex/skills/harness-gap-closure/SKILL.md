@@ -63,8 +63,8 @@ Turn repeated workflow failures into issue-scoped harness hardening work with a 
 7. Update guidance where contributors will actually see it.
    - Usually one or more of:
    - `AGENTS.md`
-   - `docs/engineering/tooling-setup.md`
-   - `docs/engineering/repository-governance.md`
+   - `docs/engineering/runtime/tooling-setup.md`
+   - `docs/engineering/governance/repository-governance.md`
    - local skill command maps
 
 8. Close the loop in the PR.
@@ -84,6 +84,6 @@ After using this skill, the repository should be stronger in a concrete way:
 ## Read Next
 
 - `.codex/skills/ccpm-codex/SKILL.md`
-- [`docs/engineering/tooling-setup.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/tooling-setup.md)
-- [`docs/engineering/repository-governance.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/repository-governance.md)
-- [`docs/engineering/harness-capability-analysis.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/harness-capability-analysis.md)
+- [`docs/engineering/runtime/tooling-setup.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/tooling-setup.md)
+- [`docs/engineering/governance/repository-governance.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/governance/repository-governance.md)
+- [`docs/engineering/governance/harness-capability-analysis.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/governance/harness-capability-analysis.md)

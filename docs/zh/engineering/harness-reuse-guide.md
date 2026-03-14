@@ -77,8 +77,8 @@ OpenPrecedent 当前的 harness 可以分成六层。
 主要组成：
 
 - [run-e2e.sh](/workspace/02-projects/incubation/openprecedent/scripts/run-e2e.sh)
-- [merge-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md)
-- [openclaw-full-user-journey-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-full-user-journey-validation.md)
+- [merge-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/merge-validation.md)
+- [openclaw-full-user-journey-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-full-user-journey-validation.md)
 
 关键能力：
 
@@ -94,7 +94,7 @@ OpenPrecedent 当前的 harness 可以分成六层。
 
 - [run-openclaw-live-validation.sh](/workspace/02-projects/incubation/openprecedent/scripts/run-openclaw-live-validation.sh)
 - [.codex/skills/openclaw-live-validation/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/openclaw-live-validation/SKILL.md)
-- [openclaw-live-validation-harness.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-live-validation-harness.md)
+- [openclaw-live-validation-harness.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-live-validation-harness.md)
 
 关键能力：
 
@@ -263,6 +263,6 @@ OpenPrecedent 当前的 harness 可以分成六层。
 
 ## 相关文档
 
-- [Harness capability analysis](/workspace/02-projects/incubation/openprecedent/docs/engineering/harness-capability-analysis.md)
-- [Harness reuse guide](/workspace/02-projects/incubation/openprecedent/docs/engineering/harness-reuse-guide.md)
-- [Tooling setup](/workspace/02-projects/incubation/openprecedent/docs/engineering/tooling-setup.md)
+- [Harness capability analysis](/workspace/02-projects/incubation/openprecedent/docs/engineering/governance/harness-capability-analysis.md)
+- [Harness reuse guide](/workspace/02-projects/incubation/openprecedent/docs/engineering/governance/harness-reuse-guide.md)
+- [Tooling setup](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/tooling-setup.md)

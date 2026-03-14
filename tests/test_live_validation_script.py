@@ -102,7 +102,9 @@ def test_live_validation_script_seeds_history_and_summarizes_invocations(tmp_pat
 
 def test_tooling_doc_references_live_validation_harness() -> None:
     repo_root = Path(__file__).parent.parent
-    content = (repo_root / "docs" / "engineering" / "tooling-setup.md").read_text(encoding="utf-8")
+    content = (repo_root / "docs" / "engineering" / "runtime" / "tooling-setup.md").read_text(
+        encoding="utf-8"
+    )
 
     assert "./scripts/run-openclaw-live-validation.sh" in content
     assert "Issue-Scoped Development State" in content

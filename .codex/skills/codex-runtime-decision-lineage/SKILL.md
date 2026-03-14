@@ -85,6 +85,6 @@ fi
 
 ## Read Next
 
-- [`docs/engineering/codex-precedent-retrieval-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-precedent-retrieval-validation.md)
-- [`docs/engineering/using-openprecedent.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/using-openprecedent.md)
-- [`docs/engineering/codex-runtime-decision-lineage-workflow.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-decision-lineage-workflow.md)
+- [`docs/engineering/validation/codex-precedent-retrieval-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/codex-precedent-retrieval-validation.md)
+- [`docs/engineering/cli/using-openprecedent.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/using-openprecedent.md)
+- [`docs/engineering/runtime/codex-runtime-decision-lineage-workflow.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/codex-runtime-decision-lineage-workflow.md)

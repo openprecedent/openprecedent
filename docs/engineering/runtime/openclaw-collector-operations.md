@@ -12,7 +12,7 @@ It covers:
 - the evaluation/report command for real collected sessions
 
 For the first validated live rollout and its observed caveats, see
-[`docs/engineering/openclaw-collector-rollout-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-rollout-validation.md).
+[`docs/engineering/validation/openclaw-collector-rollout-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-collector-rollout-validation.md).
 
 ## Wrapper Script
 

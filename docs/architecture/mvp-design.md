@@ -19,7 +19,7 @@ This is not a future platform blueprint. It is the current MVP system boundary.
 
 For the planned post-MVP replacement of the public executable surface with a Rust CLI, see:
 
-- [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/rust-public-cli-design.md)
+- [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/rust-public-cli-design.md)
 
 ## Decision-Lineage Direction
 
@@ -401,10 +401,10 @@ For OpenClaw this means:
 Related operational docs:
 
 - [openclaw-silent-collection.md](/workspace/02-projects/incubation/openprecedent/docs/architecture/openclaw-silent-collection.md)
-- [openclaw-collector-operations.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-operations.md)
-- [openclaw-collector-rollout-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-collector-rollout-validation.md)
-- [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
-- [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md)
+- [openclaw-collector-operations.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/openclaw-collector-operations.md)
+- [openclaw-collector-rollout-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-collector-rollout-validation.md)
+- [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md)
+- [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-runtime-decision-lineage-trigger-rerun.md)
 
 ## Accurate MVP v1 Capability Summary
 

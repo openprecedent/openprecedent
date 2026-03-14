@@ -81,8 +81,8 @@ This layer validates the product loop without requiring a separate live runtime 
 Main components:
 
 - [run-e2e.sh](/workspace/02-projects/incubation/openprecedent/scripts/run-e2e.sh)
-- [merge-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md)
-- [openclaw-full-user-journey-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-full-user-journey-validation.md)
+- [merge-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/merge-validation.md)
+- [openclaw-full-user-journey-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-full-user-journey-validation.md)
 
 Key capabilities:
 
@@ -98,7 +98,7 @@ Main components:
 
 - [run-openclaw-live-validation.sh](/workspace/02-projects/incubation/openprecedent/scripts/run-openclaw-live-validation.sh)
 - [.codex/skills/openclaw-live-validation/SKILL.md](/workspace/02-projects/incubation/openprecedent/.codex/skills/openclaw-live-validation/SKILL.md)
-- [openclaw-live-validation-harness.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-live-validation-harness.md)
+- [openclaw-live-validation-harness.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-live-validation-harness.md)
 
 Key capabilities:
 
@@ -267,6 +267,6 @@ This keeps the exported harness small enough to adopt and prevents the target re
 
 ## Related Docs
 
-- [Harness capability analysis](/workspace/02-projects/incubation/openprecedent/docs/engineering/harness-capability-analysis.md)
-- [Tooling setup](/workspace/02-projects/incubation/openprecedent/docs/engineering/tooling-setup.md)
-- [Repository governance](/workspace/02-projects/incubation/openprecedent/docs/engineering/repository-governance.md)
+- [Harness capability analysis](/workspace/02-projects/incubation/openprecedent/docs/engineering/governance/harness-capability-analysis.md)
+- [Tooling setup](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/tooling-setup.md)
+- [Repository governance](/workspace/02-projects/incubation/openprecedent/docs/engineering/governance/repository-governance.md)

@@ -6,7 +6,7 @@ This document describes the Rust CLI that is now actually shipped on `main`.
 
 It is the implementation companion to:
 
-- [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/rust-public-cli-design.md)
+- [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/rust-public-cli-design.md)
 
 The design document defines the long-term public contract.
 This document explains what was implemented, how the code is organized today, what was cut over from the earlier Python and shell entrypoints, and what remains intentionally internal.
@@ -246,8 +246,8 @@ These are not part of the supported public CLI contract.
 
 If you are trying to understand the system now, use this order:
 
-1. [using-openprecedent.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/using-openprecedent.md)
+1. [using-openprecedent.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/using-openprecedent.md)
 2. this implementation document
-3. [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/rust-public-cli-design.md)
+3. [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/rust-public-cli-design.md)
 
 That sequence moves from current usage, to actual implementation, to long-term contract intent.

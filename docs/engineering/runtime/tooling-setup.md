@@ -14,7 +14,7 @@ The repository already includes:
 - `scripts/run-codex-session-start.sh` for restoring branch, issue, task, issue-state, and PR context at the start of a Codex session
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
-- `scripts/run-openclaw-live-validation.sh` as an internal repository-local live-validation harness around the Rust CLI
+- `scripts/run-openclaw-live-validation.sh` for preparing a reusable live OpenClaw validation workspace and summarizing runtime evidence
 - `python3 -m openprecedent.codex_pm issue-state-init <task-path>` for preserving issue-scoped working state across longer agent work
 
 To enable the local hook:
@@ -142,7 +142,7 @@ or run the E2E script directly:
 ```
 
 The detailed merge checklist lives in
-[`docs/engineering/merge-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md).
+[`docs/engineering/validation/merge-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/merge-validation.md).
 
 ## Live OpenClaw Validation Harness
 
