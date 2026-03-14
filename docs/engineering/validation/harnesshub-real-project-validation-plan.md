@@ -165,8 +165,8 @@ In that case, a second, more demanding HarnessHub task should be run before draw
 
 ## Related Artifacts
 
-- [Codex runtime boundary](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-boundary.md)
-- [Codex runtime startup guide](/workspace/02-projects/incubation/openprecedent/docs/engineering/codex-runtime-startup-guide.md)
+- [Codex runtime boundary](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/codex-runtime-boundary.md)
+- [Codex runtime startup guide](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/codex-runtime-startup-guide.md)
 
 ## Naming Note
 

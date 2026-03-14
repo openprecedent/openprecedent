@@ -68,3 +68,9 @@ Remaining follow-up:
 - `#163` Research contamination controls for decision-lineage retrieval
 
 The remaining work is now about improving retrieval hygiene and continued evaluation depth, not about proving that the external-project precedent loop can work.
+
+## Archive
+
+For the full first-phase closeout narrative, including the early failures, the issue chain that resolved them, and the later refactors around the study boundary, see:
+
+- [HarnessHub Real-Project Validation Archive](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/harnesshub-real-project-validation-archive.md)

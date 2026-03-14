@@ -56,7 +56,7 @@ This is the human-readable conclusion:
 
 This layer belongs in:
 
-- `docs/engineering/`
+- `docs/engineering/validation/`
 
 ## What Should Enter Git
 
@@ -111,10 +111,12 @@ Keep these fields when they directly support the research conclusion:
 openprecedent/
 ├── docs/
 │   └── engineering/
-│       ├── harnesshub-real-project-validation-plan.md
-│       ├── harnesshub-real-project-observation-log.md
-│       ├── harnesshub-real-project-validation-report.md
-│       └── research-archive-workflow.md
+│       └── validation/
+│           ├── harnesshub-real-project-validation-plan.md
+│           ├── harnesshub-real-project-observation-log.md
+│           ├── harnesshub-real-project-validation-report.md
+│           ├── harnesshub-real-project-validation-archive.md
+│           └── research-archive-workflow.md
 ├── research-artifacts/
 │   └── harnesshub/
 │       └── 2026-03-11T1530Z/
