@@ -14,7 +14,7 @@ The repository already includes:
 - `scripts/run-codex-session-start.sh` for restoring branch, issue, task, issue-state, and PR context at the start of a Codex session
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
 - `scripts/run-e2e.sh` for the standard local fixture-backed end-to-end runtime validation path
-- `scripts/run-openclaw-live-validation.sh` for preparing a reusable live OpenClaw validation workspace and summarizing runtime evidence
+- `scripts/run-openclaw-live-validation.sh` as an internal repository-local live-validation harness around the Rust CLI
 - `python3 -m openprecedent.codex_pm issue-state-init <task-path>` for preserving issue-scoped working state across longer agent work
 
 To enable the local hook:
@@ -151,6 +151,8 @@ For runtime integration work that must exercise the real OpenClaw loop rather th
 ```bash
 ./scripts/run-openclaw-live-validation.sh
 ```
+
+Treat this script as a repository-local harness entrypoint, not as part of the supported public product interface.
 
 The harness prepares a stable local workspace, shared `OPENPRECEDENT_HOME`, prompt file, gateway launcher, and structured artifact directory under `/tmp/openprecedent-openclaw-live` by default.
 It also synchronizes the installed OpenClaw skill bundle in the target profile workspace so the skill points at that same shared runtime home instead of falling back to a different default path.

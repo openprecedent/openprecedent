@@ -16,7 +16,7 @@ For the first validated live rollout and its observed caveats, see
 
 ## Wrapper Script
 
-Use the Rust CLI as the supported collection surface. [`scripts/run-collector.sh`](/workspace/02-projects/incubation/openprecedent/scripts/run-collector.sh) remains only as a repository-local convenience wrapper for scheduled jobs.
+Use the Rust CLI as the supported collection surface. [`scripts/run-collector.sh`](/workspace/02-projects/incubation/openprecedent/scripts/run-collector.sh) remains only as an internal repository-local convenience wrapper for scheduled jobs.
 
 The wrapper prefers the repository-local `.venv/bin/openprecedent` binary when it exists, then falls back to `openprecedent` on `PATH`. This keeps scheduled runs aligned with the checked-out repository environment without requiring a separate global install.
 

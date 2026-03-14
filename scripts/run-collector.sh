@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Internal-only repository helper.
+# The supported product surface is `openprecedent capture openclaw collect-sessions`.
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/lib/openprecedent-rust-cli.sh"
 

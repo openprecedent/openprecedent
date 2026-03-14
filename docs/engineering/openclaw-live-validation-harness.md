@@ -15,6 +15,9 @@ Run:
 ./scripts/run-openclaw-live-validation.sh
 ```
 
+This script is a repository-local live-validation harness.
+It is not a supported public product interface and should be treated as an internal helper around the Rust `openprecedent` CLI.
+
 By default this prepares a workspace under `/tmp/openprecedent-openclaw-live` with:
 
 - `runtime-home/` for the shared `OPENPRECEDENT_HOME`
@@ -62,7 +65,7 @@ This keeps the most important runtime evidence in one stable local location even
 
 ## Recommended Workflow
 
-1. Prepare the live workspace with `./scripts/run-openclaw-live-validation.sh`.
+1. Prepare the live workspace with the repository-local harness `./scripts/run-openclaw-live-validation.sh`.
 2. If needed, seed prior history into the shared runtime home.
 3. Start the isolated OpenClaw gateway with `./launch-openclaw-gateway.sh`.
 4. Run the target prompt from `prompt.txt`.

@@ -102,6 +102,7 @@ Main components:
 
 Key capabilities:
 
+- keep runtime validation wrappers explicitly repository-local rather than product-facing
 - prepare a shared runtime home for live validation
 - optionally seed prior history
 - sync the installed skill bundle into the target profile workspace

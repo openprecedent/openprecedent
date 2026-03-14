@@ -127,3 +127,13 @@ def test_codex_runtime_workflow_script_returns_brief_and_logs_invocation(tmp_pat
 
     assert '"invocation"' in inspect_result.stdout
     assert '"query_reason": "before_file_write"' in inspect_result.stdout
+
+
+def test_codex_runtime_workflow_script_is_documented_as_internal_helper() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    script = (repo_root / "scripts" / "run-codex-decision-lineage-workflow.sh").read_text(encoding="utf-8")
+    readme = (repo_root / "scripts" / "README.md").read_text(encoding="utf-8")
+
+    assert "Internal-only repository helper." in script
+    assert "supported product surface is `openprecedent lineage ...`" in script
+    assert "repository-local helpers around that CLI" in readme

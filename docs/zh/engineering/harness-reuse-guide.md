@@ -98,6 +98,7 @@ OpenPrecedent 当前的 harness 可以分成六层。
 
 关键能力：
 
+- 明确将运行时验证脚本保持为仓库内部 harness，而不是产品公开接口
 - 准备 live validation 用的 shared runtime home
 - 可选 seed prior history
 - 自动同步目标 profile workspace 里的 installed skill bundle
