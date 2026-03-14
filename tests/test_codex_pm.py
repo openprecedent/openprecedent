@@ -145,7 +145,7 @@ def test_codex_pm_updates_status_and_renders_issue_and_pr_body(tmp_path: Path, m
     )
     task_text = task_text.replace(
         "## Validation\n\n<!-- TODO: fill in -->\n\n",
-        "## Validation\n\n- .venv/bin/python -m pytest tests/test_api.py tests/test_cli.py\n\n",
+        "## Validation\n\n- .venv/bin/python -m pytest tests/test_api.py tests/test_rust_cli_workspace.py\n\n",
     )
     task_text = task_text.replace(
         "## Implementation Notes\n\n<!-- TODO: fill in -->\n\n",
@@ -174,7 +174,7 @@ def test_codex_pm_updates_status_and_renders_issue_and_pr_body(tmp_path: Path, m
                 "--issue",
                 "23",
                 "--tests",
-                ".venv/bin/python -m pytest tests/test_api.py tests/test_cli.py",
+                ".venv/bin/python -m pytest tests/test_api.py tests/test_rust_cli_workspace.py",
             ]
         )
         == 0

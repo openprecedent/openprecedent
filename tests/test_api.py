@@ -931,7 +931,11 @@ def test_service_precedent_prefers_semantically_related_case(db_path) -> None:
                 ("message.user", "user", {"message": "Fix the failing pytest suite"}),
                 ("message.agent", "agent", {"message": "I will inspect the failing tests and patch them."}),
                 ("tool.called", "agent", {"tool_name": "pytest", "reason": "run test suite"}),
-                ("file.write", "agent", {"path": "tests/test_cli.py", "summary": "fixed failing tests"}),
+                (
+                    "file.write",
+                    "agent",
+                    {"path": "tests/test_rust_cli_workspace.py", "summary": "fixed Rust CLI contract tests"},
+                ),
                 ("case.completed", "system", {"summary": "tests fixed"}),
             ],
         ),
