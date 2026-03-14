@@ -7,6 +7,7 @@ status: done
 ---
 
 ## Summary
+
 The English engineering docs were regrouped into `cli`, `runtime`, `validation`, and `governance` subdirectories after the Rust CLI cutover, and README entrypoints were updated to explain the new taxonomy.
 
 ## Validated Facts

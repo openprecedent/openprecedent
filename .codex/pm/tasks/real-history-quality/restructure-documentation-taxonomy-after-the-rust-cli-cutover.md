@@ -11,10 +11,12 @@ state_path: .codex/pm/issue-state/211-restructure-documentation-taxonomy-after-t
 ---
 
 ## Context
+
 The Rust CLI cutover left engineering documentation spread across a large flat `docs/engineering/` directory.
 That made CLI usage, runtime operations, validation evidence, and governance guidance harder to navigate and increased the cost of maintaining cross-links after public-interface changes.
 
 ## Deliverable
+
 Reorganize the engineering documentation into a clearer taxonomy, update README entrypoints, and repair the moved-path references needed to keep the repository documentation and doc-path tests coherent.
 
 ## Scope
@@ -40,5 +42,6 @@ Reorganize the engineering documentation into a clearer taxonomy, update README 
 - run `OPENPRECEDENT_PYTHON_BIN=/workspace/02-projects/incubation/openprecedent/.venv/bin/python ./scripts/run-agent-preflight.sh`
 
 ## Implementation Notes
+
 - Keep this branch docs-only aside from the minimal surviving doc-path assertions in `tests/test_e2e_script.py` and `tests/test_live_validation_script.py`.
 - Revert any accidental fixture or non-doc path rewrites caused by broad replacement passes.
