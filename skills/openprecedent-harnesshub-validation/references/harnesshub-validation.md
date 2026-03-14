@@ -29,7 +29,7 @@ OpenPrecedent should function as a local private development aid for normal Harn
 
 Only load the following OpenPrecedent-side files when they materially affect the current task:
 
-- `{{OPENPRECEDENT_REPO_ROOT}}/docs/engineering/harnesshub-real-project-validation-report.md`
+- `{{OPENPRECEDENT_REPO_ROOT}}/docs/engineering/validation/harnesshub-real-project-validation-report.md`
 - `{{OPENPRECEDENT_REPO_ROOT}}/.codex/pm/issue-state/131-validate-codex-real-project-decision-lineage-reuse.md`
 - `{{OPENPRECEDENT_REPO_ROOT}}/.codex/pm/tasks/codex-runtime-research/validate-codex-real-project-decision-lineage-reuse.md`
 

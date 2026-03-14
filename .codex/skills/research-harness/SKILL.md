@@ -14,6 +14,7 @@ Typical triggers:
 - extraction quality analysis
 - experiment design
 - evidence capture for post-MVP product hypotheses
+- real-project observation or progress-analysis requests where the result should become durable research evidence
 
 Do not use this skill for straightforward implementation-only tasks unless the user explicitly wants a hypothesis-driven framing.
 
@@ -67,6 +68,11 @@ Parent framework: #100
    - Do not close umbrella issue `#100`.
    - Keep parent framing in docs and issue links, not in PR closing clauses.
 
+8. When the user asks for a research observation, progress analysis, or study interpretation round, do not stop at verbal analysis.
+   - Append the durable observation to the active research log before finishing the turn.
+   - Run the sanitized archive flow for the active study before finishing the turn.
+   - Treat log update plus archive refresh as the default close-out for research turns unless the user explicitly says not to archive.
+
 ## Recommended Structure
 
 For a research issue, aim to fill these fields:
@@ -84,6 +90,7 @@ For a research result, always record:
 - what was observed
 - what changed in confidence
 - what follow-up issue, if any, should come next
+- which observation log entry and sanitized archive path now hold the evidence
 
 ## Read Next
 

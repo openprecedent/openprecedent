@@ -29,4 +29,4 @@ Preserve the backlog research context for decision-lineage contamination control
 ## Artifacts
 
 - `.codex/pm/tasks/codex-runtime-research/research-contamination-controls-for-decision-lineage-retrieval.md`
-- `docs/engineering/harnesshub-real-project-observation-log.md`
+- `docs/engineering/validation/harnesshub-real-project-observation-log.md`

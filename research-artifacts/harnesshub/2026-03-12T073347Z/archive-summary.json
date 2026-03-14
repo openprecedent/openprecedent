@@ -1,0 +1,12 @@
+{
+  "study": "harnesshub",
+  "stamp": "2026-03-12T073347Z",
+  "query_terms": [
+    "harnesshub"
+  ],
+  "archived_invocation_count": 5,
+  "query_reasons": [
+    "before_file_write",
+    "initial_planning"
+  ]
+}

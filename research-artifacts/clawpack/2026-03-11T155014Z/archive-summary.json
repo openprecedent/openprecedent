@@ -1,0 +1,12 @@
+{
+  "study": "clawpack",
+  "stamp": "2026-03-11T155014Z",
+  "query_terms": [
+    "clawpack"
+  ],
+  "archived_invocation_count": 2,
+  "query_reasons": [
+    "before_file_write",
+    "initial_planning"
+  ]
+}
