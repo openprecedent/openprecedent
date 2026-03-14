@@ -65,6 +65,7 @@ Completed follow-up issue chain:
 
 Remaining follow-up:
 
+- `#217` Define second-phase HarnessHub reliability study after the first validation closeout
 - `#163` Research contamination controls for decision-lineage retrieval
 
 The remaining work is now about improving retrieval hygiene and continued evaluation depth, not about proving that the external-project precedent loop can work.
