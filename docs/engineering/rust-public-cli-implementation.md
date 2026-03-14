@@ -22,10 +22,10 @@ That cutover includes:
 - Rust-native SQLite access and schema initialization
 - Rust-native implementations of case, event, decision, replay, precedent, capture, lineage, and eval commands
 - skill and validation workflow migration to direct Rust CLI invocation
-- removal of the public Python `openprecedent` console script
+- removal of the public Python `openprecedent` console script and the retired Python CLI module that backed it
 - removal of repository-local shell wrappers as the supported public interface
 
-The Python codebase remains in the repository for internal service logic, PM tooling, and repository-local harness scripts, but it no longer defines the supported product-facing CLI contract.
+The Python codebase remains in the repository for internal service logic, PM tooling, and repository-local harness scripts, but the retired Python public CLI implementation itself has been removed and no longer competes with the supported Rust contract.
 
 ## Implemented Command Surface
 
@@ -184,9 +184,9 @@ The cutover intentionally removed two earlier public surfaces.
 
 ### Python public CLI
 
-The packaged Python `openprecedent` console script is no longer exposed as the product-facing command entrypoint.
+The packaged Python `openprecedent` console script is no longer exposed as the product-facing command entrypoint, and the retired Python CLI module that previously implemented that surface has been removed from `src/openprecedent/cli.py`.
 
-The Python codebase still exists in the repository, but the supported public executable interface is now Rust `openprecedent`.
+Python still remains in the repository for internal service logic and PM tooling, but the supported public executable interface is now Rust `openprecedent`.
 
 ### Public shell-script entrypoints
 

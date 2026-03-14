@@ -55,6 +55,10 @@ def test_pyproject_no_longer_exposes_python_openprecedent_console_script() -> No
     assert 'openprecedent-pm = "openprecedent.codex_pm:run"' in pyproject
 
 
+def test_retired_python_public_cli_module_is_removed() -> None:
+    assert not (ROOT / "src" / "openprecedent" / "cli.py").exists()
+
+
 def test_rust_ci_workflow_exists_as_a_dedicated_workflow() -> None:
     python_workflow = (ROOT / ".github" / "workflows" / "python-ci.yml").read_text(encoding="utf-8")
     rust_workflow = (ROOT / ".github" / "workflows" / "rust-ci.yml").read_text(encoding="utf-8")
