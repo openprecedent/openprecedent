@@ -45,14 +45,14 @@ python3 scripts/archive_research_artifacts.py \
   --repo-root /workspace/02-projects/active/HarnessHub
 ```
 
-4. Inspect the generated directory under:
+1. Inspect the generated directory under:
    - `research-artifacts/<study>/<stamp>/`
 
-5. When the archive should support a report or observation log, cite:
+2. When the archive should support a report or observation log, cite:
    - `archive-manifest.json`
    - `archive-summary.json`
 
-6. For research turns, pair the archive with a log update.
+3. For research turns, pair the archive with a log update.
    - Append the finding to the active observation log before finishing the turn.
    - Report both the updated log path and the new archive path in the response.
    - Treat this as the default close-out after a research observation unless the user explicitly says to skip archival.
@@ -66,5 +66,5 @@ python3 scripts/archive_research_artifacts.py \
 
 ## Read Next
 
-- [`docs/engineering/research-archive-workflow.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/research-archive-workflow.md)
-- [`docs/engineering/harnesshub-real-project-validation-plan.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/harnesshub-real-project-validation-plan.md)
+- [`docs/engineering/validation/research-archive-workflow.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/research-archive-workflow.md)
+- [`docs/engineering/validation/harnesshub-real-project-validation-plan.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/harnesshub-real-project-validation-plan.md)
