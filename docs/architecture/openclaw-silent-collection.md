@@ -76,7 +76,7 @@ Operational assets now live in:
 - `deploy/systemd/openprecedent-collector.service`
 - `deploy/systemd/openprecedent-collector.timer`
 - `deploy/cron/openprecedent-collector.cron`
-- `docs/engineering/openclaw-collector-operations.md`
+- `docs/engineering/runtime/openclaw-collector-operations.md`
 
 ## MVP Boundary
 

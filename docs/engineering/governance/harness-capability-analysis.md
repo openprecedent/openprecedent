@@ -6,7 +6,7 @@ Record a repository-grounded analysis of the current OpenPrecedent development h
 
 For the current harness inventory and reuse/export path, see:
 
-- [harness-reuse-guide.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/harness-reuse-guide.md)
+- [harness-reuse-guide.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/governance/harness-reuse-guide.md)
 
 This document focuses on one question:
 
@@ -71,7 +71,7 @@ The repository already has:
 - unit/regression CI through [python-ci.yml](/workspace/02-projects/incubation/openprecedent/.github/workflows/python-ci.yml)
 - Markdown structure checks through [markdownlint.yml](/workspace/02-projects/incubation/openprecedent/.github/workflows/markdownlint.yml)
 - issue/task closure sync validation and review gating through [pr-review-gate.yml](/workspace/02-projects/incubation/openprecedent/.github/workflows/pr-review-gate.yml)
-- documented merge-time validation expectations in [merge-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/merge-validation.md)
+- documented merge-time validation expectations in [merge-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/merge-validation.md)
 
 This means the harness already enforces:
 
@@ -103,9 +103,9 @@ This is one of the most mature parts of the current harness.
 The repository is not limited to synthetic tests.
 It already contains durable records of live OpenClaw integration validation:
 
-- [openclaw-full-user-journey-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-full-user-journey-validation.md)
-- [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
-- [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md)
+- [openclaw-full-user-journey-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-full-user-journey-validation.md)
+- [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md)
+- [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-runtime-decision-lineage-trigger-rerun.md)
 
 This is important because the most valuable bugs in MVP work were not found by unit tests alone.
 They were found by putting the system back through the live OpenClaw loop.

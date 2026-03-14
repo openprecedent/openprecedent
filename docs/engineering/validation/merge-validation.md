@@ -53,5 +53,5 @@ For docs-only or narrow PM-governance changes, the smaller relevant checks are e
 ## Baseline Source
 
 The script mirrors the documented baseline in
-[`openclaw-full-user-journey-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-full-user-journey-validation.md)
+[`openclaw-full-user-journey-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-full-user-journey-validation.md)
 rather than introducing a separate E2E path.

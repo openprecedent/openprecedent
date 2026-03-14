@@ -44,7 +44,7 @@ def test_run_e2e_script_completes_and_writes_expected_outputs(tmp_path: Path) ->
 
 
 def test_merge_validation_doc_references_standard_e2e_script() -> None:
-    path = Path(__file__).parent.parent / "docs" / "engineering" / "merge-validation.md"
+    path = Path(__file__).parent.parent / "docs" / "engineering" / "validation" / "merge-validation.md"
 
     content = path.read_text(encoding="utf-8")
 

@@ -76,6 +76,6 @@ That classification should be recorded explicitly so follow-up work can target t
 
 ## Read Next
 
-- [`docs/engineering/openclaw-live-validation-harness.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-live-validation-harness.md)
-- [`docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-runtime-decision-lineage-trigger-rerun.md)
-- [`docs/engineering/openclaw-real-runtime-decision-lineage-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/openclaw-real-runtime-decision-lineage-validation.md)
+- [`docs/engineering/validation/openclaw-live-validation-harness.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-live-validation-harness.md)
+- [`docs/engineering/validation/openclaw-runtime-decision-lineage-trigger-rerun.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-runtime-decision-lineage-trigger-rerun.md)
+- [`docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md`](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md)

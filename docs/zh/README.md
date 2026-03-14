@@ -6,8 +6,15 @@
 
 - `product/`: 产品战略与 MVP 需求
 - `architecture/`: MVP 设计文档
-- `engineering/`: 工程流程、验证与 harness 复用文档
+- `engineering/`: 中文工程文档原稿
 - `research/`: 竞品与赛道研究
+
+英文工程文档已经按职责细分为：
+
+- `docs/engineering/cli/`
+- `docs/engineering/runtime/`
+- `docs/engineering/validation/`
+- `docs/engineering/governance/`
 
 说明：
 
