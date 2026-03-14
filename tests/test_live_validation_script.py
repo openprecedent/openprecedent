@@ -114,9 +114,9 @@ def test_tooling_doc_references_live_validation_harness() -> None:
 
 def test_live_validation_harness_doc_marks_wrapper_as_internal() -> None:
     repo_root = Path(__file__).parent.parent
-    content = (repo_root / "docs" / "engineering" / "openclaw-live-validation-harness.md").read_text(
-        encoding="utf-8"
-    )
+    content = (
+        repo_root / "docs" / "engineering" / "validation" / "openclaw-live-validation-harness.md"
+    ).read_text(encoding="utf-8")
     script = (repo_root / "scripts" / "run-openclaw-live-validation.sh").read_text(encoding="utf-8")
 
     assert "repository-local live-validation harness" in content
