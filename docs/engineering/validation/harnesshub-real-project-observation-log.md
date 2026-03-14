@@ -115,6 +115,7 @@ Add manifest-level harness metadata so a `.clawpack` package describes a reusabl
 - Decision affected: HarnessHub kept moving as a product toward operational readiness and release framing rather than only deepening schema work; the active tasks are now about operator remediation, workflow closure, and release packaging
 - Observed effect: the external repository is clean on `main-codex-sync` and has merged commits `bf77666` (`Add remediation guidance to verify output`), `f6ea741` (`Close the inspect-to-export workflow`), and `4ffc4fd` (`Cut the first MVP release candidate notes`); the shared runtime invocation log now contains 14 HarnessHub records, but the latest issue `#61`, `#59`, and `#62` invocations still record empty `matched_case_ids`
 - Confidence change: stronger support that HarnessHub development itself is progressing cleanly into MVP-closeout work, but only mixed support that the newly merged OpenPrecedent pipeline improvements are affecting the live development loop yet, because the shared runtime database remains empty (`cases=0`, `events=0`, `decisions=0`) even after issues `#152` to `#155` were merged; the import-and-retrieval chain is proven in isolated validation, but it has not yet been executed against the actual shared runtime that current HarnessHub sessions are querying
+- Archive note: this late empty-match milestone is preserved in `research-artifacts/harnesshub/2026-03-12T092548Z/`
 
 - Timestamp: 2026-03-13T00:40+08:00 to 2026-03-13T00:41+08:00, observed on 2026-03-13
 - HarnessHub task step: issue `#67` product-positioning and architecture clarification, codifying HarnessHub as environment capability packaging rather than agent packaging
@@ -123,3 +124,8 @@ Add manifest-level harness metadata so a `.clawpack` package describes a reusabl
 - Decision affected: the active HarnessHub positioning work was not framed from scratch; it was grounded in imported precedent that already encoded the product foundation, adapter boundary, and formal image semantics, which is exactly the kind of reuse the validation effort was trying to achieve
 - Observed effect: the shared runtime now contains `19` cases, `154` events, and `73` decisions; the invocation log contains `16` HarnessHub runtime records, and the latest live invocations at `2026-03-12T16:40:55.502739Z` and `2026-03-12T16:41:47.212035Z` both recorded non-empty `matched_case_ids`; the external HarnessHub repository advanced through commit `15c92aa` (`Codify harness capability packaging direction`) and merge commit `58fd0d2`
 - Confidence change: strong support that the precedent loop is now closed in the live development environment rather than only in isolated validation harnesses; OpenPrecedent is no longer acting solely as observation instrumentation, because imported HarnessHub history is now being retrieved back into later real work and influencing current product-positioning decisions
+- Archive note: this first strong live-reuse milestone is preserved in `research-artifacts/harnesshub/2026-03-12T164942Z/`
+
+## Archive Hygiene Note
+
+The local snapshot `research-artifacts/harnesshub/2026-03-12T165042Z/` is intentionally excluded from version control because its sanitized invocation payload duplicated `research-artifacts/harnesshub/2026-03-12T164942Z/` rather than adding a distinct research milestone.

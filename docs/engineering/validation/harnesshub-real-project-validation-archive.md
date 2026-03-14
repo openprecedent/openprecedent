@@ -173,6 +173,16 @@ At that point:
 This was the first strong proof that OpenPrecedent was doing more than session discipline or post-hoc explanation.
 It was reusing imported prior external-project history strongly enough to shape a later live development decision.
 
+## Archived Milestone Trail
+
+The first-phase closeout now preserves the key HarnessHub archive milestones in version control.
+
+- `research-artifacts/harnesshub/2026-03-12T080016Z/` captures the early diagnostic state before the MVP-closeout wave expanded the evidence trail
+- `research-artifacts/harnesshub/2026-03-12T092548Z/` extends that trail to `14` sanitized invocations and preserves the last major empty-match milestone across issues `#61`, `#59`, and `#62`
+- `research-artifacts/harnesshub/2026-03-12T164942Z/` extends the trail to `16` sanitized invocations and preserves the first strong live-reuse evidence with non-empty `matched_case_ids` during issue `#67`
+
+One later local snapshot, `research-artifacts/harnesshub/2026-03-12T165042Z/`, is intentionally excluded from version control because its sanitized invocation payload duplicates `2026-03-12T164942Z` instead of adding a distinct research milestone.
+
 ## What `#131` Proved
 
 Issue `#131` now supports these conclusions:
