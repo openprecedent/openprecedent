@@ -107,3 +107,16 @@ def test_tooling_doc_references_live_validation_harness() -> None:
     assert "./scripts/run-openclaw-live-validation.sh" in content
     assert "Issue-Scoped Development State" in content
     assert "shared runtime home" in content
+    assert "repository-local harness entrypoint" in content
+
+
+def test_live_validation_harness_doc_marks_wrapper_as_internal() -> None:
+    repo_root = Path(__file__).parent.parent
+    content = (repo_root / "docs" / "engineering" / "openclaw-live-validation-harness.md").read_text(
+        encoding="utf-8"
+    )
+    script = (repo_root / "scripts" / "run-openclaw-live-validation.sh").read_text(encoding="utf-8")
+
+    assert "repository-local live-validation harness" in content
+    assert "not a supported public product interface" in content
+    assert "Internal-only repository helper." in script

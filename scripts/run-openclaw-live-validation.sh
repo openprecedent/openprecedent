@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Internal-only repository helper.
+# This harness wraps the Rust CLI for repo-local live validation and is not the public product interface.
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/lib/openprecedent-rust-cli.sh"
 
