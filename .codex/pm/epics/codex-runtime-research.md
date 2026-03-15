@@ -44,6 +44,7 @@ Use Codex as a second, research-only runtime so OpenPrecedent can gather dense r
 - `#216` Backfill missing HarnessHub archive milestones from issue 131
 - `#217` Define second-phase HarnessHub reliability study after the first validation closeout
 - `#221` Analyze PlugMem and knowledge-centric agent memory against OpenPrecedent
+- `#220` Run second-phase HarnessHub reliability rounds after the Rust CLI cutover
 
 ## Notes
 
