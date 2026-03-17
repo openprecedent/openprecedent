@@ -1,5 +1,7 @@
 # 引入记忆效用与上下文成本（memory utility / context cost）评价视角
 
+日期：2026-03-17
+
 英文版本：[引入记忆效用与上下文成本评价视角（英文）](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-memory-utility-evaluation.md)
 
 主分析文档：[PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-openprecedent-analysis.md)

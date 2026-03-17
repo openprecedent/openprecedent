@@ -1,5 +1,7 @@
 # PlugMem And OpenPrecedent
 
+Date: 2026-03-17
+
 Chinese version: [PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-openprecedent-analysis.md)
 
 ## Purpose

@@ -1,5 +1,7 @@
 # PlugMem Follow-Up: Memory Utility Versus Context Cost
 
+Date: 2026-03-17
+
 Chinese version: [引入 memory utility / context cost 评价视角](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-memory-utility-evaluation.md)
 
 Main analysis: [PlugMem And OpenPrecedent](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-openprecedent-analysis.md)
