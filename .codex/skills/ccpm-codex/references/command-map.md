@@ -32,6 +32,9 @@ This skill ports the ccpm command model into Codex-friendly local commands.
 - `/pm:issue-sync`
   - Codex equivalent: regenerate the issue body from the task file:
     `python3 -m openprecedent.codex_pm issue-body <task-path>`
+- `/pm:issue-create`
+  - Codex equivalent:
+    `python3 -m openprecedent.codex_pm issue-create <task-path>`
 - `/pm:pr-body`
   - Codex equivalent:
     `python3 -m openprecedent.codex_pm pr-body <task-path> --issue <n> --tests "<cmd>"`
@@ -46,8 +49,6 @@ This skill ports the ccpm command model into Codex-friendly local commands.
 Pair the local commands with `gh`:
 
 - create issue:
-  - `gh issue create --body-file <(python3 -m openprecedent.codex_pm issue-body <task-path>) ...`
+  - `python3 -m openprecedent.codex_pm issue-create <task-path>`
 - create PR:
   - `python3 -m openprecedent.codex_pm pr-create <task-path> --tests "..."`
-
-If process substitution is inconvenient, redirect output to a temp file first.

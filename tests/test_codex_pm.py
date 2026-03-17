@@ -185,6 +185,117 @@ def test_codex_pm_updates_status_and_renders_issue_and_pr_body(tmp_path: Path, m
     assert "Validation:" in pr_body
 
 
+def test_codex_pm_issue_create_applies_task_labels_after_creation(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "issue-label-sync",
+                "--title",
+                "Synchronize issue labels",
+                "--issue",
+                "231",
+                "--labels",
+                "harness,docs",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "issue-label-sync.md"
+
+    calls: list[list[str]] = []
+    captured_body: dict[str, str] = {}
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        calls.append(cmd)
+        if cmd[:3] == ["gh", "issue", "create"]:
+            body_path = Path(cmd[cmd.index("--body-file") + 1])
+            captured_body["value"] = body_path.read_text(encoding="utf-8")
+            return subprocess.CompletedProcess(
+                cmd,
+                0,
+                stdout="https://github.com/openprecedent/openprecedent/issues/231\n",
+                stderr="",
+            )
+        if cmd[:3] == ["gh", "issue", "edit"]:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert main(["issue-create", str(task_path)]) == 0
+    output = capsys.readouterr().out
+
+    assert "https://github.com/openprecedent/openprecedent/issues/231" in output
+    create_call = next(cmd for cmd in calls if cmd[:3] == ["gh", "issue", "create"])
+    assert create_call[create_call.index("--repo") + 1] == "openprecedent/openprecedent"
+    assert create_call[create_call.index("--title") + 1] == "Synchronize issue labels"
+    edit_calls = [cmd for cmd in calls if cmd[:3] == ["gh", "issue", "edit"]]
+    assert len(edit_calls) == 2
+    assert {cmd[cmd.index("--add-label") + 1] for cmd in edit_calls} == {"harness", "docs"}
+    assert all(cmd[3] == "231" for cmd in edit_calls)
+    assert "## Labels" not in captured_body["value"]
+
+
+def test_codex_pm_issue_create_skips_label_sync_when_task_has_no_labels(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["init"]) == 0
+    capsys.readouterr()
+    assert (
+        main(
+            [
+                "task-new",
+                "real-history-quality",
+                "issue-no-labels",
+                "--title",
+                "Create issue without labels",
+                "--issue",
+                "232",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    task_path = tmp_path / ".codex" / "pm" / "tasks" / "real-history-quality" / "issue-no-labels.md"
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], check: bool, capture_output: bool, text: bool):
+        calls.append(cmd)
+        if cmd[:3] == ["gh", "issue", "create"]:
+            return subprocess.CompletedProcess(
+                cmd,
+                0,
+                stdout="https://github.com/openprecedent/openprecedent/issues/232\n",
+                stderr="",
+            )
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert main(["issue-create", str(task_path)]) == 0
+    capsys.readouterr()
+
+    assert [cmd[:3] for cmd in calls] == [["gh", "issue", "create"]]
+
+
 def test_codex_pm_task_new_supports_explicit_task_type(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.chdir(tmp_path)
 

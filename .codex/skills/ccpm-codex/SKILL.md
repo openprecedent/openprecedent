@@ -22,6 +22,7 @@ Use this skill for project-management work in this repository when the task invo
    - merged: `set-status ... done`
 5. Generate GitHub text from the task file instead of rewriting it each time:
    - issue body: `python3 -m openprecedent.codex_pm issue-body <task-path>`
+   - issue creation: `python3 -m openprecedent.codex_pm issue-create <task-path>`
    - PR body: `python3 -m openprecedent.codex_pm pr-body <task-path> --issue <n> --tests "..."`
    - PR creation: `python3 -m openprecedent.codex_pm pr-create <task-path> --tests "..."`
 6. Pick the next local task with:
