@@ -16,7 +16,7 @@ The second-phase HarnessHub reliability study under `#220` found that later real
 
 ## Deliverable
 
-Strengthen the private HarnessHub validation skill itself so local issue-delivery sessions are more likely to keep it in the default session workflow when it is installed, while still keeping OpenPrecedent private and optional.
+Strengthen the private HarnessHub validation skill itself so the skill exposes a clearer single-entry surface for session composition and lineage retrieval when it is installed locally, while still keeping OpenPrecedent private and optional.
 
 ## Scope
 
@@ -43,3 +43,4 @@ Strengthen the private HarnessHub validation skill itself so local issue-deliver
 - prefer a stronger one-skill private entry surface over splitting composition and validation into separate local skills
 - keep the fix targeted at session composition rather than adding a hard dependency to `issue-deliver`
 - verified the strengthened skill by refreshing the local HarnessHub checkout and confirming the updated single-skill instructions were installed
+- this issue improves the skill-side entry surface but does not by itself prove that later stable loading can be attributed solely to the repository-side skill change

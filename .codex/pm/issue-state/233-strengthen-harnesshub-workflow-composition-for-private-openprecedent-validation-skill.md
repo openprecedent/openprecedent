@@ -3,12 +3,12 @@ type: issue_state
 issue: 233
 task: .codex/pm/tasks/real-history-quality/strengthen-harnesshub-workflow-composition-for-private-openprecedent-validation-skill.md
 title: Strengthen HarnessHub workflow composition for private OpenPrecedent validation skill
-status: in_progress
+status: done
 ---
 
 ## Summary
 
-Improve HarnessHub's private OpenPrecedent skill composition so local issue-delivery sessions are more likely to include the validation layer after the Rust CLI cutover, without changing HarnessHub's public workflow contract.
+Improve HarnessHub's private OpenPrecedent validation skill so it offers a clearer one-skill entry surface for session composition plus lineage retrieval after the Rust CLI cutover, without changing HarnessHub's public workflow contract.
 
 ## Validated Facts
 
@@ -19,16 +19,17 @@ Improve HarnessHub's private OpenPrecedent skill composition so local issue-deli
 - `./scripts/run-pytest.sh -q tests/test_harnesshub_skill_install_script.py` passed.
 - `./scripts/run-agent-preflight.sh` passed.
 - Refreshing the local HarnessHub installation now updates the single `openprecedent-harnesshub-validation` skill with the strengthened one-skill entry guidance.
+- Later positive evidence under issue `#220` cannot yet be attributed solely to this issue because the user also introduced an additional locally maintained hidden AGENTS indirection to load the private skill more aggressively.
 
 ## Open Questions
 
-- Whether later post-fix HarnessHub rounds actually restore more reliable `initial_planning` and `before_file_write` lineage invocation under issue `#220`.
+- Whether later post-fix HarnessHub rounds would still restore more reliable `initial_planning` and `before_file_write` lineage invocation without the user's extra hidden local AGENTS indirection.
 
 ## Next Steps
 
-- Open the issue PR for `#233`.
-- Merge the strengthened one-skill composition fix.
+- Merge the strengthened one-skill skill-surface fix.
 - Continue observing later HarnessHub rounds under `#220` to measure whether invocation adherence improves.
+- Avoid over-attributing later positive evidence to `#233` unless the hidden local-entry factor is isolated.
 
 ## Artifacts
 
