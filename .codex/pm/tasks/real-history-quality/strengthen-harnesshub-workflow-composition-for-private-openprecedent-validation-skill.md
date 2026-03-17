@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: strengthen-harnesshub-workflow-composition-for-private-openprecedent-validation-skill
 title: Strengthen HarnessHub workflow composition for private OpenPrecedent validation skill
-status: in_progress
+status: done
 task_type: implementation
 labels: documentation,harness
 issue: 233
@@ -42,3 +42,5 @@ Strengthen the private HarnessHub skill installation so local issue-delivery ses
 
 - prefer a private skill-bundle solution over modifying HarnessHub's public tracked workflow files
 - keep the fix targeted at session composition rather than adding a hard dependency to `issue-deliver`
+- implemented the fix as a second private skill, `openprecedent-harnesshub-composition`, installed alongside `openprecedent-harnesshub-validation`
+- verified the bundle by refreshing the local HarnessHub checkout and confirming both private skill roots exist
