@@ -33,6 +33,7 @@ Improve the quality of replay, evaluation, and precedent behavior on real or ano
 - `#204` Restore local PM twins for remaining open GitHub issues
 - `#223` Add explicit date metadata to PlugMem research notes and define a date-placement convention
 - `#229` Normalize labels across active and historical GitHub issues
+- `#231` Automatically synchronize GitHub issue labels after Codex PM issue creation
 
 ## Notes
 

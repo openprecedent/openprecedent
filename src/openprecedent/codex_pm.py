@@ -20,6 +20,7 @@ CLOSING_ISSUE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 GITHUB_REMOTE_PATTERN = re.compile(r"github\.com[:/]([^/]+)/([^/.]+?)(?:\.git)?$")
+GITHUB_ISSUE_URL_PATTERN = re.compile(r"/issues/(\d+)(?:\b|$)")
 
 
 @dataclass
@@ -92,6 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     issue_body = subparsers.add_parser("issue-body")
     issue_body.add_argument("path")
+
+    issue_create = subparsers.add_parser("issue-create")
+    issue_create.add_argument("path")
+    issue_create.add_argument("--title")
+    issue_create.add_argument("--repo", default="openprecedent/openprecedent")
 
     pr_body = subparsers.add_parser("pr-body")
     pr_body.add_argument("path")
@@ -293,6 +299,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.action == "issue-body":
         document = _read_document(Path(args.path))
         print(_render_issue_body(document))
+        return 0
+    if args.action == "issue-create":
+        document = _read_document(Path(args.path))
+        try:
+            issue_url = _create_issue(document, title=args.title, repo=args.repo)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        except subprocess.CalledProcessError as exc:
+            message = exc.stderr.strip() or exc.stdout.strip() or str(exc)
+            print(message, file=sys.stderr)
+            return exc.returncode or 1
+        print(issue_url)
         return 0
     if args.action == "pr-body":
         document = _read_document(Path(args.path))
@@ -694,7 +713,7 @@ def _print_tasks(documents: list[PMDocument], as_json: bool) -> int:
     return 0
 
 
-def _render_issue_body(document: PMDocument) -> str:
+def _render_issue_body(document: PMDocument, *, include_labels: bool = True) -> str:
     lines = []
     context = _renderable_section_body(document.sections.get("Context", ""))
     deliverable = _renderable_section_body(document.sections.get("Deliverable", ""))
@@ -713,7 +732,7 @@ def _render_issue_body(document: PMDocument) -> str:
     if task_type:
         lines.extend(["## Task Type", task_type, ""])
     labels = document.metadata.get("labels", "")
-    if labels:
+    if include_labels and labels:
         lines.extend(["## Labels", labels, ""])
     return "\n".join(lines).rstrip()
 
@@ -944,10 +963,71 @@ def _create_pr(
         body_path.unlink(missing_ok=True)
 
 
+def _create_issue(document: PMDocument, *, title: str | None, repo: str) -> str:
+    issue_title = title or document.metadata.get("title") or document.path.stem
+    issue_body = _render_issue_body(document, include_labels=False)
+    labels = [item.strip() for item in document.metadata.get("labels", "").split(",") if item.strip()]
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as handle:
+        handle.write(issue_body)
+        body_path = Path(handle.name)
+
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "issue",
+                "create",
+                "--repo",
+                repo,
+                "--title",
+                issue_title,
+                "--body-file",
+                str(body_path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        issue_url = result.stdout.strip()
+    finally:
+        body_path.unlink(missing_ok=True)
+
+    issue_number = _parse_issue_number_from_url(issue_url)
+    if issue_number is None:
+        raise ValueError(f"Issue creation failed: could not parse the created issue number from `{issue_url}`.")
+
+    for label in labels:
+        subprocess.run(
+            [
+                "gh",
+                "issue",
+                "edit",
+                str(issue_number),
+                "--repo",
+                repo,
+                "--add-label",
+                label,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    return issue_url
+
+
 def _parse_issue_number(value: str) -> int | None:
     if value.isdigit():
         return int(value)
     return None
+
+
+def _parse_issue_number_from_url(value: str) -> int | None:
+    match = GITHUB_ISSUE_URL_PATTERN.search(value)
+    if match is None:
+        return None
+    return int(match.group(1))
 
 
 def _resolve_pr_body(pr_body: str | None, event_path: str | None) -> str:
