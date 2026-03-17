@@ -1,5 +1,7 @@
 # Competitive Landscape
 
+Date: 2026-03-09
+
 ## Summary
 
 The market is active, but split across layers.

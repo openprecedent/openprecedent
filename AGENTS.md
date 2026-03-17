@@ -50,7 +50,7 @@ The first implementation target is a local single-agent workflow. The current go
 - Keep naming consistent with `case`, `event`, `decision`, `artifact`, and `precedent`.
 - Do not describe the project as a generic graph database, memory store, or trace viewer.
 - In Chinese documentation, do not leave English technical terms untranslated by default. When preserving the original English term matters, write the Chinese translation first and keep the original English in parentheses so the prose remains readable to Chinese readers.
-- Research notes must include explicit date metadata near the top of each document. For bilingual research note sets, keep the English and Chinese dates aligned and prefer putting the date directly under the title so single-document references retain temporal context.
+- Research note sets must expose explicit date metadata both in the directory index and near the top of each document. For bilingual research note sets, keep the English and Chinese dates aligned, prefer putting the document date directly under the title, and keep the directory-level index current enough for later chronology tracking.
 
 ## Near-Term Priorities
 
