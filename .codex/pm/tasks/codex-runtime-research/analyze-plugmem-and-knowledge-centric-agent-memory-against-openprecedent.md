@@ -30,12 +30,16 @@ Produce a durable research analysis that compares PlugMem's memory model with Op
 - compare their core memory claims with OpenPrecedent's current event, decision, replay, and precedent model
 - identify where the external work confirms, challenges, or extends current OpenPrecedent assumptions
 - end with concrete follow-up implications rather than a summary-only writeup
+- add a Chinese version of the main analysis
+- break the four main follow-up implications into separately linked English and Chinese note documents
 
 ## Acceptance Criteria
 
 - the repository contains a durable analysis document under `docs/research/`
+- the repository contains a Chinese version of the main analysis under `docs/zh/research/`
 - the analysis identifies both alignment and disagreement with current OpenPrecedent design
 - the analysis recommends concrete next moves for retrieval, decision schema, evaluation, or research framing
+- the four main follow-up implications are each broken out into separately linked English and Chinese note documents
 
 ## Validation
 

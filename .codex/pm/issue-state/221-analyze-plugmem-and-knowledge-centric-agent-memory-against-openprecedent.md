@@ -24,9 +24,14 @@ Study PlugMem and the companion Microsoft Research memory blog as external resea
 
 ## Next Steps
 
-- merge the literature analysis so the external research comparison becomes part of the durable repository context
-- decide later whether the follow-up implications warrant new design or research issues
+- merge the expanded literature analysis so the external research comparison becomes durable repository context
+- decide later whether the strongest follow-up notes should be promoted into separate design or research issues
 
 ## Artifacts
 
 - `docs/research/plugmem-openprecedent-analysis.md`
+- `docs/zh/research/plugmem-openprecedent-analysis.md`
+- `docs/research/plugmem-reusable-knowledge-layer.md`
+- `docs/research/plugmem-fact-vs-prescription.md`
+- `docs/research/plugmem-memory-utility-evaluation.md`
+- `docs/research/plugmem-fine-grained-retrieval-units.md`

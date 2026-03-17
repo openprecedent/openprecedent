@@ -1,5 +1,7 @@
 # PlugMem And OpenPrecedent
 
+Chinese version: [PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem-openprecedent-analysis.md)
+
 ## Purpose
 
 This document analyzes the paper [PlugMem: A Task-Agnostic Plugin Memory Module for LLM Agents](https://arxiv.org/abs/2603.03296) and the companion Microsoft Research blog [From raw interaction to reusable knowledge: Rethinking memory for AI agents](https://www.microsoft.com/en-us/research/blog/from-raw-interaction-to-reusable-knowledge-rethinking-memory-for-ai-agents/) against OpenPrecedent's current product and research direction.
@@ -275,6 +277,15 @@ The most likely healthy product direction is dual-layer:
 - reusable knowledge units for runtime retrieval
 
 That direction is strongly consistent with both PlugMem's central argument and OpenPrecedent's current semantic refocus.
+
+## Related Follow-Up Notes
+
+The four main follow-up implications are also captured as dedicated note documents:
+
+1. [A clearer reusable-knowledge layer above cases](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-reusable-knowledge-layer.md)
+2. [A fact-versus-prescription distinction inside decision lineage](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-fact-vs-prescription.md)
+3. [Memory utility versus context cost](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-memory-utility-evaluation.md)
+4. [Smaller retrieval units without losing replay](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-fine-grained-retrieval-units.md)
 
 ## Bottom Line
 
