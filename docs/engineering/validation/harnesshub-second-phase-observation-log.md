@@ -19,6 +19,14 @@ The goal is to classify later rounds as positive, negative, or ambiguous evidenc
 
 ## Entries
 
+- Timestamp: 2026-03-17, observed from issue `#89` and follow-up issue `#93`
+- HarnessHub issue: `#89` Unify repository versioning on `0.1.0-rc.1`; `#93` Tighten unreleased RC wording after issue `#89` without changing repository version strings
+- Development step: complete issue `#89` through merged PR `#92`, then open and merge follow-up PR `#94` for issue `#93`
+- Query reasons observed: `initial_planning` and `before_file_write`
+- Runtime evidence: `~/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl` now contains new HarnessHub records at `2026-03-17T16:37:55.201561721Z`, `2026-03-17T16:38:46.481830732Z`, `2026-03-17T16:39:26.421751074Z`, `2026-03-17T16:46:55.619085166Z`, and `2026-03-17T16:47:38.263035756Z`; those records cover issue `#89` and follow-up issue `#93`, include both `initial_planning` and `before_file_write`, and return non-empty `matched_case_ids` grounded in prior HarnessHub release-candidate, versioning, and repository-evolution cases
+- Interpretation: this is strong new positive evidence that post-cutover HarnessHub rounds can again invoke lineage at the intended stages and retrieve semantically relevant precedent; however, the positive result cannot be attributed solely to the `#233` single-skill refinement because the user reports that the session also relied on an additional locally maintained hidden file referenced from HarnessHub's `AGENTS.md` to force that private skill into the session
+- Reliability effect: materially improves the second-phase reliability picture relative to the `#79`, `#81`, `#83`, and `#85` misses, but the result should currently be interpreted as evidence that a stronger local private-entry mechanism works rather than as proof that the repository-level `#233` skill text alone is sufficient for stable loading
+
 - Timestamp: 2026-03-17, observed from merged issues `#81`, `#83`, and `#85`
 - HarnessHub issue: `#81` Document how to interpret harness CLI artifact outputs; `#83` Raise coverage on CLI entrypoints and command/output surfaces; `#85` Raise overall branch coverage to 80 percent
 - Development step: complete three consecutive issue rounds through PRs `#82`, `#84`, and `#86`, with a fourth follow-up issue `#87` already opened afterward
