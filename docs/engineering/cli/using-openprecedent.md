@@ -352,11 +352,17 @@ An installable OpenClaw skill is also included in this repository:
 That skill is designed for progressive disclosure.
 It teaches OpenClaw when to call `openprecedent --format json lineage brief`, how to choose `query_reason`, and how to use the returned brief as judgment context rather than operational instructions.
 
-A separate OpenPrecedent-maintained HarnessHub validation skill is also included for the current real-project study:
+A separate OpenPrecedent-maintained HarnessHub private skill bundle is also included for the current real-project study:
 
-- [SKILL.md](/workspace/02-projects/incubation/openprecedent/skills/openprecedent-harnesshub-validation/SKILL.md)
+- [openprecedent-harnesshub-composition/SKILL.md](/workspace/02-projects/incubation/openprecedent/skills/openprecedent-harnesshub-composition/SKILL.md)
+- [openprecedent-harnesshub-validation/SKILL.md](/workspace/02-projects/incubation/openprecedent/skills/openprecedent-harnesshub-validation/SKILL.md)
 
-That HarnessHub skill is maintained here in OpenPrecedent, then installed into a local HarnessHub workspace as a private `.codex/skills/` bundle so the study can keep one canonical skill source without making HarnessHub publicly depend on OpenPrecedent.
+That HarnessHub bundle is maintained here in OpenPrecedent, then installed into a local HarnessHub workspace as a private `.codex/skills/` bundle so the study can keep one canonical skill source without making HarnessHub publicly depend on OpenPrecedent.
+
+The bundle installs two private skills:
+
+- a composition skill that tells local HarnessHub sessions to compose the private validation layer with `harness-issue-execution` or `harness-multi-issue-delivery` when available
+- the validation skill that performs the OpenPrecedent availability probe and the lineage queries themselves
 
 To install or refresh it into a local HarnessHub checkout:
 

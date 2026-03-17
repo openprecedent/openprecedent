@@ -34,6 +34,7 @@ Improve the quality of replay, evaluation, and precedent behavior on real or ano
 - `#223` Add explicit date metadata to PlugMem research notes and define a date-placement convention
 - `#229` Normalize labels across active and historical GitHub issues
 - `#231` Automatically synchronize GitHub issue labels after Codex PM issue creation
+- `#233` Strengthen HarnessHub workflow composition for private OpenPrecedent validation skill
 
 ## Notes
 
