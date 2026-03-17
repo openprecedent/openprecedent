@@ -1,5 +1,7 @@
 # PlugMem 与 OpenPrecedent 对照分析
 
+日期：2026-03-17
+
 英文版本：[PlugMem 与 OpenPrecedent 对照分析（英文）](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-openprecedent-analysis.md)
 
 ## 目的

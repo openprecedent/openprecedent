@@ -1,5 +1,7 @@
 # PlugMem Follow-Up: A Reusable-Knowledge Layer Above Cases
 
+Date: 2026-03-17
+
 Chinese version: [在 case 之上增加更明确的 reusable-knowledge layer](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-reusable-knowledge-layer.md)
 
 Main analysis: [PlugMem And OpenPrecedent](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-openprecedent-analysis.md)

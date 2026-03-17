@@ -1,5 +1,7 @@
 # 引入小于案例（case）的检索单元（retrieval unit），同时保留案例级回放（case-level replay）
 
+日期：2026-03-17
+
 英文版本：[引入更小的检索单元并保留回放能力（英文）](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-fine-grained-retrieval-units.md)
 
 主分析文档：[PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-openprecedent-analysis.md)
