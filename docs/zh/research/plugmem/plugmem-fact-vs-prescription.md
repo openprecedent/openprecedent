@@ -1,8 +1,8 @@
 # 在决策脉络（decision lineage）中区分事实型知识与处方式知识
 
-英文版本：[在决策脉络中区分事实型知识与处方式知识（英文）](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-fact-vs-prescription.md)
+英文版本：[在决策脉络中区分事实型知识与处方式知识（英文）](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-fact-vs-prescription.md)
 
-主分析文档：[PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem-openprecedent-analysis.md)
+主分析文档：[PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-openprecedent-analysis.md)
 
 ## 目的
 

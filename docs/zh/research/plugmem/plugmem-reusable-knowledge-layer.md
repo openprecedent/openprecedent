@@ -1,8 +1,8 @@
 # 在案例（case）之上增加更明确的可复用知识层（reusable-knowledge layer）
 
-英文版本：[在案例之上增加更明确的可复用知识层（英文）](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-reusable-knowledge-layer.md)
+英文版本：[在案例之上增加更明确的可复用知识层（英文）](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-reusable-knowledge-layer.md)
 
-主分析文档：[PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem-openprecedent-analysis.md)
+主分析文档：[PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-openprecedent-analysis.md)
 
 ## 目的
 

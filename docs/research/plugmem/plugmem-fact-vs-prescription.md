@@ -1,8 +1,8 @@
 # PlugMem Follow-Up: Fact-Like Versus Prescriptive Knowledge
 
-Chinese version: [在 decision lineage 中区分事实型知识与处方式知识](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem-fact-vs-prescription.md)
+Chinese version: [在 decision lineage 中区分事实型知识与处方式知识](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-fact-vs-prescription.md)
 
-Main analysis: [PlugMem And OpenPrecedent](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-openprecedent-analysis.md)
+Main analysis: [PlugMem And OpenPrecedent](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-openprecedent-analysis.md)
 
 ## Purpose
 

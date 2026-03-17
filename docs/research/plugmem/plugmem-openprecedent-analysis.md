@@ -1,6 +1,6 @@
 # PlugMem And OpenPrecedent
 
-Chinese version: [PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem-openprecedent-analysis.md)
+Chinese version: [PlugMem 与 OpenPrecedent 对照分析](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-openprecedent-analysis.md)
 
 ## Purpose
 
@@ -282,10 +282,10 @@ That direction is strongly consistent with both PlugMem's central argument and O
 
 The four main follow-up implications are also captured as dedicated note documents:
 
-1. [A clearer reusable-knowledge layer above cases](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-reusable-knowledge-layer.md)
-2. [A fact-versus-prescription distinction inside decision lineage](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-fact-vs-prescription.md)
-3. [Memory utility versus context cost](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-memory-utility-evaluation.md)
-4. [Smaller retrieval units without losing replay](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-fine-grained-retrieval-units.md)
+1. [A clearer reusable-knowledge layer above cases](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-reusable-knowledge-layer.md)
+2. [A fact-versus-prescription distinction inside decision lineage](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-fact-vs-prescription.md)
+3. [Memory utility versus context cost](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-memory-utility-evaluation.md)
+4. [Smaller retrieval units without losing replay](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-fine-grained-retrieval-units.md)
 
 ## Bottom Line
 

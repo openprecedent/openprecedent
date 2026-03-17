@@ -25,13 +25,21 @@ Study PlugMem and the companion Microsoft Research memory blog as external resea
 ## Next Steps
 
 - merge the expanded literature analysis so the external research comparison becomes durable repository context
-- decide later whether the strongest follow-up notes should be promoted into separate design or research issues
+- track the PlugMem research-note date metadata follow-up in issue `#223`
+- track reusable-knowledge-layer follow-up research in issue `#224`
+- track fact-versus-prescription follow-up research in issue `#225`
+- track memory-utility-versus-context-cost follow-up research in issue `#226`
+- track smaller-retrieval-unit follow-up research in issue `#227`
 
 ## Artifacts
 
-- `docs/research/plugmem-openprecedent-analysis.md`
-- `docs/zh/research/plugmem-openprecedent-analysis.md`
-- `docs/research/plugmem-reusable-knowledge-layer.md`
-- `docs/research/plugmem-fact-vs-prescription.md`
-- `docs/research/plugmem-memory-utility-evaluation.md`
-- `docs/research/plugmem-fine-grained-retrieval-units.md`
+- `docs/research/plugmem/plugmem-openprecedent-analysis.md`
+- `docs/zh/research/plugmem/plugmem-openprecedent-analysis.md`
+- `docs/research/plugmem/plugmem-reusable-knowledge-layer.md`
+- `docs/zh/research/plugmem/plugmem-reusable-knowledge-layer.md`
+- `docs/research/plugmem/plugmem-fact-vs-prescription.md`
+- `docs/zh/research/plugmem/plugmem-fact-vs-prescription.md`
+- `docs/research/plugmem/plugmem-memory-utility-evaluation.md`
+- `docs/zh/research/plugmem/plugmem-memory-utility-evaluation.md`
+- `docs/research/plugmem/plugmem-fine-grained-retrieval-units.md`
+- `docs/zh/research/plugmem/plugmem-fine-grained-retrieval-units.md`

@@ -1,8 +1,8 @@
 # PlugMem Follow-Up: Smaller Retrieval Units Without Losing Replay
 
-Chinese version: [引入小于 case 的 retrieval unit，同时保留 case-level replay](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem-fine-grained-retrieval-units.md)
+Chinese version: [引入小于 case 的 retrieval unit，同时保留 case-level replay](/workspace/02-projects/incubation/openprecedent/docs/zh/research/plugmem/plugmem-fine-grained-retrieval-units.md)
 
-Main analysis: [PlugMem And OpenPrecedent](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem-openprecedent-analysis.md)
+Main analysis: [PlugMem And OpenPrecedent](/workspace/02-projects/incubation/openprecedent/docs/research/plugmem/plugmem-openprecedent-analysis.md)
 
 ## Purpose
 
