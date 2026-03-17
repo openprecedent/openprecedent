@@ -3,7 +3,7 @@ type: issue_state
 issue: 223
 task: .codex/pm/tasks/real-history-quality/add-explicit-date-metadata-to-plugmem-research-notes.md
 title: Add explicit date metadata to PlugMem research notes and define a date-placement convention
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -13,19 +13,17 @@ Backfill explicit date metadata into the PlugMem research-note set and define a 
 ## Validated Facts
 
 - the PlugMem note set now lives under `docs/research/plugmem/` and `docs/zh/research/plugmem/`
-- the current documents do not yet show explicit date metadata at the top of each note
-- the repository does not yet have a durable rule for research-note date placement
+- the implemented convention places the research-note date directly under the document title
+- the PlugMem English and Chinese note pairs now share explicit matching `2026-03-17` date metadata
+- `AGENTS.md` now records the repository rule for research-note date placement
 
 ## Open Questions
 
-- whether research-note date metadata should live in the directory index, in each document, or both
+- whether older research notes outside the PlugMem set should be backfilled under the same rule
 
 ## Next Steps
 
-- define the date-placement rule in `AGENTS.md`
-- choose the document top as the canonical date location for this note set
-- backfill the PlugMem English and Chinese notes with explicit dates
-- run repository preflight and close the loop on `#223`
+- open and merge the issue-scoped PR for `#223`
 
 ## Artifacts
 

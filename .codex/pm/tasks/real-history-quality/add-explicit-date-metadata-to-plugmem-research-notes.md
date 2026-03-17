@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: add-explicit-date-metadata-to-plugmem-research-notes
 title: Add explicit date metadata to PlugMem research notes and define a date-placement convention
-status: in_progress
+status: done
 task_type: implementation
 labels: docs
 issue: 223
