@@ -49,6 +49,7 @@ The first implementation target is a local single-agent workflow. The current go
 - Update docs when schemas, APIs, or core object models change.
 - Keep naming consistent with `case`, `event`, `decision`, `artifact`, and `precedent`.
 - Do not describe the project as a generic graph database, memory store, or trace viewer.
+- In Chinese documentation, do not leave English technical terms untranslated by default. When preserving the original English term matters, write the Chinese translation first and keep the original English in parentheses so the prose remains readable to Chinese readers.
 
 ## Near-Term Priorities
 
