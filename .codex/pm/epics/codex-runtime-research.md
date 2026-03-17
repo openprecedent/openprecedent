@@ -43,6 +43,7 @@ Use Codex as a second, research-only runtime so OpenPrecedent can gather dense r
 - `#163` Research contamination controls for decision-lineage retrieval
 - `#216` Backfill missing HarnessHub archive milestones from issue 131
 - `#217` Define second-phase HarnessHub reliability study after the first validation closeout
+- `#221` Analyze PlugMem and knowledge-centric agent memory against OpenPrecedent
 
 ## Notes
 
