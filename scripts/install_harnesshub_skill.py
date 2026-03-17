@@ -7,11 +7,12 @@ from pathlib import Path
 
 
 PLACEHOLDERS = ("{{OPENPRECEDENT_REPO_ROOT}}",)
+LEGACY_SKILL_ROOTS = ("openprecedent-harnesshub-composition",)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Install the OpenPrecedent-maintained HarnessHub validation skill into a target HarnessHub workspace."
+        description="Install the OpenPrecedent-maintained private HarnessHub validation skill into a target HarnessHub workspace."
     )
     parser.add_argument(
         "--target-repo-root",
@@ -33,6 +34,12 @@ def replace_placeholders(path: Path, *, repo_root: Path) -> None:
 
 
 def install_skill(*, repo_root: Path, target_repo_root: Path, source_skill_root: Path) -> Path:
+    target_skills_root = target_repo_root / ".codex" / "skills"
+    for legacy_skill_root_name in LEGACY_SKILL_ROOTS:
+        legacy_skill_root = target_skills_root / legacy_skill_root_name
+        if legacy_skill_root.exists():
+            shutil.rmtree(legacy_skill_root)
+
     target_skill_root = target_repo_root / ".codex" / "skills" / "openprecedent-harnesshub-validation"
     if target_skill_root.exists():
         shutil.rmtree(target_skill_root)

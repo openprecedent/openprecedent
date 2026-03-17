@@ -358,6 +358,11 @@ A separate OpenPrecedent-maintained HarnessHub validation skill is also included
 
 That HarnessHub skill is maintained here in OpenPrecedent, then installed into a local HarnessHub workspace as a private `.codex/skills/` bundle so the study can keep one canonical skill source without making HarnessHub publicly depend on OpenPrecedent.
 
+The skill itself now carries both responsibilities:
+
+- it states that local HarnessHub issue-delivery sessions should use it together with `harness-issue-execution` or `harness-multi-issue-delivery`
+- it performs the OpenPrecedent availability probe and the lineage queries themselves
+
 To install or refresh it into a local HarnessHub checkout:
 
 ```bash

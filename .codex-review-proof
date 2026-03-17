@@ -1,0 +1,4 @@
+branch=codex/issue-233-harnesshub-workflow-composition
+head_sha=d2dd5afee9f19b3586b85926ae9466666a96ae89
+base_ref=upstream/main
+generated_at=2026-03-17T14:21:07Z
