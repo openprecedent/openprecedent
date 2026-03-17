@@ -22,6 +22,6 @@ Notable repository-local helper entrypoints:
 - `run-harnesshub-decision-lineage-workflow.sh` auto-syncs completed HarnessHub rounds into the shared runtime before calling the Rust CLI lineage brief surface
 - `run-harnesshub-matched-case-validation.sh` imports one prior HarnessHub round bundle, runs a later semantically related Rust CLI lineage query, and writes matched-case summary artifacts
 - `run-codex-live-validation.sh` runs the repository's Codex live validation harness against the Rust CLI
-- `install_harnesshub_skill.py` installs the OpenPrecedent-maintained private HarnessHub skill bundle into a local HarnessHub workspace, including the workflow-composition companion skill and the validation skill
+- `install_harnesshub_skill.py` installs the OpenPrecedent-maintained private HarnessHub validation skill into a local HarnessHub workspace
 - `triage_pr_checks.py` summarizes and classifies current PR check results for faster CI diagnosis
 - `install-collector-assets.sh` renders `systemd` / `cron` assets against the current repo path

@@ -16,31 +16,30 @@ The second-phase HarnessHub reliability study under `#220` found that later real
 
 ## Deliverable
 
-Strengthen the private HarnessHub skill installation so local issue-delivery sessions have an explicit composition surface that pulls `openprecedent-harnesshub-validation` into the default session workflow when it is installed, while still keeping OpenPrecedent private and optional.
+Strengthen the private HarnessHub validation skill itself so local issue-delivery sessions are more likely to keep it in the default session workflow when it is installed, while still keeping OpenPrecedent private and optional.
 
 ## Scope
 
-- add a private session-composition skill for local HarnessHub work
-- update the HarnessHub private skill installer to install the composition skill together with the validation skill
-- update repository docs to describe the installed private skill bundle accurately
+- strengthen the private HarnessHub validation skill metadata and session-entry instructions so one skill carries both the composition rule and the validation workflow
+- keep the HarnessHub private skill installer focused on that one validation skill
+- update repository docs to describe the strengthened single-skill integration accurately
 - record the local PM outcome for issue `#233`
 
 ## Acceptance Criteria
 
-- the OpenPrecedent-maintained HarnessHub private bundle contains a composition surface in addition to the validation skill
-- the composition surface clearly instructs local HarnessHub issue sessions to pair the validation skill with `harness-issue-execution` or `harness-multi-issue-delivery`
-- the installer refreshes both private skills into a local HarnessHub workspace
+- the OpenPrecedent-maintained HarnessHub validation skill itself clearly instructs local HarnessHub issue sessions to pair it with `harness-issue-execution` or `harness-multi-issue-delivery`
+- the validation skill carries both the session-composition guidance and the lineage-query workflow
+- the installer refreshes the strengthened validation skill into a local HarnessHub workspace
 - the change does not turn missing OpenPrecedent setup into a HarnessHub repository error
 
 ## Validation
 
 - run `./scripts/run-pytest.sh -q tests/test_harnesshub_skill_install_script.py`
 - run `./scripts/run-agent-preflight.sh`
-- refresh the private skill bundle into the local HarnessHub checkout and confirm both private skill roots are present
+- refresh the private validation skill into the local HarnessHub checkout and confirm the updated skill text is present
 
 ## Implementation Notes
 
-- prefer a private skill-bundle solution over modifying HarnessHub's public tracked workflow files
+- prefer a stronger one-skill private entry surface over splitting composition and validation into separate local skills
 - keep the fix targeted at session composition rather than adding a hard dependency to `issue-deliver`
-- implemented the fix as a second private skill, `openprecedent-harnesshub-composition`, installed alongside `openprecedent-harnesshub-validation`
-- verified the bundle by refreshing the local HarnessHub checkout and confirming both private skill roots exist
+- verified the strengthened skill by refreshing the local HarnessHub checkout and confirming the updated single-skill instructions were installed

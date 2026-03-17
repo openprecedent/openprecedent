@@ -1,25 +1,29 @@
 ---
 name: openprecedent-harnesshub-validation
-description: Use for HarnessHub development so local decision lineage and precedent reuse are consulted by default without making the repository appear to depend on OpenPrecedent.
+description: Use for normal issue-scoped or multi-issue local HarnessHub development so OpenPrecedent lineage is consulted by default alongside HarnessHub workflow skills when the private local setup is available, without making HarnessHub appear to depend on OpenPrecedent.
 user-invocable: false
 ---
 
 # OpenPrecedent HarnessHub Validation
 
-Use this skill inside `/workspace/02-projects/active/HarnessHub` for local HarnessHub development.
+Use this skill inside `/workspace/02-projects/active/HarnessHub` for normal local HarnessHub delivery work.
 
 This is a private validation layer for development sessions that already have local access to OpenPrecedent.
 It should improve decision continuity, but it must not make HarnessHub look publicly coupled to OpenPrecedent.
 
-## Composition
+## Default Session Use
 
-Use this skill together with HarnessHub's main issue-execution workflow.
+Treat this skill as the default OpenPrecedent companion for local HarnessHub delivery sessions.
 
-- For normal single-issue work, compose it with `harness-issue-execution`.
-- For multi-issue delivery sessions, compose it with `harness-multi-issue-delivery`.
+- For normal single-issue work, use it together with `harness-issue-execution`.
+- For multi-issue delivery sessions, use it together with `harness-multi-issue-delivery`.
 
 This skill handles semantic lineage retrieval.
 HarnessHub's own workflow skills still handle branch, task, review, preflight, PR, and merge sequencing.
+
+At session start, first decide whether this private skill is available locally.
+If it is available, keep it in the active session workflow rather than treating it as an optional afterthought.
+If it is not available, continue normal HarnessHub development without redefining the repository's public workflow.
 
 ## Step 0: Probe Availability
 
@@ -44,6 +48,11 @@ If that probe fails:
 - treat OpenPrecedent as unavailable for this session
 - continue normal HarnessHub development without lineage retrieval
 - do not treat the missing local setup as a HarnessHub repository error
+
+If that probe succeeds:
+
+- keep this skill active for the rest of the current delivery session
+- run the minimum lineage flow below at the intended stages
 
 ## Minimum Default Flow
 
