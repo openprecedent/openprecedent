@@ -19,6 +19,14 @@ The goal is to classify later rounds as positive, negative, or ambiguous evidenc
 
 ## Entries
 
+- Timestamp: 2026-03-18, observed from merged issues `#98`, `#99`, and `#102`
+- HarnessHub issue: `#98` Validate published `0.1.0-rc.1` from a fresh external-user install path; `#99` Define the `0.1.0` GA go/no-go gate after `0.1.0-rc.1`; `#102` Prepare the final HarnessHub `0.1.0` GA release
+- Development step: complete a contiguous post-RC release sequence that validated the published RC, wrote the GA go/no-go gate, decided to proceed, and then closed the final GA publication flow through merged PRs `#100`, `#101`, and `#103`
+- Query reasons observed: repeated `initial_planning`, repeated `before_file_write`, and `after_failure` on both `#98` and `#102`
+- Runtime evidence: `~/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl` contains a dense series of new `2026-03-18` HarnessHub records at `06:25:39Z`, `06:26:56Z`, `06:32:43Z`, `06:33:45Z`, `06:34:39Z`, `08:51:10Z`, `08:52:22Z`, `09:04:51Z`, `09:13:22Z`, `09:15:29Z`, `09:18:26Z`, `09:20:16Z`, `09:21:01Z`, and `09:28:09Z`; these cover release follow-up planning waves, issue `#98` external-user validation, issue `#99` gate definition, issue `#97` release-decision planning, and issue `#102` final GA execution; the records repeatedly return non-empty `matched_case_ids` grounded in prior release-checklist, release-candidate, CLI-validation, repository-governance, validation-baseline, and documentation-alignment cases
+- Interpretation: this is the strongest positive evidence in the second-phase study so far because the current local private-entry setup did not just restore isolated invocation on one issue; it remained active across a whole release sequence with multiple planning waves, multiple write-time narrowing steps, and repeated `after_failure` recovery lookups on real operator-facing release work
+- Reliability effect: materially upgrades the current reliability assessment from "recovered but still fragile" to "showing sustained positive signals under the present local activation mechanism"; the study should still avoid claiming that the repository-side skill text alone is sufficient, but it can now say that the combined local setup is repeatedly supporting real HarnessHub work rather than producing one-off success
+
 - Timestamp: 2026-03-18, observed from merged issue `#95`
 - HarnessHub issue: `#95` Run release gate and publish HarnessHub `v0.1.0-rc.1`
 - Development step: complete the release-candidate closeout round through merged PR `#96`, including release-gate execution, a fresh-operator validation pass, a release runbook, and release-note finalization
