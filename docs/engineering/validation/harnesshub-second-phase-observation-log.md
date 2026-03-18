@@ -19,6 +19,14 @@ The goal is to classify later rounds as positive, negative, or ambiguous evidenc
 
 ## Entries
 
+- Timestamp: 2026-03-18, observed from merged issue `#95`
+- HarnessHub issue: `#95` Run release gate and publish HarnessHub `v0.1.0-rc.1`
+- Development step: complete the release-candidate closeout round through merged PR `#96`, including release-gate execution, a fresh-operator validation pass, a release runbook, and release-note finalization
+- Query reasons observed: `initial_planning`, `before_file_write`, and `after_failure`
+- Runtime evidence: `~/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl` now contains new HarnessHub records at `2026-03-18T02:00:35.337593875Z`, `2026-03-18T02:03:00.729168447Z`, and `2026-03-18T02:06:55.611987971Z`; those records cover release planning, write-time narrowing for the `#95` implementation surface, and an `after_failure` recovery step for a broken fresh-operator validation path; all three records return non-empty `matched_case_ids` grounded in prior HarnessHub release-checklist, release-candidate, CLI-validation, guardrail, and documentation-alignment cases
+- Interpretation: this is stronger positive evidence than the `#89/#93` round because the current local activation path did not only restore `initial_planning` and `before_file_write`; it also produced an `after_failure` invocation during a real release-execution problem, showing that the current local hidden-entry mechanism plus the Rust-CLI-based private skill can support planning, implementation narrowing, and recovery guidance within one end-to-end round
+- Reliability effect: materially strengthens the second-phase reliability picture by showing a full three-stage trigger pattern on a consequential release round; however, the evidence should still be interpreted as validating the current local private-entry setup rather than proving that the repository-side skill text alone is sufficient for stable loading
+
 - Timestamp: 2026-03-17, observed from issue `#89` and follow-up issue `#93`
 - HarnessHub issue: `#89` Unify repository versioning on `0.1.0-rc.1`; `#93` Tighten unreleased RC wording after issue `#89` without changing repository version strings
 - Development step: complete issue `#89` through merged PR `#92`, then open and merge follow-up PR `#94` for issue `#93`

@@ -1,4 +1,4 @@
-branch=codex/issue-233-harnesshub-workflow-composition
-head_sha=d2dd5afee9f19b3586b85926ae9466666a96ae89
+branch=codex/issue-220-harnesshub-phase-two-rounds
+head_sha=6f6bef5287a6fe1660c8b9245d23398b70c87fd0
 base_ref=upstream/main
-generated_at=2026-03-17T14:21:07Z
+generated_at=2026-03-18T02:37:16Z
