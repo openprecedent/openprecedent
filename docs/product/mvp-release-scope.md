@@ -77,3 +77,7 @@ They do not mean the MVP core loop is unfinished.
 ## Release Gate Implication
 
 When later release-readiness issues define coverage and checklist gates, they should measure the MVP release baseline against this scope rather than against every repository-local support surface.
+
+For the concrete release-blocking checklist, see:
+
+- [mvp-release-validation-checklist.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-validation-checklist.md)

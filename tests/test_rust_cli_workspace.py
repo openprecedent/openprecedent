@@ -79,7 +79,6 @@ def test_coverage_workflow_reports_python_and_rust_coverage() -> None:
     assert "coverage/coverage-summary.md" in coverage_workflow
     assert "coverage-report" in coverage_workflow
 
-
 def test_readme_and_usage_guide_point_to_mvp_quickstart() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     usage_guide = (ROOT / "docs" / "engineering" / "cli" / "using-openprecedent.md").read_text(
@@ -90,3 +89,21 @@ def test_readme_and_usage_guide_point_to_mvp_quickstart() -> None:
     assert quickstart.exists()
     assert "docs/engineering/cli/mvp-quickstart.md" in readme
     assert "mvp-quickstart.md" in usage_guide
+
+
+def test_release_docs_link_quickstart_scope_and_validation_checklist() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    release_scope = (ROOT / "docs" / "product" / "mvp-release-scope.md").read_text(encoding="utf-8")
+    validation_checklist = (
+        ROOT / "docs" / "product" / "mvp-release-validation-checklist.md"
+    ).read_text(encoding="utf-8")
+    tooling_setup = (ROOT / "docs" / "engineering" / "runtime" / "tooling-setup.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "docs/engineering/cli/mvp-quickstart.md" in readme
+    assert "docs/product/mvp-release-validation-checklist.md" in readme
+    assert "mvp-release-validation-checklist.md" in release_scope
+    assert "docs/engineering/cli/mvp-quickstart.md" in validation_checklist
+    assert "scripts/check_mvp_coverage_gate.py" in validation_checklist
+    assert "mvp-release-validation-checklist.md" in tooling_setup

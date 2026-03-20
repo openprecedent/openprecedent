@@ -3,7 +3,7 @@ type: task
 epic: mvp-release-closeout
 slug: codify-mvp-release-validation-checklist
 title: Codify the MVP release validation checklist
-status: backlog
+status: done
 task_type: docs
 labels: documentation,test
 issue: 251
