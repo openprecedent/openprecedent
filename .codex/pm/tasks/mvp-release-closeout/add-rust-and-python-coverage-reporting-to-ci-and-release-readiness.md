@@ -3,7 +3,7 @@ type: task
 epic: mvp-release-closeout
 slug: add-rust-and-python-coverage-reporting-to-ci-and-release-readiness
 title: Add Rust and Python coverage reporting to CI and release readiness
-status: backlog
+status: done
 task_type: implementation
 labels: test
 issue: 246

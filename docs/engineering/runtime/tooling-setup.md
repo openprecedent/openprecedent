@@ -6,10 +6,12 @@ The repository already includes:
 
 - `markdownlint` GitHub Actions workflow for Markdown review
 - `python-ci` GitHub Actions workflow for dependency install and tests
+- `coverage` GitHub Actions workflow for Python and Rust coverage summaries plus uploaded reports
 - `feishu-pr-notify` GitHub Actions workflow for pull request review notifications
 - a local Git pre-push hook that requires a Codex review note
 - `scripts/run-codex-review-checkpoint.sh` as the preferred local checkpoint for invoking native Codex `/review`
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
+- `scripts/run-coverage.sh` for repository-local Python and Rust coverage generation plus a combined markdown summary
 - `scripts/run-pytest.sh` for repository-local pytest resolution before falling back to global commands
 - `scripts/run-codex-session-start.sh` for restoring branch, issue, task, issue-state, and PR context at the start of a Codex session
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
@@ -113,6 +115,28 @@ For direct local test runs, prefer:
 
 The wrapper resolves `OPENPRECEDENT_PYTHON_BIN`, repository-local `.venv` entrypoints, and only then falls back to global Python or `pytest` binaries.
 Do not treat a missing global `pytest` as a blocker until that local resolution path has been exhausted.
+
+## Coverage Reporting
+
+For a local MVP release-readiness coverage pass, run:
+
+```bash
+./scripts/run-coverage.sh
+```
+
+That command writes standard coverage outputs under `coverage/`, including:
+
+- `coverage/python/coverage.json`
+- `coverage/python/coverage.xml`
+- `coverage/python/html/`
+- `coverage/rust/coverage-summary.json`
+- `coverage/rust/lcov.info`
+- `coverage/rust/html/`
+- `coverage/coverage-summary.md`
+
+On GitHub, `.github/workflows/coverage.yml` runs the same coverage flow, publishes the markdown summary into the workflow run, uploads the `coverage/` directory as the `coverage-report` artifact, and updates a sticky pull-request comment when possible.
+
+Use that workflow output as the standard source of truth for MVP release readiness. The explicit 90 percent release gate is tracked separately in issue `#243`.
 
 Set `OPENPRECEDENT_PREFLIGHT_RUN_E2E=1` if you also want the standard E2E path included in the same pass.
 Set `OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE=1` if you want preflight to fail until the issue state document exists.

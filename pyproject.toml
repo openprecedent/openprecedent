@@ -19,8 +19,10 @@ openprecedent-pm = "openprecedent.codex_pm:run"
 
 [dependency-groups]
 dev = [
+  "coverage[toml]>=7.11.0,<8.0.0",
   "httpx>=0.28.0,<1.0.0",
   "pytest>=8.4.0,<9.0.0",
+  "pytest-cov>=7.0.0,<8.0.0",
 ]
 
 [build-system]
@@ -30,3 +32,11 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/openprecedent"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
