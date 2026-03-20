@@ -43,6 +43,7 @@ Produce a research framing document that defines an explicit miss-classification
 ## Implementation Notes
 
 Potential questions to answer later:
+
 - where should miss classification be recorded: runtime log, issue closeout, or both
 - whether explicit non-invocation should be represented per round or per stage
 - how to avoid turning every intentional skip into noisy bookkeeping

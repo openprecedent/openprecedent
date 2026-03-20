@@ -44,6 +44,7 @@ Produce a research framing document that defines how OpenPrecedent should explic
 ## Implementation Notes
 
 Potential questions to answer later:
+
 - should adoption be recorded at the level of retrieved cases or individual constraints/cautions
 - should the runtime store explicit "adopted / ignored / rejected" markers or infer them from closeout summaries
 - how should adoption tracking interact with future contamination-control work

@@ -13,6 +13,7 @@ state_path: .codex/pm/issue-state/237-study-lightweight-closeout-capture-for-pre
 ## Context
 
 `#220` established that the existing three-stage model already helps real work:
+
 - `initial_planning`
 - `before_file_write`
 - `after_failure`
@@ -46,6 +47,7 @@ Produce a research framing document that defines a lightweight closeout-capture 
 ## Implementation Notes
 
 Potential questions to answer later:
+
 - should closeout capture live in issue-state, runtime artifacts, or a separate archive layer
 - how to distinguish newly validated precedent from merely re-observed precedent
 - how to summarize noisy retrieval without overburdening everyday development rounds
