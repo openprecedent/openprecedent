@@ -1,4 +1,4 @@
 branch=codex/issue-244-frame-mvp-release-closeout
-head_sha=6868e9f214a580a81359931f85bebad36f5d0b52
+head_sha=241e46a6de6e5ca9e659c5ac383adc252268ac7e
 base_ref=upstream/main
-generated_at=2026-03-20T08:10:04Z
+generated_at=2026-03-20T08:11:30Z
