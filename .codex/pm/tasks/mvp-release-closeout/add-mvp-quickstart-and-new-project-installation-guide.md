@@ -3,7 +3,7 @@ type: task
 epic: mvp-release-closeout
 slug: add-mvp-quickstart-and-new-project-installation-guide
 title: Add MVP quickstart and new-project installation guide
-status: backlog
+status: done
 task_type: docs
 labels: documentation
 issue: 248

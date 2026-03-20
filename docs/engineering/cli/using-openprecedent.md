@@ -4,6 +4,10 @@
 
 This guide explains how to use the current OpenPrecedent `0.1.0` MVP release in practice.
 
+If you are starting from a new local project and want the shortest supported path first, begin with:
+
+- [mvp-quickstart.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/mvp-quickstart.md)
+
 For the release-facing scope and positioning of that MVP, see:
 
 - [mvp-release-scope.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-scope.md)
