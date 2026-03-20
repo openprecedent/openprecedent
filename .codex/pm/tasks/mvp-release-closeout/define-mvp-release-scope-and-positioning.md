@@ -3,7 +3,7 @@ type: task
 epic: mvp-release-closeout
 slug: define-mvp-release-scope-and-positioning
 title: Define the MVP release scope and positioning
-status: backlog
+status: done
 task_type: docs
 labels: documentation
 issue: 245

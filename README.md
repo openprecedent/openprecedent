@@ -6,6 +6,8 @@ Open decision replay and precedent layer for agents.
 
 OpenPrecedent is an open-source project for capturing agent execution history, extracting key decisions, replaying why those decisions happened, and turning past cases into reusable precedent.
 
+The current published MVP should be read as a local-first, research-oriented, developer-facing baseline rather than as a hosted platform or a finished enterprise product.
+
 The first target runtime is a local single-agent workflow such as OpenClaw. The initial product loop is:
 
 1. Capture a case
@@ -60,9 +62,14 @@ The repository now includes:
 - collected-session evaluation/reporting
 - operational `systemd` and `cron` templates plus installer script for collector scheduling
 
+For the current release-facing scope and positioning, see:
+
+- [docs/product/mvp-release-scope.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-scope.md)
+
 ## How To Use It
 
 - usage guide for humans and agents: [docs/engineering/cli/using-openprecedent.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/using-openprecedent.md)
+- MVP release scope and positioning: [docs/product/mvp-release-scope.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-scope.md)
 - runtime decision-lineage validation baseline: [docs/engineering/validation/openclaw-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-runtime-decision-lineage-validation.md)
 - real OpenClaw runtime decision-lineage validation: [docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md)
 - Codex runtime research boundary: [docs/engineering/runtime/codex-runtime-boundary.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/codex-runtime-boundary.md)
