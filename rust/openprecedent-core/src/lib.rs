@@ -366,3 +366,111 @@ fn parse_bool(value: &str) -> Result<bool, BootstrapError> {
         other => Err(BootstrapError::InvalidBool(other.to_string())),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn unique_temp_dir() -> PathBuf {
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("current time")
+            .as_nanos();
+        std::env::temp_dir().join(format!("openprecedent-core-tests-{stamp}"))
+    }
+
+    #[test]
+    fn not_implemented_uses_cli_binary_name() {
+        let error = not_implemented(&["capture", "openclaw"]);
+        assert_eq!(
+            error.to_string(),
+            "command execution is not implemented yet for openprecedent capture openclaw"
+        );
+    }
+
+    #[test]
+    fn parse_helpers_accept_expected_values() {
+        assert_eq!(parse_output_format("json").expect("json format"), OutputFormat::Json);
+        assert_eq!(parse_output_format("text").expect("text format"), OutputFormat::Text);
+        assert!(parse_output_format("yaml").is_err());
+
+        assert!(parse_bool("yes").expect("bool yes"));
+        assert!(!parse_bool("off").expect("bool off"));
+        assert!(parse_bool("maybe").is_err());
+    }
+
+    #[test]
+    fn normalize_path_expands_home_and_relative_inputs() {
+        let home = unique_temp_dir();
+        fs::create_dir_all(&home).expect("create home");
+        std::env::set_var("HOME", &home);
+
+        let expanded = normalize_path(Path::new("~/runtime"), None).expect("expand home");
+        assert_eq!(expanded, home.join("runtime"));
+
+        let base = home.join("config");
+        fs::create_dir_all(&base).expect("create config base");
+        let relative = normalize_path(Path::new("runtime/db.sqlite"), Some(&base))
+            .expect("resolve relative path");
+        assert_eq!(relative, base.join("runtime/db.sqlite"));
+    }
+
+    #[test]
+    fn resolve_runtime_config_uses_flag_then_env_then_default() {
+        let home = unique_temp_dir();
+        fs::create_dir_all(&home).expect("create home");
+        std::env::set_var("HOME", &home);
+        std::env::remove_var(HOME_ENV_VAR);
+        std::env::remove_var(DB_ENV_VAR);
+        std::env::remove_var(RUNTIME_INVOCATION_LOG_ENV_VAR);
+        std::env::remove_var(COLLECTOR_STATE_ENV_VAR);
+        std::env::remove_var(FORMAT_ENV_VAR);
+        std::env::remove_var(NO_COLOR_ENV_VAR);
+
+        let default_config = resolve_runtime_config(&CliConfigOverrides {
+            format: None,
+            no_color: false,
+            home: None,
+            db: None,
+            invocation_log: None,
+            state_file: None,
+            config: None,
+        })
+        .expect("default config");
+        assert_eq!(default_config.format.value, OutputFormat::Text);
+        assert_eq!(default_config.home.path, home.join(".openprecedent").join("runtime"));
+
+        std::env::set_var(FORMAT_ENV_VAR, "json");
+        std::env::set_var(NO_COLOR_ENV_VAR, "true");
+        std::env::set_var(DB_ENV_VAR, home.join("env.db"));
+        let env_config = resolve_runtime_config(&CliConfigOverrides {
+            format: None,
+            no_color: false,
+            home: None,
+            db: None,
+            invocation_log: None,
+            state_file: None,
+            config: None,
+        })
+        .expect("env config");
+        assert_eq!(env_config.format.value, OutputFormat::Json);
+        assert!(env_config.no_color.value);
+        assert_eq!(env_config.db.path, home.join("env.db"));
+
+        let flag_config = resolve_runtime_config(&CliConfigOverrides {
+            format: Some(OutputFormat::Text),
+            no_color: true,
+            home: Some(home.join("flag-home")),
+            db: Some(home.join("flag.db")),
+            invocation_log: Some(home.join("flag.jsonl")),
+            state_file: Some(home.join("flag-state.json")),
+            config: None,
+        })
+        .expect("flag config");
+        assert_eq!(flag_config.format.source, ConfigSource::Flag);
+        assert!(flag_config.no_color.value);
+        assert_eq!(flag_config.home.path, home.join("flag-home"));
+        assert_eq!(flag_config.db.path, home.join("flag.db"));
+    }
+}

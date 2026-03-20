@@ -121,6 +121,75 @@ async def test_duplicate_case_returns_conflict(db_path) -> None:
         assert duplicate.status_code == 409
 
 
+@pytest.mark.anyio
+async def test_list_and_get_case_routes_cover_success_and_not_found(db_path) -> None:
+    async with await _client() as client:
+        created = await client.post(
+            "/cases",
+            json={"case_id": "case_lookup", "title": "Lookup case", "user_id": "u1", "agent_id": "openclaw"},
+        )
+        assert created.status_code == 201
+
+        listed = await client.get("/cases")
+        assert listed.status_code == 200
+        listed_body = listed.json()
+        assert len(listed_body) == 1
+        assert listed_body[0]["case_id"] == "case_lookup"
+
+        existing = await client.get("/cases/case_lookup")
+        assert existing.status_code == 200
+        assert existing.json()["title"] == "Lookup case"
+
+        missing = await client.get("/cases/missing-case")
+        assert missing.status_code == 404
+        assert missing.json()["detail"] == "case not found"
+
+
+@pytest.mark.anyio
+async def test_event_decision_replay_and_precedent_routes_report_missing_case(db_path) -> None:
+    async with await _client() as client:
+        append_missing = await client.post(
+            "/cases/missing-case/events",
+            json={"event_type": "message.user", "actor": "user", "payload": {"message": "missing"}},
+        )
+        assert append_missing.status_code == 404
+
+        replay_missing = await client.get("/cases/missing-case/replay")
+        assert replay_missing.status_code == 404
+
+        extract_missing = await client.post("/cases/missing-case/extract-decisions")
+        assert extract_missing.status_code == 404
+
+        decisions_missing = await client.get("/cases/missing-case/decisions")
+        assert decisions_missing.status_code == 404
+
+        precedents_missing = await client.get("/cases/missing-case/precedents")
+        assert precedents_missing.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_append_event_route_reports_duplicate_event_conflict(db_path) -> None:
+    async with await _client() as client:
+        created = await client.post(
+            "/cases",
+            json={"case_id": "case_duplicate_event", "title": "Duplicate event case"},
+        )
+        assert created.status_code == 201
+
+        payload = {
+            "event_id": "evt_duplicate",
+            "event_type": "message.user",
+            "actor": "user",
+            "payload": {"message": "hello"},
+        }
+        first = await client.post("/cases/case_duplicate_event/events", json=payload)
+        assert first.status_code == 201
+
+        duplicate = await client.post("/cases/case_duplicate_event/events", json=payload)
+        assert duplicate.status_code == 409
+        assert "event conflict for case case_duplicate_event" in duplicate.json()["detail"]
+
+
 def test_service_imports_openclaw_runtime_trace(db_path) -> None:
     service = OpenPrecedentService.from_path(get_db_path())
     fixture_path = Path(__file__).parent / "fixtures" / "openclaw_trace.jsonl"

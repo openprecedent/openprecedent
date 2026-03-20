@@ -129,3 +129,38 @@ pub struct VersionReport {
     pub version: &'static str,
     pub contract_phase: &'static str,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn output_format_display_matches_public_contract() {
+        assert_eq!(OutputFormat::Json.to_string(), "json");
+        assert_eq!(OutputFormat::Text.to_string(), "text");
+    }
+
+    #[test]
+    fn public_contract_constants_match_expected_names() {
+        assert_eq!(CLI_BINARY_NAME, "openprecedent");
+        assert_eq!(DEFAULT_DB_NAME, "openprecedent.db");
+        assert_eq!(
+            DEFAULT_RUNTIME_INVOCATION_LOG_NAME,
+            "openprecedent-runtime-invocations.jsonl"
+        );
+    }
+
+    #[test]
+    fn version_report_serializes_with_release_fields() {
+        let report = VersionReport {
+            name: CLI_BINARY_NAME,
+            version: "0.1.0",
+            contract_phase: CONTRACT_PHASE,
+        };
+
+        let payload = serde_json::to_value(report).expect("serialize version report");
+        assert_eq!(payload["name"], "openprecedent");
+        assert_eq!(payload["version"], "0.1.0");
+        assert_eq!(payload["contract_phase"], CONTRACT_PHASE);
+    }
+}

@@ -96,3 +96,121 @@ def test_render_coverage_summary_fails_when_a_summary_is_missing(tmp_path: Path)
 
     assert result.returncode == 1
     assert "Coverage summary not found:" in result.stderr
+
+
+def test_check_mvp_coverage_gate_accepts_release_surface_threshold(tmp_path: Path) -> None:
+    python_summary = tmp_path / "python-coverage.json"
+    rust_summary = tmp_path / "rust-coverage-summary.json"
+
+    python_summary.write_text(
+        json.dumps(
+            {
+                "files": {
+                    "src/openprecedent/services.py": {
+                        "summary": {"covered_lines": 900, "num_statements": 1000}
+                    },
+                    "src/openprecedent/config.py": {
+                        "summary": {"covered_lines": 45, "num_statements": 45}
+                    },
+                    "src/openprecedent/codex_pm.py": {
+                        "summary": {"covered_lines": 0, "num_statements": 1000}
+                    },
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    rust_summary.write_text(
+        json.dumps(
+            {
+                "data": [
+                    {
+                        "files": [
+                            {
+                                "filename": str(
+                                    (ROOT / "rust" / "openprecedent-core" / "src" / "lib.rs").resolve()
+                                ),
+                                "summary": {"lines": {"covered": 91, "count": 100}},
+                            },
+                            {
+                                "filename": str(
+                                    (ROOT / "rust" / "openprecedent-cli" / "src" / "main.rs").resolve()
+                                ),
+                                "summary": {"lines": {"covered": 0, "count": 1000}},
+                            },
+                        ]
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/check_mvp_coverage_gate.py",
+            str(python_summary),
+            str(rust_summary),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "PASS: MVP release coverage gate satisfied." in result.stdout
+
+
+def test_check_mvp_coverage_gate_reports_release_surface_failure(tmp_path: Path) -> None:
+    python_summary = tmp_path / "python-coverage.json"
+    rust_summary = tmp_path / "rust-coverage-summary.json"
+
+    python_summary.write_text(
+        json.dumps(
+            {
+                "files": {
+                    "src/openprecedent/services.py": {
+                        "summary": {"covered_lines": 89, "num_statements": 100}
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    rust_summary.write_text(
+        json.dumps(
+            {
+                "data": [
+                    {
+                        "files": [
+                            {
+                                "filename": str(
+                                    (ROOT / "rust" / "openprecedent-core" / "src" / "lib.rs").resolve()
+                                ),
+                                "summary": {"lines": {"covered": 90, "count": 100}},
+                            }
+                        ]
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/check_mvp_coverage_gate.py",
+            str(python_summary),
+            str(rust_summary),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "Python MVP release surface is below threshold" in result.stderr

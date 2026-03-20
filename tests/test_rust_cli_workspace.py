@@ -75,5 +75,6 @@ def test_coverage_workflow_reports_python_and_rust_coverage() -> None:
     assert "name: coverage" in coverage_workflow
     assert "taiki-e/install-action@cargo-llvm-cov" in coverage_workflow
     assert "./scripts/run-coverage.sh" in coverage_workflow
+    assert "scripts/check_mvp_coverage_gate.py" in coverage_workflow
     assert "coverage/coverage-summary.md" in coverage_workflow
     assert "coverage-report" in coverage_workflow
