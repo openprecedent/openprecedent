@@ -1,0 +1,27 @@
+{
+  "study": "harnesshub",
+  "stamp": "2026-03-20T043601Z",
+  "created_at": "2026-03-20T04:36:01.069267+00:00",
+  "source": {
+    "runtime_home": "/root/.openprecedent/runtime",
+    "invocation_log": "/root/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl"
+  },
+  "filters": {
+    "query_terms": [
+      "harnesshub"
+    ],
+    "limit": 200
+  },
+  "sanitization": {
+    "repo_roots": [
+      "/workspace/02-projects/active/HarnessHub"
+    ],
+    "session_id": "redacted",
+    "known_files": "repo-relative when possible"
+  },
+  "counts": {
+    "total_invocations_seen": 79,
+    "matching_invocations": 41,
+    "archived_invocations": 41
+  }
+}

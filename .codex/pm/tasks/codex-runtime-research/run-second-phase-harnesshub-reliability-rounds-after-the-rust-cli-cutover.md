@@ -47,4 +47,5 @@ Execute the phase-two HarnessHub research rounds, archive their sanitized eviden
 - `docs/engineering/validation/harnesshub-second-phase-reliability-plan.md`
 - `docs/engineering/validation/harnesshub-second-phase-observation-log.md`
 - `docs/engineering/validation/harnesshub-second-phase-reliability-closeout.md`
+- `research-artifacts/harnesshub/2026-03-20T043601Z/`
 - `research-artifacts/harnesshub/`

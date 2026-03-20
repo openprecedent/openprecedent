@@ -30,6 +30,7 @@ It determined that the current local private-entry setup repeatedly supports use
 - With that implementation-wave evidence in place, the main `#220` question has been answered positively: the current local private-entry setup now shows repeated useful invocation across release, governance, PRD, and implementation work rather than only a narrow release corridor
 - The `#106` worked example now demonstrates the full decision-influence chain in concrete terms: original task framing, retrieved historical cases, and a narrowing effect on later implementation and validation choices
 - The current three-stage evaluation is now stable enough to summarize: `initial_planning` is effective for task framing, `before_file_write` is currently the strongest stage for implementation narrowing, and `after_failure` is less frequent but already validated on real recovery loops
+- A final sanitized second-phase archive snapshot now exists at `research-artifacts/harnesshub/2026-03-20T043601Z/`, containing 41 HarnessHub invocation records through the current closeout boundary and covering all three query reasons: `initial_planning`, `before_file_write`, and `after_failure`
 
 ## Open Questions
 
@@ -47,4 +48,5 @@ It determined that the current local private-entry setup repeatedly supports use
 - `docs/engineering/validation/harnesshub-second-phase-reliability-plan.md`
 - `docs/engineering/validation/harnesshub-second-phase-observation-log.md`
 - `docs/engineering/validation/harnesshub-second-phase-reliability-closeout.md`
+- `research-artifacts/harnesshub/2026-03-20T043601Z/`
 - `research-artifacts/harnesshub/`

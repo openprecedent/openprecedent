@@ -73,3 +73,4 @@ They are tracked as follow-up research:
 - `docs/engineering/validation/harnesshub-second-phase-reliability-plan.md`
 - `docs/engineering/validation/harnesshub-second-phase-observation-log.md`
 - `docs/engineering/validation/harnesshub-second-phase-reliability-closeout.md`
+- `research-artifacts/harnesshub/2026-03-20T043601Z/`
