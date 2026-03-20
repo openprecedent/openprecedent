@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This guide explains how to use the current OpenPrecedent MVP in practice.
+This guide explains how to use the current OpenPrecedent `0.1.0` MVP release in practice.
 
 For the release-facing scope and positioning of that MVP, see:
 
@@ -18,8 +18,8 @@ It is written for two audiences:
 - humans who want to run the current local workflow themselves
 - agent developers who want to connect a local agent workflow to OpenPrecedent
 
-This is a usage guide for the shipped MVP, not a future platform manual.
-It assumes the MVP release is a local-first, research-oriented, developer-facing baseline.
+This is a usage guide for the shipped `0.1.0` MVP release, not a future platform manual.
+It assumes the current release is a local-first, research-oriented, developer-facing baseline.
 
 ## What OpenPrecedent Is Today
 
@@ -32,7 +32,7 @@ OpenPrecedent is currently a local-first decision replay and precedent layer wit
 - rule-based decision extraction
 - replay, explanation, and precedent lookup over stored case history
 
-The current MVP is strongest in one environment:
+The current `0.1.0` MVP release is strongest in one environment:
 
 - a local single-agent workflow
 - OpenClaw as the first integrated runtime

@@ -3,7 +3,7 @@ type: task
 epic: mvp-release-closeout
 slug: unify-mvp-versioning-and-release-wording
 title: Unify MVP versioning and release wording
-status: backlog
+status: in_progress
 task_type: docs
 labels: documentation
 issue: 249

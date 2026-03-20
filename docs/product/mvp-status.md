@@ -2,7 +2,7 @@
 
 ## Status
 
-As of `2026-03-10`, OpenPrecedent `MVP v1` is complete.
+As of `2026-03-10`, OpenPrecedent `0.1.0` MVP release is complete.
 
 The core loop is no longer just specified in design docs. It is implemented and validated in the repository's local OpenClaw-first runtime path.
 

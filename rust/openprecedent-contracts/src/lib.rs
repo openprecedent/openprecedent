@@ -28,7 +28,7 @@ pub use precedent::Precedent;
 pub use replay::ReplayResponse;
 
 pub const CLI_BINARY_NAME: &str = "openprecedent";
-pub const CONTRACT_PHASE: &str = "bootstrap";
+pub const CONTRACT_PHASE: &str = "mvp";
 pub const DEFAULT_DB_NAME: &str = "openprecedent.db";
 pub const DEFAULT_COLLECTOR_STATE_NAME: &str = "openprecedent-collector-state.json";
 pub const DEFAULT_RUNTIME_INVOCATION_LOG_NAME: &str = "openprecedent-runtime-invocations.jsonl";

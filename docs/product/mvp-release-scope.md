@@ -4,7 +4,7 @@
 
 ## Release Positioning
 
-OpenPrecedent `MVP v1` should be understood as a:
+OpenPrecedent `0.1.0` MVP release should be understood as a:
 
 - local-first release
 - research-oriented release

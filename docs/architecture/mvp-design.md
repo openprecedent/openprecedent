@@ -1,11 +1,11 @@
-# OpenPrecedent MVP v1 Architecture
+# OpenPrecedent 0.1.0 MVP Architecture
 
-Chinese version: [中文版本 / MVP v1 架构文档](/workspace/02-projects/incubation/openprecedent/docs/zh/architecture/mvp-design.md)
+Chinese version: [中文版本 / 0.1.0 MVP 架构文档](/workspace/02-projects/incubation/openprecedent/docs/zh/architecture/mvp-design.md)
 Status summary: [MVP status note](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
 
 ## Purpose
 
-This document describes the architecture that is actually shipped in MVP v1 as of 2026-03-10.
+This document describes the architecture that is actually shipped in the OpenPrecedent `0.1.0` MVP release as of 2026-03-10.
 
 It is intentionally implementation-grounded:
 
@@ -58,9 +58,9 @@ The first semantic decision taxonomy is:
 This taxonomy is the contract for follow-on implementation work.
 If the shipped extractor still exposes older operational labels, treat that as transitional implementation behavior rather than the target decision model.
 
-## What MVP v1 Does
+## What The 0.1.0 MVP Release Does
 
-OpenPrecedent MVP v1 can:
+OpenPrecedent `0.1.0` MVP release can:
 
 1. capture a case and ordered event timeline
 2. import OpenClaw runtime traces and OpenClaw session transcripts
@@ -71,9 +71,9 @@ OpenPrecedent MVP v1 can:
 7. evaluate curated fixtures and collected OpenClaw sessions
 8. surface runtime decision-lineage briefs for OpenClaw task planning against shared prior history
 
-## What MVP v1 Is Not
+## What The 0.1.0 MVP Release Is Not
 
-MVP v1 does not include:
+The `0.1.0` MVP release does not include:
 
 - a multi-tenant hosted service
 - a live runtime hook inside OpenClaw internals
@@ -95,7 +95,7 @@ The shipped system has four operational layers:
 @startuml
 skinparam componentStyle rectangle
 skinparam shadowing false
-title OpenPrecedent MVP v1 System Context
+title OpenPrecedent 0.1.0 MVP System Context
 
 actor User
 node "OpenClaw Local Runtime" as OpenClaw
@@ -133,7 +133,7 @@ The core MVP loop is import first, then derive, then replay and retrieve:
 ```plantuml
 @startuml
 skinparam shadowing false
-title OpenPrecedent MVP v1 End-to-End Flow
+title OpenPrecedent 0.1.0 MVP End-to-End Flow
 
 actor User
 participant "openprecedent CLI" as CLI
@@ -167,7 +167,7 @@ CLI <-- Service : ranked precedents
 
 ## Capability Boundary
 
-This flowchart shows the exact MVP v1 capability boundary.
+This flowchart shows the exact `0.1.0` MVP capability boundary.
 
 ```mermaid
 flowchart TD
@@ -179,7 +179,7 @@ flowchart TD
     D --> G[Fingerprint-based precedent retrieval]
     D --> H[Fixture and collected-session evaluation]
 
-    X[Not in MVP v1] -.-> X1[Hosted multi-user platform]
+    X[Not in 0.1.0 MVP] -.-> X1[Hosted multi-user platform]
     X -.-> X2[Graph database backend]
     X -.-> X3[Direct runtime hook]
     X -.-> X4[Embedding-first retrieval]
@@ -195,7 +195,7 @@ The MVP object model is deliberately small. Raw history and derived records stay
 skinparam shadowing false
 hide methods
 hide stereotypes
-title OpenPrecedent MVP v1 Core Objects
+title OpenPrecedent 0.1.0 MVP Core Objects
 
 class Case {
   case_id
@@ -291,7 +291,7 @@ The current MVP executable surface is the local Rust CLI.
 - `openprecedent eval fixtures`
 - `openprecedent eval captured-openclaw-sessions`
 
-## Shipped MVP v1 Event Coverage
+## Shipped 0.1.0 MVP Event Coverage
 
 Supported event types:
 
@@ -351,7 +351,7 @@ The explanation contract is evidence-bound:
 
 ## Precedent Retrieval Model
 
-MVP v1 precedent retrieval is case-oriented and lightweight.
+The `0.1.0` MVP release keeps precedent retrieval case-oriented and lightweight.
 
 It currently compares cases using fingerprints built from:
 
@@ -382,7 +382,7 @@ Storage implications:
 - raw events are persisted in order with `sequence_no`
 - decisions are derived and replaceable per case
 - artifacts are derived from events during replay
-- there is no separate graph store or vector store in MVP v1
+- there is no separate graph store or vector store in the `0.1.0` MVP release
 
 ## Operational Model
 
@@ -406,9 +406,9 @@ Related operational docs:
 - [openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md)
 - [openclaw-runtime-decision-lineage-trigger-rerun.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-runtime-decision-lineage-trigger-rerun.md)
 
-## Accurate MVP v1 Capability Summary
+## Accurate 0.1.0 MVP Capability Summary
 
-If you want the shortest possible summary of MVP v1, it is this:
+If you want the shortest possible summary of the `0.1.0` MVP release, it is this:
 
 1. import or collect local OpenClaw task history
 2. normalize it into `case` and ordered `event` records

@@ -6,7 +6,7 @@ Open decision replay and precedent layer for agents.
 
 OpenPrecedent is an open-source project for capturing agent execution history, extracting key decisions, replaying why those decisions happened, and turning past cases into reusable precedent.
 
-The current published MVP should be read as a local-first, research-oriented, developer-facing baseline rather than as a hosted platform or a finished enterprise product.
+The current published release should be read as the OpenPrecedent `0.1.0` MVP release: a local-first, research-oriented, developer-facing baseline rather than a hosted platform or a finished enterprise product.
 
 The first target runtime is a local single-agent workflow such as OpenClaw. The initial product loop is:
 
