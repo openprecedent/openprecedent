@@ -48,8 +48,14 @@ Use Codex as a second, research-only runtime so OpenPrecedent can gather dense r
 - `#235` Study explicit adoption tracking between retrieved precedent and final decisions
 - `#236` Study explicit miss classification for lineage non-invocation
 - `#237` Study lightweight closeout capture for precedent validation and retention
+- `#239` Frame long-horizon capture and storage research after issue 220
+- `#240` Study hybrid semantic-plus-passive capture architecture beyond explicit CLI-triggered invocation
+- `#241` Study graph-shaped semantics and long-horizon storage evolution beyond SQLite
 
 ## Notes
 
 This epic is intentionally narrow.
 Its purpose is to generate research evidence for issue `#100`, not to introduce a generalized adapter framework for arbitrary agents.
+
+The newest long-horizon capture and storage issues are intentionally deferred.
+They preserve future architectural research directions, but they should remain behind the current near-term work on contamination, adoption tracking, miss classification, closeout capture, utility-versus-cost, fact-versus-prescription modeling, smaller retrieval units, and reusable knowledge layers.
