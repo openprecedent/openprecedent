@@ -1,0 +1,12 @@
+{
+  "study": "agentharnesskit",
+  "stamp": "2026-03-20T150227Z",
+  "query_terms": [
+    "agentharnesskit"
+  ],
+  "archived_invocation_count": 4,
+  "query_reasons": [
+    "after_failure",
+    "initial_planning"
+  ]
+}
