@@ -1,4 +1,4 @@
-branch=codex/issue-220-harnesshub-phase-two-rounds
-head_sha=e67acce7558c4c2ff22cd5be33c0e15fd18f0244
+branch=codex/issue-239-long-horizon-architecture-research-framing
+head_sha=c36e171643fbad99de74af2cc858ba66c6305cb6
 base_ref=upstream/main
-generated_at=2026-03-20T04:36:58Z
+generated_at=2026-03-20T05:18:39Z
