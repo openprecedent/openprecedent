@@ -81,3 +81,7 @@ When later release-readiness issues define coverage and checklist gates, they sh
 For the concrete release-blocking checklist, see:
 
 - [mvp-release-validation-checklist.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-validation-checklist.md)
+
+For the standard publication flow and release artifacts, see:
+
+- [mvp-release-publication-flow.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-publication-flow.md)

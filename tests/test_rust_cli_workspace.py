@@ -107,3 +107,20 @@ def test_release_docs_link_quickstart_scope_and_validation_checklist() -> None:
     assert "docs/engineering/cli/mvp-quickstart.md" in validation_checklist
     assert "scripts/check_mvp_coverage_gate.py" in validation_checklist
     assert "mvp-release-validation-checklist.md" in tooling_setup
+
+
+def test_release_docs_link_publication_flow_and_notes_template() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    release_scope = (ROOT / "docs" / "product" / "mvp-release-scope.md").read_text(encoding="utf-8")
+    publication_flow = (ROOT / "docs" / "product" / "mvp-release-publication-flow.md").read_text(
+        encoding="utf-8"
+    )
+    release_notes_template = (
+        ROOT / "docs" / "product" / "mvp-release-notes-template.md"
+    ).read_text(encoding="utf-8")
+
+    assert "docs/product/mvp-release-publication-flow.md" in readme
+    assert "mvp-release-publication-flow.md" in release_scope
+    assert "mvp-release-notes-template.md" in publication_flow
+    assert "v0.1.0" in publication_flow
+    assert "source-build installation path" in release_notes_template

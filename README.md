@@ -72,6 +72,7 @@ For the current release-facing scope and positioning, see:
 - usage guide for humans and agents: [docs/engineering/cli/using-openprecedent.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/using-openprecedent.md)
 - MVP release scope and positioning: [docs/product/mvp-release-scope.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-scope.md)
 - MVP release validation checklist: [docs/product/mvp-release-validation-checklist.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-validation-checklist.md)
+- MVP release publication flow: [docs/product/mvp-release-publication-flow.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-publication-flow.md)
 - runtime decision-lineage validation baseline: [docs/engineering/validation/openclaw-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-runtime-decision-lineage-validation.md)
 - real OpenClaw runtime decision-lineage validation: [docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/validation/openclaw-real-runtime-decision-lineage-validation.md)
 - Codex runtime research boundary: [docs/engineering/runtime/codex-runtime-boundary.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/runtime/codex-runtime-boundary.md)
