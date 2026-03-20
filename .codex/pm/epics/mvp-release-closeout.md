@@ -7,7 +7,6 @@ prd: mvp-release-closeout
 ---
 
 ## Outcome
-
 Deliver a standard research-oriented MVP release baseline for OpenPrecedent that can be installed and used in new projects, without confusing post-MVP research work with MVP-blocking implementation.
 
 
