@@ -2,7 +2,7 @@
 
 ## Current Status
 
-As of 2026-03-10, MVP v1 is complete: the core loop is implemented, validated in a real local target environment, and brought through the first round of real-session quality fixes.
+As of 2026-03-10, the `0.1.0` MVP release is complete: the core loop is implemented, validated in a real local target environment, and brought through the first round of real-session quality fixes.
 
 Primary summary:
 
@@ -29,9 +29,9 @@ Completed:
 - false-positive `clarify` decisions reduced on wrapped multi-turn real sessions
 - additional real-session OpenClaw record types mapped into replayable events where they carry useful signal
 
-Current MVP v1 status:
+Current `0.1.0` MVP release status:
 
-- no open implementation issues remain in the current MVP v1 scope
+- no open implementation issues remain in the current `0.1.0` MVP scope
 - the shipped loop now covers collection, replay, explanation, precedent retrieval, and the first real-session quality pass
 - follow-up work should be treated as post-MVP expansion rather than MVP-blocking scope
 - the repository is now best understood as a local-first research validation platform for decision-lineage and precedent reuse hypotheses
@@ -158,7 +158,7 @@ Completed work:
 
 Status:
 
-- completed for MVP v1
+- completed for the `0.1.0` MVP release
 
 Goal:
 
@@ -189,7 +189,7 @@ Remaining gaps:
 
 Status:
 
-- completed for MVP v1
+- completed for the `0.1.0` MVP release
 
 Goal:
 
@@ -217,13 +217,13 @@ Completed work:
 Remaining gaps:
 
 - stronger retrieval quality validation belongs to post-MVP work on larger continuously collected real history
-- richer semantic retrieval remains out of scope for MVP v1
+- richer semantic retrieval remains out of scope for the `0.1.0` MVP release
 
 ## Phase 6: Local Runtime Validation
 
 Status:
 
-- completed for MVP v1 rollout
+- completed for the `0.1.0` MVP rollout
 
 Goal:
 
@@ -272,7 +272,7 @@ Remaining gaps:
 
 ## Post-MVP Next Stage
 
-The next stage should build on the completed MVP v1 loop instead of re-opening MVP scope:
+The next stage should build on the completed `0.1.0` MVP loop instead of re-opening MVP scope:
 
 1. grow the real-session evaluation set and re-validate replay, extraction, and precedent behavior against the larger history
 2. keep improving precedent ranking quality as the collected corpus expands

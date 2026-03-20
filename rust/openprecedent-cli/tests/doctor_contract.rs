@@ -20,7 +20,7 @@ fn version_supports_json_output() {
 
     let payload: Value = serde_json::from_slice(&output).expect("json");
     assert_eq!(payload["name"], "openprecedent");
-    assert_eq!(payload["contract_phase"], "bootstrap");
+    assert_eq!(payload["contract_phase"], "mvp");
 }
 
 #[test]

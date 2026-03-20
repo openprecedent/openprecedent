@@ -2,7 +2,7 @@
 
 ## Status
 
-- status: shipped MVP v1
+- status: shipped `0.1.0` MVP release
 - core-loop status date: `2026-03-10`
 - repository summary: [mvp-status.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-status.md)
 - implementation boundary: [mvp-design.md](/workspace/02-projects/incubation/openprecedent/docs/architecture/mvp-design.md)
