@@ -3,7 +3,7 @@ type: task
 epic: mvp-release-closeout
 slug: prepare-standard-mvp-release-artifacts-and-publication-flow
 title: Prepare standard MVP release artifacts and publication flow
-status: backlog
+status: done
 task_type: docs
 labels: ops,documentation
 issue: 247
