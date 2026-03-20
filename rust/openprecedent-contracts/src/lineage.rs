@@ -91,3 +91,52 @@ pub struct RuntimeDecisionLineageInspection {
     #[serde(default)]
     pub downstream_decisions: Vec<Decision>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn query_reason_display_matches_cli_values() {
+        assert_eq!(
+            DecisionLineageQueryReason::InitialPlanning.to_string(),
+            "initial_planning"
+        );
+        assert_eq!(
+            DecisionLineageQueryReason::BeforeFileWrite.to_string(),
+            "before_file_write"
+        );
+        assert_eq!(
+            DecisionLineageQueryReason::AfterFailure.to_string(),
+            "after_failure"
+        );
+        assert_eq!(DecisionLineageQueryReason::Manual.to_string(), "manual");
+    }
+
+    #[test]
+    fn lineage_structs_round_trip_through_json() {
+        let brief = DecisionLineageBrief {
+            query_reason: DecisionLineageQueryReason::InitialPlanning,
+            task_summary: "Plan the MVP release".to_string(),
+            suggested_focus: Some("release scope".to_string()),
+            matched_cases: vec![DecisionLineageMatchedCase {
+                case_id: "case_release".to_string(),
+                title: "Release baseline".to_string(),
+                similarity_score: 7,
+                summary: "A prior release baseline".to_string(),
+            }],
+            task_frame: Some("Define the release scope".to_string()),
+            accepted_constraints: vec!["stay local-first".to_string()],
+            success_criteria: vec!["release docs are aligned".to_string()],
+            rejected_options: vec!["do not broaden runtime support".to_string()],
+            authority_signals: vec!["MVP status note".to_string()],
+            cautions: vec!["do not overstate maturity".to_string()],
+        };
+
+        let serialized = serde_json::to_string(&brief).expect("serialize brief");
+        let restored: DecisionLineageBrief =
+            serde_json::from_str(&serialized).expect("deserialize brief");
+
+        assert_eq!(restored, brief);
+    }
+}

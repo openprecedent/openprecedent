@@ -41,6 +41,9 @@ jobs:
       - name: Run coverage
         run: ./scripts/run-coverage.sh
 
+      - name: Enforce MVP release coverage gate
+        run: python3 scripts/check_mvp_coverage_gate.py coverage/python/coverage.json coverage/rust/coverage-summary.json
+
       - name: Publish workflow summary
         run: cat coverage/coverage-summary.md >> "$GITHUB_STEP_SUMMARY"
 

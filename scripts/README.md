@@ -11,6 +11,7 @@ Notable repository-local helper entrypoints:
 - `run-openclaw-live-validation.sh` prepares a reusable live OpenClaw validation workspace and summarizes runtime evidence as a repository-local live harness
 - `run-agent-preflight.sh` runs the standard local pre-push confidence checks for agent-driven work
 - `run-coverage.sh` generates local Python and Rust coverage reports plus a combined markdown summary under `coverage/`
+- `check_mvp_coverage_gate.py` enforces the `90%` MVP release coverage gate against the scoped Python and Rust release surfaces
 - `run-pytest.sh` resolves the repository-local pytest runner before falling back to global Python or `pytest`
 - `render_coverage_summary.py` renders one combined markdown summary from Python and Rust coverage JSON outputs
 - `run-codex-session-start.sh` restores active issue and PR context and restates the repository's default direct-fix workflow at session start

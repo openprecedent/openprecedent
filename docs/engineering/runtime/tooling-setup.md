@@ -12,6 +12,7 @@ The repository already includes:
 - `scripts/run-codex-review-checkpoint.sh` as the preferred local checkpoint for invoking native Codex `/review`
 - `scripts/run-agent-preflight.sh` for the standard local pre-push confidence checks
 - `scripts/run-coverage.sh` for repository-local Python and Rust coverage generation plus a combined markdown summary
+- `scripts/check_mvp_coverage_gate.py` for enforcing the scoped `90%` MVP release coverage gate
 - `scripts/run-pytest.sh` for repository-local pytest resolution before falling back to global commands
 - `scripts/run-codex-session-start.sh` for restoring branch, issue, task, issue-state, and PR context at the start of a Codex session
 - `scripts/triage_pr_checks.py` for local CI failure classification against current PR checks
@@ -136,7 +137,18 @@ That command writes standard coverage outputs under `coverage/`, including:
 
 On GitHub, `.github/workflows/coverage.yml` runs the same coverage flow, publishes the markdown summary into the workflow run, uploads the `coverage/` directory as the `coverage-report` artifact, and updates a sticky pull-request comment when possible.
 
-Use that workflow output as the standard source of truth for MVP release readiness. The explicit 90 percent release gate is tracked separately in issue `#243`.
+Use that workflow output as the standard source of truth for MVP release readiness. The workflow now also runs:
+
+```bash
+python3 scripts/check_mvp_coverage_gate.py coverage/python/coverage.json coverage/rust/coverage-summary.json
+```
+
+That gate measures the scoped MVP release surface rather than every repository-local support path:
+
+- Python: `src/openprecedent/**/*.py`, excluding `src/openprecedent/codex_pm.py`
+- Rust: release implementation library crates under `rust/**/src/lib.rs`, excluding `rust/openprecedent-cli/src/main.rs`
+
+The Rust CLI shell remains covered through command-level contract tests and the later release validation checklist rather than this line-coverage threshold.
 
 Set `OPENPRECEDENT_PREFLIGHT_RUN_E2E=1` if you also want the standard E2E path included in the same pass.
 Set `OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE=1` if you want preflight to fail until the issue state document exists.
