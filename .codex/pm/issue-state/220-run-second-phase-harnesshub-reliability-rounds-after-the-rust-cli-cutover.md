@@ -3,12 +3,13 @@ type: issue_state
 issue: 220
 task: .codex/pm/tasks/codex-runtime-research/run-second-phase-harnesshub-reliability-rounds-after-the-rust-cli-cutover.md
 title: Run second-phase HarnessHub reliability rounds after the Rust CLI cutover
-status: in_progress
+status: done
 ---
 
 ## Summary
 
-Run the post-plan HarnessHub research rounds that determine whether decision-lineage invocation and precedent reuse remain reliable after the Rust CLI cutover, then close the study once the evidence spans more than release-only work.
+The second-phase HarnessHub reliability study is complete.
+It determined that the current local private-entry setup repeatedly supports useful decision-lineage invocation across release, governance, PRD, and implementation work after the Rust CLI cutover.
 
 ## Validated Facts
 
@@ -33,21 +34,17 @@ Run the post-plan HarnessHub research rounds that determine whether decision-lin
 ## Open Questions
 
 - whether a later follow-up study should isolate the causal contribution of the single-skill `#233` refinement, the user-maintained hidden local AGENTS indirection, the refreshed Rust CLI command entry, or the combination of those factors
-- whether contamination and retrieval hygiene become the next primary research risk now that invocation reliability has been re-established under the current local setup
-- how the system should explicitly record which retrieved precedent was adopted, ignored, or rejected in the final decision path
-- how non-invocation or skipped-invocation rounds should be classified explicitly instead of inferred from missing runtime records
-- whether a lightweight closeout-stage capture should summarize validated precedent and noisy retrieval after each completed round
+- how contamination and retrieval hygiene should be researched now that invocation reliability has been re-established under the current local setup
 
 ## Next Steps
 
-- prepare the `#220` closeout update and archive the final second-phase conclusion without reopening issue `#131`
-- keep the causal-boundary caveat explicit in the closeout: the study validates the current local private-entry setup, not the repository-side skill text in isolation
-- treat any follow-up work on causal isolation or contamination as separate research issues rather than blockers to closing `#220`
-- link the next-step follow-up issues for adoption tracking, miss classification, closeout capture, and contamination control into the closeout narrative so they carry the remaining research load after `#220` closes
-- use `#235`, `#236`, `#237`, and `#163` as the explicit post-`#220` issue set so the closeout can say the main reliability question is answered while the next research questions remain tracked
+- close issue `#220` with the second-phase closeout document rather than reopen `#131`
+- keep the causal-boundary caveat explicit: the study validates the current local private-entry setup, not the repository-side skill text in isolation
+- continue later research under `#235`, `#236`, `#237`, and `#163`
 
 ## Artifacts
 
 - `docs/engineering/validation/harnesshub-second-phase-reliability-plan.md`
 - `docs/engineering/validation/harnesshub-second-phase-observation-log.md`
+- `docs/engineering/validation/harnesshub-second-phase-reliability-closeout.md`
 - `research-artifacts/harnesshub/`

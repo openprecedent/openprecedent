@@ -3,7 +3,7 @@ type: task
 epic: codex-runtime-research
 slug: run-second-phase-harnesshub-reliability-rounds-after-the-rust-cli-cutover
 title: Run second-phase HarnessHub reliability rounds after the Rust CLI cutover
-status: in_progress
+status: done
 task_type: research
 labels: docs,test
 issue: 220
@@ -18,7 +18,7 @@ OpenPrecedent now needs actual repeated HarnessHub development rounds that test 
 
 ## Deliverable
 
-Execute the first phase-two HarnessHub research rounds, archive their sanitized evidence, and record whether the post-cutover reliability claim is strengthened, weakened, or still ambiguous.
+Execute the phase-two HarnessHub research rounds, archive their sanitized evidence, and produce a closeout conclusion that states whether the post-cutover reliability claim was strengthened, weakened, or resolved.
 
 ## Scope
 
@@ -33,6 +33,7 @@ Execute the first phase-two HarnessHub research rounds, archive their sanitized 
 - the repository records at least the first new phase-two execution rounds and their interpretations
 - each completed round has both observation evidence and a sanitized archive milestone
 - the issue explicitly states whether the current evidence increases, weakens, or leaves ambiguous the post-cutover reliability claim
+- the issue records a final closeout conclusion once the evidence spans more than release-only work
 - contamination-control follow-up is only escalated if it becomes the dominant failure mode
 
 ## Validation
@@ -45,4 +46,5 @@ Execute the first phase-two HarnessHub research rounds, archive their sanitized 
 
 - `docs/engineering/validation/harnesshub-second-phase-reliability-plan.md`
 - `docs/engineering/validation/harnesshub-second-phase-observation-log.md`
+- `docs/engineering/validation/harnesshub-second-phase-reliability-closeout.md`
 - `research-artifacts/harnesshub/`
