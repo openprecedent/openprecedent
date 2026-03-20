@@ -51,6 +51,7 @@ Use Codex as a second, research-only runtime so OpenPrecedent can gather dense r
 - `#239` Frame long-horizon capture and storage research after issue 220
 - `#240` Study hybrid semantic-plus-passive capture architecture beyond explicit CLI-triggered invocation
 - `#241` Study graph-shaped semantics and long-horizon storage evolution beyond SQLite
+- `#261` Study OpenPrecedent-assisted AgentHarnessKit development as a new external validation track
 
 ## Notes
 

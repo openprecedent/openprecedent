@@ -1,0 +1,27 @@
+{
+  "study": "agentharnesskit",
+  "stamp": "2026-03-20T150227Z",
+  "created_at": "2026-03-20T15:02:27.703369+00:00",
+  "source": {
+    "runtime_home": "/root/.openprecedent/runtime",
+    "invocation_log": "/root/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl"
+  },
+  "filters": {
+    "query_terms": [
+      "agentharnesskit"
+    ],
+    "limit": 200
+  },
+  "sanitization": {
+    "repo_roots": [
+      "/workspace/02-projects/active/AgentHarnessKit"
+    ],
+    "session_id": "redacted",
+    "known_files": "repo-relative when possible"
+  },
+  "counts": {
+    "total_invocations_seen": 84,
+    "matching_invocations": 4,
+    "archived_invocations": 4
+  }
+}
