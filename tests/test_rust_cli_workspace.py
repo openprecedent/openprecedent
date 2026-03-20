@@ -67,3 +67,13 @@ def test_rust_ci_workflow_exists_as_a_dedicated_workflow() -> None:
     assert "name: rust-ci" in rust_workflow
     assert "rust-ci:" in rust_workflow
     assert "run: cargo test" in rust_workflow
+
+
+def test_coverage_workflow_reports_python_and_rust_coverage() -> None:
+    coverage_workflow = (ROOT / ".github" / "workflows" / "coverage.yml").read_text(encoding="utf-8")
+
+    assert "name: coverage" in coverage_workflow
+    assert "taiki-e/install-action@cargo-llvm-cov" in coverage_workflow
+    assert "./scripts/run-coverage.sh" in coverage_workflow
+    assert "coverage/coverage-summary.md" in coverage_workflow
+    assert "coverage-report" in coverage_workflow

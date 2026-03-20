@@ -10,7 +10,9 @@ Notable repository-local helper entrypoints:
 - `run-e2e.sh` runs the standard local fixture-backed end-to-end validation flow
 - `run-openclaw-live-validation.sh` prepares a reusable live OpenClaw validation workspace and summarizes runtime evidence as a repository-local live harness
 - `run-agent-preflight.sh` runs the standard local pre-push confidence checks for agent-driven work
+- `run-coverage.sh` generates local Python and Rust coverage reports plus a combined markdown summary under `coverage/`
 - `run-pytest.sh` resolves the repository-local pytest runner before falling back to global Python or `pytest`
+- `render_coverage_summary.py` renders one combined markdown summary from Python and Rust coverage JSON outputs
 - `run-codex-session-start.sh` restores active issue and PR context and restates the repository's default direct-fix workflow at session start
 - `run-codex-review-checkpoint.sh` creates or refreshes the local review note and the current-HEAD review proof before invoking native Codex `/review`
 - `python3 -m openprecedent.codex_pm reconcile-task-statuses` diagnoses local task drift against remote issue state before PR creation
