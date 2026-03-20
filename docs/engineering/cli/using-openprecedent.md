@@ -4,6 +4,10 @@
 
 This guide explains how to use the current OpenPrecedent MVP in practice.
 
+For the release-facing scope and positioning of that MVP, see:
+
+- [mvp-release-scope.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-scope.md)
+
 For the planned long-term public-interface replacement, see:
 
 - [rust-public-cli-design.md](/workspace/02-projects/incubation/openprecedent/docs/engineering/cli/rust-public-cli-design.md)
@@ -15,6 +19,7 @@ It is written for two audiences:
 - agent developers who want to connect a local agent workflow to OpenPrecedent
 
 This is a usage guide for the shipped MVP, not a future platform manual.
+It assumes the MVP release is a local-first, research-oriented, developer-facing baseline.
 
 ## What OpenPrecedent Is Today
 
