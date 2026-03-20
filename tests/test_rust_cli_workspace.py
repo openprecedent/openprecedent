@@ -78,3 +78,15 @@ def test_coverage_workflow_reports_python_and_rust_coverage() -> None:
     assert "scripts/check_mvp_coverage_gate.py" in coverage_workflow
     assert "coverage/coverage-summary.md" in coverage_workflow
     assert "coverage-report" in coverage_workflow
+
+
+def test_readme_and_usage_guide_point_to_mvp_quickstart() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    usage_guide = (ROOT / "docs" / "engineering" / "cli" / "using-openprecedent.md").read_text(
+        encoding="utf-8"
+    )
+    quickstart = ROOT / "docs" / "engineering" / "cli" / "mvp-quickstart.md"
+
+    assert quickstart.exists()
+    assert "docs/engineering/cli/mvp-quickstart.md" in readme
+    assert "mvp-quickstart.md" in usage_guide
