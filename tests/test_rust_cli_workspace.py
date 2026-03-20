@@ -124,3 +124,14 @@ def test_release_docs_link_publication_flow_and_notes_template() -> None:
     assert "mvp-release-notes-template.md" in publication_flow
     assert "v0.1.0" in publication_flow
     assert "source-build installation path" in release_notes_template
+
+
+def test_release_docs_link_closeout_and_post_release_handoff() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    mvp_status = (ROOT / "docs" / "product" / "mvp-status.md").read_text(encoding="utf-8")
+    closeout = (ROOT / "docs" / "product" / "mvp-release-closeout.md").read_text(encoding="utf-8")
+
+    assert "docs/product/mvp-release-closeout.md" in readme
+    assert "mvp-release-closeout.md" in mvp_status
+    for issue_ref in ("#163", "#224", "#225", "#226", "#227", "#235", "#236", "#237", "#240", "#241", "#100"):
+        assert issue_ref in closeout
