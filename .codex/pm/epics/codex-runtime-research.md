@@ -45,6 +45,9 @@ Use Codex as a second, research-only runtime so OpenPrecedent can gather dense r
 - `#217` Define second-phase HarnessHub reliability study after the first validation closeout
 - `#221` Analyze PlugMem and knowledge-centric agent memory against OpenPrecedent
 - `#220` Run second-phase HarnessHub reliability rounds after the Rust CLI cutover
+- `#235` Study explicit adoption tracking between retrieved precedent and final decisions
+- `#236` Study explicit miss classification for lineage non-invocation
+- `#237` Study lightweight closeout capture for precedent validation and retention
 
 ## Notes
 

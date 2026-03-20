@@ -74,3 +74,122 @@ The goal is to classify later rounds as positive, negative, or ambiguous evidenc
 - Runtime evidence: HarnessHub development clearly occurred on `2026-03-15` with commits `19c5c10`, `fb37b74`, `1af6de1`, `bc0190d`, `2205916`, and `086d7c9`, and PR `#80` merged at `2026-03-15T05:45:39Z`; however, `~/.openprecedent/runtime/openprecedent-runtime-invocations.jsonl` contains no `2026-03-15` records even though the Rust-CLI-based private skill had already been installed into HarnessHub on `2026-03-14`
 - Interpretation: this round is best classified as an invocation-adherence miss rather than a retrieval-quality regression or a Rust CLI execution failure; the development loop ran and closed successfully, but it did not enter the lineage path at all
 - Reliability effect: negative evidence for reliable stage-triggered invocation after the Rust CLI cutover; it suggests the current main HarnessHub workflow still does not consistently compose or execute the private OpenPrecedent skill during every issue round
+
+## Cross-Round Synthesis
+
+### Worked Example: HarnessHub Issue `#106`
+
+This example shows how OpenPrecedent's recorded lineage context influenced a later implementation task instead of merely logging that a query happened.
+
+#### Planning-stage input and retrieval
+
+Original runtime record:
+- `query_reason: "initial_planning"`
+- `task_summary: "HarnessHub issue #106: define harness definition file model and add harness init command"`
+- `matched_case_ids:`
+  - `case_harnesshub_issue_13_define-clawpack-product-foundation-and-architect`
+  - `case_harnesshub_issue_52_publish-a-formal-mvp-harness-image-specification`
+  - `case_harnesshub_issue_53_refine-verification-into-explicit-readiness-clas`
+
+中文解释：
+- 这一步记录的原始输入是“为 `v0.2.0` 引入 definition file 模型，并新增 `harness init` 命令”。
+- 返回的历史案例不是随机命中，而是分别落在：
+  - 产品基础定义
+  - 形式化 image/spec 契约
+  - verify / readiness 语义收敛
+- 这意味着系统给当前任务施加的历史约束是：
+  - 新 definition file 不能脱离已有产品基础定义
+  - 不能发明一套与既有 image contract 断裂的新模型
+  - 不能绕开现有 verify / readiness 语义
+
+#### Write-stage input and retrieval
+
+Original runtime record:
+- `query_reason: "before_file_write"`
+- `task_summary: "HarnessHub issue #106: define harness definition file model and add harness init"`
+- `matched_case_ids:`
+  - `case_harnesshub_issue_3_bootstrap-local-ccpm-codex-and-harness-guardrail`
+  - `case_harnesshub_issue_6_expand-cli-integration-validation-for-the-pack-l`
+  - `case_harnesshub_issue_13_define-clawpack-product-foundation-and-architect`
+
+中文解释：
+- 到真正写文件前，返回的 precedent 从“产品定义”进一步收窄到了“实现路径”。
+- 这轮命中的重点已经变成：
+  - 本地 harness / guardrail
+  - CLI integration validation
+  - 产品基础定义
+- 它对实现的隐含影响是：
+  - 这不是一个只改内部数据结构的任务
+  - `harness init` 应按 CLI-first 的方式实现和验证
+  - 新模型仍要服从既有产品基础定义，而不是另起炉灶
+
+#### Decision influence
+
+Recorded facts:
+- issue `#106` 在 `initial_planning` 与 `before_file_write` 两个阶段都触发了 lineage
+- 两次 retrieval 都返回了非空 precedent
+- 对应 PR `#113` 已 merged
+
+中文解释：
+- 当前系统已经不只是“记录发生了查询”，而是已经能在两个关键节点提供有约束力的历史上下文：
+  - planning 阶段帮助任务定类
+  - write 阶段帮助实现面收窄
+- 在 `#106` 这个例子里，OpenPrecedent 的作用不是替开发者发明答案，而是把这轮工作持续拉回到：
+  - 既有产品定义
+  - 既有 image/spec 语义
+  - 既有 CLI validation 路径
+- 这就构成了一个完整的“记录输入 -> 提取 precedent -> 影响后续决策”的链条
+
+### Current Assessment of the Three Trigger Stages
+
+#### `initial_planning`
+
+Assessment:
+- clearly effective
+- consistently useful for task framing and precedent-based boundary setting
+
+中文解释：
+- 这个阶段已经证明有效。
+- 它最稳定的价值是帮助当前任务回到已有历史语境里，避免一开始就偏离到无 precedent 支持的新方向。
+
+#### `before_file_write`
+
+Assessment:
+- currently the strongest stage
+- repeatedly useful for narrowing implementation shape, likely files, and validation surface
+
+中文解释：
+- 这是当前最强的一环。
+- 它不仅说明“该做什么”，还更具体地约束“该怎么做、该验证什么、该沿哪条既有实现路径收敛”。
+
+#### `after_failure`
+
+Assessment:
+- less frequent than the first two stages
+- already validated in real recovery loops such as `#95`, `#98`, and `#102`
+
+中文解释：
+- 这一步样本相对少，但已经证明有价值。
+- 它的意义不在于高频，而在于开发偏航时，系统能够提供恢复方向，而不只是事后回放。
+
+### What Is Proven and What Still Remains Open
+
+Proven now:
+- the current local hidden-entry setup plus the private skill and Rust CLI can repeatedly produce useful lineage invocation across release, governance, PRD, and implementation work
+- the three-stage model is already useful enough to support real work rather than merely logging experiments
+
+中文解释：
+- `#220` 的主问题现在已经回答清楚：这套机制已经不是偶发成功，而是可重复支持真实开发。
+- 这一点已经足以支撑 `#220` 收口。
+
+Still open:
+- the study does not isolate which factor is individually necessary or sufficient
+- the system still records retrieved context more clearly than adopted context
+- contamination and retrieval hygiene remain valid next-step research topics
+
+中文解释：
+- 还没解决的问题不是“它能不能工作”，而是：
+  - 到底哪个因子最关键
+  - 哪些 retrieval 真正被采纳
+  - 如何进一步减少污染和噪音
+- 这些都更适合变成后续研究 issue，而不是继续阻塞 `#220`
