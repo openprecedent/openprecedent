@@ -150,6 +150,10 @@ That gate measures the scoped MVP release surface rather than every repository-l
 
 The Rust CLI shell remains covered through command-level contract tests and the later release validation checklist rather than this line-coverage threshold.
 
+For the full release-blocking checklist that combines preflight, coverage, CLI smoke, and the minimal end-to-end MVP loop, see:
+
+- [mvp-release-validation-checklist.md](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-validation-checklist.md)
+
 Set `OPENPRECEDENT_PREFLIGHT_RUN_E2E=1` if you also want the standard E2E path included in the same pass.
 Set `OPENPRECEDENT_PREFLIGHT_ENFORCE_ISSUE_STATE=1` if you want preflight to fail until the issue state document exists.
 
