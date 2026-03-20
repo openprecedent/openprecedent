@@ -70,6 +70,7 @@ They are tracked as follow-up research:
 
 ## Artifacts
 
+- `research-artifacts/harnesshub/README.md`
 - `docs/engineering/validation/harnesshub-second-phase-reliability-plan.md`
 - `docs/engineering/validation/harnesshub-second-phase-observation-log.md`
 - `docs/engineering/validation/harnesshub-second-phase-reliability-closeout.md`
