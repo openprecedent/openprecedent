@@ -8,7 +8,7 @@ status: in_progress
 
 ## Summary
 
-Run the post-plan HarnessHub research rounds that determine whether decision-lineage invocation and precedent reuse remain reliable after the Rust CLI cutover.
+Run the post-plan HarnessHub research rounds that determine whether decision-lineage invocation and precedent reuse remain reliable after the Rust CLI cutover, then close the study once the evidence spans more than release-only work.
 
 ## Validated Facts
 
@@ -23,23 +23,21 @@ Run the post-plan HarnessHub research rounds that determine whether decision-lin
 - The `#95` positive sample strengthens confidence in the current local private-entry setup, but it still does not isolate whether the decisive factor is the hidden local AGENTS indirection, the repository-side single-skill refinement, the refreshed Rust CLI entrypoint, or their combination
 - HarnessHub's subsequent `2026-03-18` release sequence around issues `#98`, `#99`, `#97`, and `#102` produced a dense run of additional planning, write-time, and failure-recovery invocation records with non-empty `matched_case_ids`, extending the positive evidence well beyond a single round
 - The current evidence now supports a stronger intermediate claim: the combined local private-entry setup is repeatedly supporting real HarnessHub release work across multiple consecutive rounds, even though the study still does not isolate which individual intervention is necessary or sufficient by itself
+- HarnessHub's first `0.2.0`-line tasks on `2026-03-19` also produced new positive evidence: issue `#110` left both planning and write-time invocation records with non-empty `matched_case_ids`, and issue `#104` left a planning-stage invocation record with non-empty `matched_case_ids`
+- Those `0.2.0` records show early generalization beyond release-only work, but they are not yet enough to close the study because implementation-heavy `0.2.0` issues have not yet demonstrated the same end-to-end planning/write/failure pattern
+- HarnessHub's first implementation-heavy `v0.2.0` wave on `2026-03-19` to `2026-03-20` then produced the missing evidence: issues `#106`, `#107`, `#105`, `#109`, and `#108` all left new planning and/or write-time invocation records with non-empty `matched_case_ids` while the corresponding PRs `#113` to `#117` merged successfully
+- With that implementation-wave evidence in place, the main `#220` question has been answered positively: the current local private-entry setup now shows repeated useful invocation across release, governance, PRD, and implementation work rather than only a narrow release corridor
 
 ## Open Questions
 
-- do later HarnessHub rounds reliably invoke lineage at the intended stages
-- when lineage is invoked, does it still return useful precedent often enough to support a reliability claim
-- do observed failures point primarily to invocation adherence, retrieval quality, or contamination
-- whether the current local private-entry setup keeps producing stable planning/write/failure invocation beyond the concentrated `2026-03-17` to `2026-03-18` release sequence
-- whether the decisive factor for the new `#89/#93/#95` positive evidence was the single-skill `#233` refinement, the user-maintained hidden local AGENTS indirection, the refreshed Rust CLI command entry, or the combination of those factors
+- whether a later follow-up study should isolate the causal contribution of the single-skill `#233` refinement, the user-maintained hidden local AGENTS indirection, the refreshed Rust CLI command entry, or the combination of those factors
+- whether contamination and retrieval hygiene become the next primary research risk now that invocation reliability has been re-established under the current local setup
 
 ## Next Steps
 
-- execute the next HarnessHub rounds under the current Rust CLI and private-skill surface
-- archive and interpret each round separately
-- update the phase-two study record without reopening issue `#131`
-- determine whether the `#79` and `2026-03-17` misses came from workflow-composition drift, task-type-based skipping, or another local session-path gap
-- separate repository-side skill changes, user-local hidden-entry changes, and environment-level Rust CLI refresh effects when interpreting later positive rounds so the study does not over-credit `#233`
-- continue sampling post-release HarnessHub work outside the tightly coupled RC-to-GA flow so the study can determine whether the current positive pattern generalizes beyond release-focused tasks
+- prepare the `#220` closeout update and archive the final second-phase conclusion without reopening issue `#131`
+- keep the causal-boundary caveat explicit in the closeout: the study validates the current local private-entry setup, not the repository-side skill text in isolation
+- treat any follow-up work on causal isolation or contamination as separate research issues rather than blockers to closing `#220`
 
 ## Artifacts
 
