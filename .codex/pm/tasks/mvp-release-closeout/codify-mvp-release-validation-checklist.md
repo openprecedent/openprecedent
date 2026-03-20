@@ -6,6 +6,8 @@ title: Codify the MVP release validation checklist
 status: backlog
 task_type: docs
 labels: documentation,test
+issue: 251
+state_path: .codex/pm/issue-state/251-codify-mvp-release-validation-checklist.md
 ---
 
 ## Context

@@ -6,6 +6,8 @@ title: Add MVP quickstart and new-project installation guide
 status: backlog
 task_type: docs
 labels: documentation
+issue: 248
+state_path: .codex/pm/issue-state/248-add-mvp-quickstart-and-new-project-installation-guide.md
 ---
 
 ## Context

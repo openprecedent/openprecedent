@@ -6,6 +6,8 @@ title: Raise the MVP release coverage baseline to 90 percent
 status: backlog
 task_type: implementation
 labels: test
+issue: 243
+state_path: .codex/pm/issue-state/243-raise-mvp-release-coverage-baseline-to-90-percent.md
 ---
 
 ## Context

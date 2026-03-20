@@ -6,6 +6,8 @@ title: Add Rust and Python coverage reporting to CI and release readiness
 status: backlog
 task_type: implementation
 labels: test
+issue: 246
+state_path: .codex/pm/issue-state/246-add-rust-and-python-coverage-reporting-to-ci-and-release-readiness.md
 ---
 
 ## Context

@@ -6,6 +6,8 @@ title: Close out the MVP release baseline and hand off post-release research
 status: backlog
 task_type: docs
 labels: documentation,research
+issue: 250
+state_path: .codex/pm/issue-state/250-close-out-the-mvp-release-baseline-and-hand-off-post-release-research.md
 ---
 
 ## Context

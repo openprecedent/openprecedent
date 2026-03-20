@@ -6,6 +6,8 @@ title: Define the MVP release scope and positioning
 status: backlog
 task_type: docs
 labels: documentation
+issue: 245
+state_path: .codex/pm/issue-state/245-define-mvp-release-scope-and-positioning.md
 ---
 
 ## Context

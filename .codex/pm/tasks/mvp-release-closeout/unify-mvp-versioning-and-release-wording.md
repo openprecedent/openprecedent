@@ -6,6 +6,8 @@ title: Unify MVP versioning and release wording
 status: backlog
 task_type: docs
 labels: documentation
+issue: 249
+state_path: .codex/pm/issue-state/249-unify-mvp-versioning-and-release-wording.md
 ---
 
 ## Context

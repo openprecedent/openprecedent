@@ -6,6 +6,8 @@ title: Prepare standard MVP release artifacts and publication flow
 status: backlog
 task_type: docs
 labels: ops,documentation
+issue: 247
+state_path: .codex/pm/issue-state/247-prepare-standard-mvp-release-artifacts-and-publication-flow.md
 ---
 
 ## Context

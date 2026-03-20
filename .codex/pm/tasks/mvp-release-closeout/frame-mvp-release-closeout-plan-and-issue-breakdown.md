@@ -6,6 +6,8 @@ title: Frame MVP release closeout plan and issue breakdown
 status: done
 task_type: docs
 labels: documentation
+issue: 244
+state_path: .codex/pm/issue-state/244-frame-mvp-release-closeout-plan-and-issue-breakdown.md
 ---
 
 ## Context
