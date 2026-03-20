@@ -3,7 +3,7 @@ type: issue_state
 issue: 249
 task: .codex/pm/tasks/mvp-release-closeout/unify-mvp-versioning-and-release-wording.md
 title: Unify MVP versioning and release wording
-status: in_progress
+status: done
 ---
 
 ## Summary
