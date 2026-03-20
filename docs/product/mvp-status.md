@@ -23,6 +23,7 @@ The current platform role is to make those hypotheses fast to test against a rea
 For the current release-facing scope and positioning baseline, see:
 
 - [MVP release scope](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-scope.md)
+- [MVP release closeout](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-closeout.md)
 
 As of `2026-03-11`, the next planned research runtime after OpenClaw is Codex.
 That work is intentionally scoped as a research-only second runtime rather than a generalized multi-runtime abstraction effort.
@@ -81,6 +82,7 @@ These are product-effectiveness and research-quality questions, not missing core
 ## Reference Docs
 
 - [MVP release scope](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-scope.md)
+- [MVP release closeout](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-release-closeout.md)
 - [MVP roadmap](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-roadmap.md)
 - [MVP PRD](/workspace/02-projects/incubation/openprecedent/docs/product/mvp-prd.md)
 - [MVP architecture](/workspace/02-projects/incubation/openprecedent/docs/architecture/mvp-design.md)

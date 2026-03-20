@@ -3,7 +3,7 @@ type: task
 epic: mvp-release-closeout
 slug: close-out-the-mvp-release-baseline-and-hand-off-post-release-research
 title: Close out the MVP release baseline and hand off post-release research
-status: backlog
+status: done
 task_type: docs
 labels: documentation,research
 issue: 250
