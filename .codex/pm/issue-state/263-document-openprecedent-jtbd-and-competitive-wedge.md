@@ -21,6 +21,7 @@ This issue should remain the anchor for later discussion rounds that refine Open
 - The note now treats human recall and expert consultation as the most important long-term substitute for OpenPrecedent to displace gradually.
 - The note explicitly calls out off-transcript decision context such as meetings, Slack, IM, expert recall, and customer-specific exceptions.
 - The note now makes the compounding path explicit: OpenPrecedent should accumulate reusable precedent through repeated expert-agent interaction rather than claim instant expert replacement.
+- The note now identifies the highest-value precedent classes as hard-to-recover exception decisions: route changes, defect-repair trade-offs, customer-specific exceptions, time-cut version decisions, undocumented architecture details, and temporary fix choices.
 
 ## Open Questions
 

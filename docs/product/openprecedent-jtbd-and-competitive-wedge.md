@@ -39,6 +39,37 @@ The deeper risk is that an agent or later human operator forgets:
 
 If those signals are absent, later iterations may still look competent while moving in the wrong direction.
 
+## Which Decisions Matter Most
+
+The highest-value precedents are usually not standard choices that are already well reflected in code, docs, or common best practice.
+The highest-value precedents are the decisions that drift away from the default path and become hard to reconstruct later.
+
+Current working hypothesis:
+
+- deviations from the original design direction
+- trade-offs made during defect repair
+- customer-specific exceptions or requirements
+- version-specific scope cuts made under time pressure
+- architecture-selection details that never fully made it into docs or code
+- temporary solution choices made during incident response or bug fixing
+
+These are especially valuable because they tend to be:
+
+- expensive to rediscover
+- weakly represented in code or final documentation
+- highly consequential for later maintenance
+- easy to lose when people change roles or leave
+
+The broader pattern is portable beyond development work.
+The same logic likely applies to:
+
+- product planning decisions that changed roadmap or scope direction
+- sales or customer-delivery decisions that shaped what could or could not be promised
+
+So the generalized rule is:
+
+OpenPrecedent should prioritize the decisions that are least recoverable from the final artifact but most important for later judgment.
+
 ## Candidate Jobs-To-Be-Done
 
 ### Candidate Primary Job: Decision-time judgment inheritance
