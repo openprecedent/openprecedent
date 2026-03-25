@@ -70,6 +70,12 @@ So the generalized rule is:
 
 OpenPrecedent should prioritize the decisions that are least recoverable from the final artifact but most important for later judgment.
 
+For the first phase, the strongest priority is narrower still:
+
+OpenPrecedent should first capture exception-driven decisions under real constraints, especially the places where a default or mainstream path would normally have been chosen but had to be changed because of customer requirements, historical baggage, defect-repair trade-offs, time-cut release pressure, undocumented architecture details, or temporary recovery needs.
+
+That makes these decisions stronger initial precedent candidates than generic architecture discussion or broad strategy commentary, because they are both harder to reconstruct later and more likely to mislead later agents into confident but wrong default choices.
+
 ## Candidate Jobs-To-Be-Done
 
 ### Candidate Primary Job: Decision-time judgment inheritance
