@@ -39,6 +39,68 @@ The deeper risk is that an agent or later human operator forgets:
 
 If those signals are absent, later iterations may still look competent while moving in the wrong direction.
 
+## Why Existing Infrastructure Is Not Enough
+
+OpenPrecedent should not be justified by claiming that existing systems record nothing.
+They do record many adjacent things, but they usually do not preserve reusable judgment structure in the right place or form.
+
+Existing infrastructure tends to record one of the following:
+
+- code, configuration, pull requests, and issues that show what changed
+- documents and meeting notes that show what was discussed
+- tracing, logs, and observability data that show what executed
+- wikis, knowledge bases, or CRM systems that show what was explicitly stored
+
+The gap is that OpenPrecedent is trying to preserve a different unit:
+
+- why the default path stopped being valid in this situation
+- which constraints made the team or agent choose a different path
+- which rejected options still matter for future judgment
+
+That unit is hard for existing infrastructure to preserve because it is usually:
+
+- spread across multiple surfaces
+- only partially visible in final artifacts
+- too situational to justify a full formal document
+- most legible at decision time rather than afterward
+
+So the problem is not absence of storage.
+The problem is absence of a durable, reusable decision unit.
+
+## Why This Is Not Just A Manual Recording System
+
+A manual decision-entry system is an obvious alternative, but it usually breaks down in practice.
+
+The core failure modes are:
+
+- the extra workflow cost appears exactly when teams are busy, under pressure, or handling exceptions
+- people rarely know in the moment which temporary-looking choice will become historically important later
+- manually written summaries drift away from the actual execution path, evidence, and decision timing
+
+Manual systems can still be useful as a supplement.
+They are much weaker as the primary capture mechanism for high-value exception decisions.
+
+OpenPrecedent matters when decision capture is tied closely enough to real execution that later users and agents can recover not just a polished summary, but the surrounding constraints and why they mattered.
+
+## Why Agent-Era Capture Must Sit On The Execution Path
+
+The strongest reason OpenPrecedent becomes more necessary in the agent era is that decision-making moves from a relatively low-frequency organizational activity into a high-frequency execution activity.
+
+Compared with mostly human-driven work, agent-assisted work changes several fundamentals:
+
+- decision density increases sharply during one task
+- default-path behavior becomes more dangerous because agents naturally gravitate toward generic and mainstream solutions
+- execution speed rises, so human recall becomes harder to insert at the right moment
+- captured precedent can now be consumed directly by later execution rather than only by later readers
+
+This creates a qualitative shift.
+In a mostly human era, many decisions could remain in the heads of a few experts because later humans could often reconstruct or ask around before acting.
+In an agent era, the number and speed of decisions make that human-only recovery loop increasingly fragile and expensive.
+
+That is why execution-path capture matters.
+The point is not just to preserve history for later explanation.
+The point is to make prior judgment available to the next comparable decision while execution is still happening.
+
 ## Which Decisions Matter Most
 
 The highest-value precedents are usually not standard choices that are already well reflected in code, docs, or common best practice.

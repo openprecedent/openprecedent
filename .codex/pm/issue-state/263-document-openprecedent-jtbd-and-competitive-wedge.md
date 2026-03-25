@@ -23,6 +23,7 @@ This issue should remain the anchor for later discussion rounds that refine Open
 - The note now makes the compounding path explicit: OpenPrecedent should accumulate reusable precedent through repeated expert-agent interaction rather than claim instant expert replacement.
 - The note now identifies the highest-value precedent classes as hard-to-recover exception decisions: route changes, defect-repair trade-offs, customer-specific exceptions, time-cut version decisions, undocumented architecture details, and temporary fix choices.
 - The note now makes the first-phase prioritization explicit: exception-driven decisions under real constraints should land before generic architecture commentary or broad strategy notes.
+- The note now explains why existing infrastructure and manual recording systems are insufficient, and why agent-era precedent capture must sit on the execution path rather than only in after-the-fact documentation.
 
 ## Open Questions
 
