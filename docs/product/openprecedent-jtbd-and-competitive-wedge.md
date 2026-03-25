@@ -2,6 +2,7 @@
 
 Date: 2026-03-25
 Status: draft living note
+Chinese companion: [docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md)
 
 ## Why This Note Exists
 

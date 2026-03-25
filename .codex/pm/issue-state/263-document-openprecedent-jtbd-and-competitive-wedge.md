@@ -16,6 +16,7 @@ This issue should remain the anchor for later discussion rounds that refine Open
 - GitHub issue `#263` exists and is labeled `documentation` and `research`.
 - The local task twin is `.codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md`.
 - The draft living note is `docs/product/openprecedent-jtbd-and-competitive-wedge.md`.
+- The aligned Chinese companion note is `docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md`.
 - The current note frames OpenPrecedent primarily around action-time judgment inheritance rather than replay alone.
 - The note explicitly calls out off-transcript decision context such as meetings, Slack, IM, expert recall, and customer-specific exceptions.
 
@@ -29,11 +30,12 @@ This issue should remain the anchor for later discussion rounds that refine Open
 ## Next Steps
 
 - Continue discussion and revise the living note rather than opening duplicate strategy notes.
-- Decide whether a Chinese companion note is needed after the English version stabilizes.
+- Keep the English and Chinese notes aligned as later discussion rounds modify the thesis.
 - If later rounds materially change the thesis, update the issue body and issue-state summary to match.
 
 ## Artifacts
 
 - `docs/product/openprecedent-jtbd-and-competitive-wedge.md`
+- `docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md`
 - `.codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md`
 - `https://github.com/openprecedent/openprecedent/issues/263`
