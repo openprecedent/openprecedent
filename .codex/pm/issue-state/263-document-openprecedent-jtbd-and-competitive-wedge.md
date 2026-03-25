@@ -25,6 +25,7 @@ This issue should remain the anchor for later discussion rounds that refine Open
 - The note now makes the first-phase prioritization explicit: exception-driven decisions under real constraints should land before generic architecture commentary or broad strategy notes.
 - The note now explains why existing infrastructure and manual recording systems are insufficient, and why agent-era precedent capture must sit on the execution path rather than only in after-the-fact documentation.
 - The note now explains that precedent is contextual historical judgment rather than timeless truth, and that early rollout must rely on hybrid capture because many high-value decisions still happen outside direct agent visibility.
+- The note now separates wrong precedents, locally valid precedents, and later-invalid precedents, and makes the product boundary more explicit: OpenPrecedent should surface candidate precedent rather than silently enforce historical imitation.
 
 ## Open Questions
 

@@ -117,6 +117,22 @@ A precedent may be:
 So OpenPrecedent should not treat precedent as policy or ground truth.
 It should treat precedent as contextualized historical judgment.
 
+The key analytical point is that these three failure modes are different:
+
+- a wrong decision means the original judgment itself was bad
+- a locally valid decision means the judgment was acceptable only under narrow constraints
+- a later-invalid decision means the judgment may have been good once but has aged out
+
+Those differences matter because they create different risks for future agents:
+
+- wrong precedents can amplify historical mistakes
+- locally valid precedents can be over-generalized into places where they do not belong
+- expired precedents can anchor future work on assumptions that no longer hold
+
+So the danger is not just "bad data."
+The deeper danger is misplaced authority.
+If a system presents precedent as if it carries timeless normative force, future agents may stop asking whether the surrounding constraints still match.
+
 The practical implication is that future agents should inherit more than the decision content itself.
 They should also inherit:
 
@@ -127,6 +143,12 @@ They should also inherit:
 - any indication that the decision was temporary, exceptional, or later superseded
 
 The product is most useful when it helps future execution ask "is this prior judgment still relevant here?" rather than silently assuming "do this because it happened before."
+
+This also implies a boundary for the product:
+
+- OpenPrecedent should surface candidate precedent, not silently enforce historical imitation
+- retrieval quality depends on matching constraints and applicability, not only semantic similarity of topic or wording
+- the system becomes stronger when it can preserve later correction, supersession, or invalidation rather than only the original choice
 
 ## Early Rollout Requires Hybrid Capture
 
