@@ -41,15 +41,18 @@ If those signals are absent, later iterations may still look competent while mov
 
 ## Candidate Jobs-To-Be-Done
 
-### Candidate Primary Job: Action-time judgment inheritance
+### Candidate Primary Job: Decision-time judgment inheritance
 
-When a user or agent is about to make a meaningful next move in a real project, they need a compact view of what prior similar situations already taught them about the right framing, constraints, authority boundaries, and success criteria.
+When a user or agent needs to make a meaningful new decision in a real project, they need a compact view of what prior similar situations already taught them about the right framing, constraints, trade-offs, authority boundaries, and success criteria.
 
 JTBD form:
 
-When I am about to let an agent plan, write, recover, or cross an approval boundary in a real repository, I want a compact brief of the judgment structure from similar prior cases, so I can move forward with less guesswork, less rework, and less risk of repeating a previously rejected path.
+When I need to make a new project decision with real trade-offs such as solution choice, cost, speed, maintenance burden, approval cost, or customer-specific exceptions, I want a compact brief of the judgment structure from similar prior cases, so I can move forward with less guesswork, less rework, and less risk of repeating a previously rejected path.
 
-This is the strongest current candidate for the product wedge because it targets the moment when users are most willing to pay attention and change behavior.
+Planning, writing, recovery, and approval-boundary moments are important trigger points for this job, but they are not the whole job.
+The deeper job is to support new decisions under real project trade-offs, not only to guard execution steps.
+
+This is the strongest current candidate for the product wedge because it targets the moment when users are most willing to pay attention, change behavior, and consult prior judgment before creating new downstream cost.
 
 ### Secondary Job: Post-hoc decision explanation
 
@@ -60,6 +63,8 @@ This is valuable, but it is probably not the best wedge by itself because many o
 ### Longer-Horizon Job: Durable precedent accumulation
 
 Over time, a team may want project-specific and customer-specific decision patterns to become reusable precedent rather than scattered tribal memory.
+The important point is that this does not require instant replacement of expert judgment.
+The product can begin by supporting professionals during real work, then gradually accumulate the decision precedents that later reduce dependence on fragile human recall.
 
 This matters, but it is more of a long-term compounding benefit than the narrowest initial wedge.
 
@@ -93,7 +98,17 @@ This is often the default competitor because it has zero workflow cost.
 The user asks the maintainer, the product owner, the customer-facing operator, or the expert who remembers why something was decided.
 
 This is often the strongest substitute because humans can reconstruct intent and exceptions better than current tools.
-It is also expensive, slow, and fragile.
+It is also the substitute OpenPrecedent most needs to displace over time.
+
+The reason is structural, not tactical:
+
+- important decision context often survives only in expert memory
+- expert recall is expensive and slow to access
+- staff turnover and organizational change make this memory base fragile
+- the longer a project runs, the harder it becomes to keep this human-only dependency maintainable
+
+OpenPrecedent should not assume it can replace expert judgment in one step.
+It should instead turn repeated expert-agent interaction into explicit precedent over time, so dependence on expert recall decreases as the corpus matures.
 
 ### 3. Code search and repository history
 
@@ -130,6 +145,7 @@ A user is more likely to hire OpenPrecedent when it does all of the following be
 - explains why a prior case is relevant so the result is auditable and trustworthy
 
 If OpenPrecedent cannot beat the combined workflow of search plus human recall, it will not become a durable habit.
+The more important long-term bar is whether it can progressively absorb enough reusable expert judgment that the organization becomes less dependent on remembering the right person to ask.
 
 ## Why A User Might Not Choose OpenPrecedent
 
@@ -165,19 +181,25 @@ The stronger future product target is narrower and more opinionated:
 - integrate decision-relevant signals from more than the raw runtime transcript
 - preserve customer-specific and repository-specific exceptions as first-class precedent
 - help agents inherit proven judgment structure instead of only retrieving adjacent text or operational similarity
+- accumulate reusable precedent from expert-agent interaction so organizations get compounding returns instead of resetting to tribal memory each time people change
 
 The future product should not become a generic graph, generic memory platform, or generic trace viewer.
 Its distinctive value is decision inheritance under real project constraints.
+It should also not claim immediate replacement of professional judgment.
+The stronger claim is gradual externalization of reusable expert decisions into a durable precedent layer.
 
 ## Working Product Thesis
 
-OpenPrecedent should aim to become the layer that helps agents and operators inherit the right prior judgment before the next important move, especially when the most important context is fragmented across runtime history, human discussion, and project-specific exceptions.
+OpenPrecedent should aim to become the layer that helps agents and operators make better new decisions by inheriting the right prior judgment, especially when the most important context is fragmented across runtime history, human discussion, and project-specific exceptions.
+
+Its strategic path is not instant expert replacement.
+Its strategic path is to capture precedent during real expert-agent work, so the system compounds reusable decision history and reduces long-term dependence on fragile human recall.
 
 ## Open Questions
 
 - How much off-transcript context should OpenPrecedent ingest directly versus reference indirectly?
-- What is the smallest high-frequency trigger moment where action-time lineage is clearly worth the workflow cost?
+- What is the smallest high-frequency trigger moment where decision-time lineage is clearly worth the workflow cost?
 - How should the product distinguish stable precedent from one-off local exceptions?
 - How should customer-specific exceptions be modeled without collapsing into a generic CRM or knowledge base product?
-- What evidence would prove that action-time lineage changes downstream decisions rather than merely explaining them better afterward?
-- Which substitute solution is strongest in practice for the initial target user: repository search, chat memory, or human experts?
+- What evidence would prove that decision-time lineage changes downstream decisions rather than merely explaining them better afterward?
+- Which parts of expert judgment can realistically be externalized into precedent first, and which parts will remain expert-only for longer?

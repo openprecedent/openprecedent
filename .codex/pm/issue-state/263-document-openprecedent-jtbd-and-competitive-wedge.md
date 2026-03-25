@@ -8,7 +8,7 @@ status: done
 
 ## Summary
 
-First-pass English and Chinese JTBD discussion notes are in place and the GitHub issue is ready for PR review.
+First-pass English and Chinese JTBD discussion notes are in place and the GitHub issue is open for iterative review.
 This issue should remain the anchor for later discussion rounds that refine OpenPrecedent's primary job, substitute solutions, and future product wedge.
 
 ## Validated Facts
@@ -17,8 +17,10 @@ This issue should remain the anchor for later discussion rounds that refine Open
 - The local task twin is `.codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md`.
 - The draft living note is `docs/product/openprecedent-jtbd-and-competitive-wedge.md`.
 - The aligned Chinese companion note is `docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md`.
-- The current note frames OpenPrecedent primarily around action-time judgment inheritance rather than replay alone.
+- The current note now frames OpenPrecedent primarily around new-decision judgment inheritance rather than only execution-time support.
+- The note now treats human recall and expert consultation as the most important long-term substitute for OpenPrecedent to displace gradually.
 - The note explicitly calls out off-transcript decision context such as meetings, Slack, IM, expert recall, and customer-specific exceptions.
+- The note now makes the compounding path explicit: OpenPrecedent should accumulate reusable precedent through repeated expert-agent interaction rather than claim instant expert replacement.
 
 ## Open Questions
 
@@ -29,7 +31,7 @@ This issue should remain the anchor for later discussion rounds that refine Open
 
 ## Next Steps
 
-- Open the PR for issue `#263` and use it as the review surface for this first-pass note.
+- Use the PR for issue `#263` as the review surface for ongoing thesis corrections.
 - Continue discussion and revise the living notes rather than opening duplicate strategy notes.
 - Keep the English and Chinese notes aligned as later discussion rounds modify the thesis.
 
