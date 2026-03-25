@@ -150,6 +150,17 @@ This also implies a boundary for the product:
 - retrieval quality depends on matching constraints and applicability, not only semantic similarity of topic or wording
 - the system becomes stronger when it can preserve later correction, supersession, or invalidation rather than only the original choice
 
+Pollution control should therefore be layered rather than absolute.
+An early product cannot wait for perfect governance before it captures anything useful.
+The more realistic approach is:
+
+- capture the decision with its surrounding constraints while the context is still fresh
+- allow later enrichment with result, supersession, or invalidation signals when they become known
+- present retrieved precedent as something to examine and test against the current situation, not something to obey automatically
+
+That framing matters because the product is not trying to preserve timeless truth.
+It is trying to preserve historically grounded judgment with enough context that a later agent can decide whether the old reasoning still applies.
+
 ## Early Rollout Requires Hybrid Capture
 
 Another practical limit is that many important decisions still happen outside agent visibility.
@@ -171,6 +182,24 @@ The more realistic early model is hybrid capture:
 
 This means the early goal is not omniscience.
 The early goal is to capture the highest-value, hardest-to-reconstruct decisions with enough context that later agents and operators can reuse them.
+
+That boundary can be made more specific.
+
+The product should strongly prefer automatic execution-path capture for decisions that are both high-frequency and hard to reconstruct later, such as:
+
+- an agent proposing multiple solution paths and a human selecting one
+- an agent abandoning a default path because of cost, authority, compatibility, or customer constraints
+- intermediate execution decisions made by the agent that materially affect the final result even though a human never reviewed each one
+
+The product should explicitly allow human supplementation for high-value decisions that happen outside direct agent visibility, such as:
+
+- a meeting where a customer-specific exception is approved
+- an email or chat thread where a delivery boundary is clarified
+- an expert explaining why a mainstream fix is unsafe in this repository
+
+The product does not need to force every surrounding artifact into a structured precedent record.
+Many long discussions are better kept as linked evidence rather than over-modeled fields.
+That is especially true for meeting notes, chat transcripts, design decks, and long email threads whose value is evidentiary more than structural.
 
 ## Which Decisions Matter Most
 
@@ -208,6 +237,24 @@ For the first phase, the strongest priority is narrower still:
 OpenPrecedent should first capture exception-driven decisions under real constraints, especially the places where a default or mainstream path would normally have been chosen but had to be changed because of customer requirements, historical baggage, defect-repair trade-offs, time-cut release pressure, undocumented architecture details, or temporary recovery needs.
 
 That makes these decisions stronger initial precedent candidates than generic architecture discussion or broad strategy commentary, because they are both harder to reconstruct later and more likely to mislead later agents into confident but wrong default choices.
+
+Within that class, the most practical first real-capture slice is even narrower:
+
+OpenPrecedent should start with implementation decisions where customer-specific constraints or historical compatibility constraints forced the team away from the default solution.
+
+This slice is especially attractive because it combines:
+
+- high consequence when repeated incorrectly
+- strong tendency for future agents to revert to the mainstream answer
+- weak recoverability from code alone
+- natural traces across issues, PRs, runtime activity, support context, and expert clarification
+
+A reasonable first ordering inside the initial slice is:
+
+- customer-specific exceptions that overrode the standard product path
+- compatibility or legacy constraints that overrode the preferred engineering path
+- temporary or transitional fixes that were chosen knowingly under local pressure
+- version-scope cuts that changed what "good enough for now" meant
 
 ## Candidate Jobs-To-Be-Done
 
@@ -250,6 +297,52 @@ The user is hiring it to:
 - shorten the path from "we solved something like this before" to "here is the part that still matters now"
 
 The product becomes more valuable when it behaves like a judgment inheritance layer, not just a history viewer.
+
+## How To Tell Whether OpenPrecedent Is Actually Useful
+
+It is not enough to say that the system recorded decisions.
+A useful precedent layer has to change later behavior, not just store more history.
+
+The evidence ladder should therefore be explicit.
+
+### Level 1: Capture success
+
+The system can reliably produce precedent candidates from real work.
+
+This only proves that the corpus exists.
+It does not yet prove that the corpus is changing future decisions.
+
+### Level 2: Retrieval success
+
+The system can return relevant prior cases when a similar situation appears later.
+
+This proves that the stored history is retrievable at the right moment, but it still does not prove that anyone changed course because of it.
+
+### Level 3: Decision-change success
+
+The retrieved precedent changes what the agent or operator does next.
+
+The strongest signals here are:
+
+- the agent abandons a tempting default solution after seeing a prior exception
+- the agent raises a clarification or approval need earlier than it otherwise would have
+- the user or agent chooses a path that matches prior repository-specific or customer-specific constraints instead of generic best practice
+- repeated reasoning that had already been rejected does not need to be rediscovered and rejected again
+
+### Level 4: Outcome-change success
+
+The changed behavior produces downstream benefit.
+
+Examples include:
+
+- less rework
+- fewer confident-but-wrong default implementations
+- less dependence on expert recall for recurring cases
+- fewer cases where temporary fixes are mistaken for long-term design
+- more stable handling of customer-specific and repository-specific exceptions
+
+So the success bar for OpenPrecedent is not "how much history was captured."
+The stronger bar is whether future execution requires less guesswork, less rediscovery, and less fragile dependence on asking the right human.
 
 ## Substitute Solutions
 
@@ -364,6 +457,13 @@ OpenPrecedent should aim to become the layer that helps agents and operators mak
 
 Its strategic path is not instant expert replacement.
 Its strategic path is to capture precedent during real expert-agent work, so the system compounds reusable decision history and reduces long-term dependence on fragile human recall.
+
+These four design questions are therefore tightly linked rather than independent:
+
+- pollution control defines what kind of historical judgment can be safely reused
+- hybrid capture defines how that judgment enters the system in the first place
+- first-slice prioritization defines where the product can start with the highest value and lowest ambiguity
+- usefulness criteria define whether the product is changing downstream decisions instead of merely archiving them
 
 ## Open Questions
 
