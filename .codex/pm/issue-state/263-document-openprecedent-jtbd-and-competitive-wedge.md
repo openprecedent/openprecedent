@@ -24,6 +24,7 @@ This issue should remain the anchor for later discussion rounds that refine Open
 - The note now identifies the highest-value precedent classes as hard-to-recover exception decisions: route changes, defect-repair trade-offs, customer-specific exceptions, time-cut version decisions, undocumented architecture details, and temporary fix choices.
 - The note now makes the first-phase prioritization explicit: exception-driven decisions under real constraints should land before generic architecture commentary or broad strategy notes.
 - The note now explains why existing infrastructure and manual recording systems are insufficient, and why agent-era precedent capture must sit on the execution path rather than only in after-the-fact documentation.
+- The note now explains that precedent is contextual historical judgment rather than timeless truth, and that early rollout must rely on hybrid capture because many high-value decisions still happen outside direct agent visibility.
 
 ## Open Questions
 

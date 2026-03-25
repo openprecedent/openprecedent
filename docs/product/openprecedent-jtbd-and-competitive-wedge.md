@@ -89,6 +89,8 @@ The strongest reason OpenPrecedent becomes more necessary in the agent era is th
 Compared with mostly human-driven work, agent-assisted work changes several fundamentals:
 
 - decision density increases sharply during one task
+- many decisions are now co-produced through human-agent interaction rather than only through human-human discussion
+- some intermediate decisions are made by the agent during task execution without direct human review at each step
 - default-path behavior becomes more dangerous because agents naturally gravitate toward generic and mainstream solutions
 - execution speed rises, so human recall becomes harder to insert at the right moment
 - captured precedent can now be consumed directly by later execution rather than only by later readers
@@ -100,6 +102,53 @@ In an agent era, the number and speed of decisions make that human-only recovery
 That is why execution-path capture matters.
 The point is not just to preserve history for later explanation.
 The point is to make prior judgment available to the next comparable decision while execution is still happening.
+
+## Decision Precedents Are Not Truth
+
+One critical risk is to confuse recorded decisions with timeless correct answers.
+That would make the system actively dangerous.
+
+A precedent may be:
+
+- wrong even at the time it was made
+- only valid under narrow local constraints
+- later invalidated by product, customer, architecture, or organizational change
+
+So OpenPrecedent should not treat precedent as policy or ground truth.
+It should treat precedent as contextualized historical judgment.
+
+The practical implication is that future agents should inherit more than the decision content itself.
+They should also inherit:
+
+- the constraints under which the decision was made
+- the alternatives that were considered or rejected
+- the evidence that was available at the time
+- the outcome or later evaluation when that is known
+- any indication that the decision was temporary, exceptional, or later superseded
+
+The product is most useful when it helps future execution ask "is this prior judgment still relevant here?" rather than silently assuming "do this because it happened before."
+
+## Early Rollout Requires Hybrid Capture
+
+Another practical limit is that many important decisions still happen outside agent visibility.
+They may appear in:
+
+- meetings
+- email
+- Slack or other chat systems
+- ad hoc spoken discussion
+
+So an early OpenPrecedent deployment should not assume full automatic capture.
+That assumption would be false in most real organizations.
+
+The more realistic early model is hybrid capture:
+
+- automatic or near-automatic capture from agent-visible execution paths
+- structured capture of human-agent interaction
+- low-friction human supplementation for off-path decisions that agents could not observe directly
+
+This means the early goal is not omniscience.
+The early goal is to capture the highest-value, hardest-to-reconstruct decisions with enough context that later agents and operators can reuse them.
 
 ## Which Decisions Matter Most
 
