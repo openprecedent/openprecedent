@@ -3,7 +3,7 @@ type: task
 epic: codex-runtime-research
 slug: document-openprecedent-jtbd-and-competitive-wedge
 title: Document OpenPrecedent jobs-to-be-done, substitute solutions, and competitive wedge
-status: in_progress
+status: done
 task_type: research
 labels: documentation,research
 issue: 263

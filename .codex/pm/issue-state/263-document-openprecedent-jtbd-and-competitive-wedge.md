@@ -3,12 +3,12 @@ type: issue_state
 issue: 263
 task: .codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md
 title: Document OpenPrecedent jobs-to-be-done, substitute solutions, and competitive wedge
-status: in_progress
+status: done
 ---
 
 ## Summary
 
-First-pass JTBD discussion note and matching GitHub issue are in place.
+First-pass English and Chinese JTBD discussion notes are in place and the GitHub issue is ready for PR review.
 This issue should remain the anchor for later discussion rounds that refine OpenPrecedent's primary job, substitute solutions, and future product wedge.
 
 ## Validated Facts
@@ -29,9 +29,9 @@ This issue should remain the anchor for later discussion rounds that refine Open
 
 ## Next Steps
 
-- Continue discussion and revise the living note rather than opening duplicate strategy notes.
+- Open the PR for issue `#263` and use it as the review surface for this first-pass note.
+- Continue discussion and revise the living notes rather than opening duplicate strategy notes.
 - Keep the English and Chinese notes aligned as later discussion rounds modify the thesis.
-- If later rounds materially change the thesis, update the issue body and issue-state summary to match.
 
 ## Artifacts
 
