@@ -11,6 +11,7 @@ status: done
 First-pass English and Chinese JTBD discussion notes are in place and the GitHub issue is open for iterative review.
 This issue should remain the anchor for later discussion rounds that refine OpenPrecedent's primary job, substitute solutions, and future product wedge.
 The current draft now also captures a four-part design analysis around precedent contamination, hybrid capture boundaries, initial capture scope, and usefulness criteria.
+The latest revision consolidates the living note into a clearer structure so the thesis, boundaries, capture model, substitute analysis, and usefulness criteria are easier to review without repeating the same argument in multiple sections.
 
 ## Validated Facts
 
@@ -31,6 +32,7 @@ The current draft now also captures a four-part design analysis around precedent
 - The note now makes the hybrid-capture boundary more concrete by distinguishing execution-path auto capture, human supplementation for off-path decisions, and artifact linkage without over-structuring every discussion thread.
 - The note now narrows the first real capture slice toward implementation decisions where customer-specific constraints or compatibility constraints forced a deviation from the default solution.
 - The note now states usefulness as a ladder: capture success, retrieval success, decision-change success, and outcome-change success.
+- The note now has a clearer top-level structure that reduces repetition by grouping thesis, problem, precedent boundaries, capture approach, adoption logic, and validation criteria into separate sections.
 
 ## Open Questions
 
