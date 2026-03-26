@@ -1,9 +1,8 @@
 # OpenPrecedent JTBD And Competitive Wedge
 
 Date: 2026-03-25
-Status: completed working note for this round
+Status: phase conclusion for the current JTBD round
 Chinese companion: [docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md)
-Phase conclusion: [docs/product/openprecedent-jtbd-phase-conclusion.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/product/openprecedent-jtbd-phase-conclusion.md)
 
 ## Why This Note Exists
 
@@ -683,3 +682,169 @@ These design questions are tightly linked rather than independent:
 - How should customer-specific exceptions be modeled without collapsing into a generic CRM or knowledge base product?
 - What evidence would prove that decision-time lineage changes downstream decisions rather than merely explaining them better afterward?
 - Which parts of expert judgment can realistically be externalized into precedent first, and which parts will remain expert-only for longer?
+
+## Phase Conclusion
+
+This JTBD round can now be treated as directionally converged.
+Using the frame from *Competing Against Luck*, the key questions are no longer just "who is the user" in the abstract, but:
+
+- in what situation the user hires the product
+- what progress the user is trying to make
+- what substitute set the user already uses instead
+
+On those questions, this note now gives a coherent answer.
+
+### What now appears answered
+
+Users are not hiring OpenPrecedent to own a decision archive or to inspect agent logs for their own sake.
+They are hiring it before a new meaningful decision so they can recover the historically relevant judgment from similar prior situations.
+What they want back is the part of prior history that still matters now:
+
+- decisive constraints
+- real exceptions
+- rejected options
+- boundary conditions
+- still-relevant trade-offs
+
+The real substitute set is also clearer now.
+It is not only tracing, observability, or memory tools.
+The practical substitute set is the combined workflow of non-consumption, expert recall, code search, repository history, docs, notes, chat threads, email, memory systems, and checklists.
+The strongest substitute is usually human recall and expert consultation rather than a single software product.
+
+The discussion now explains more clearly why existing approaches are insufficient.
+The problem is not that current systems store nothing.
+The problem is that they do not reliably preserve reusable judgment structure.
+What is especially easy to lose includes:
+
+- why the default path stopped being valid
+- which constraints forced the deviation
+- which options were seriously rejected and why
+- which exceptions were only locally valid
+- which decisions later expired or were superseded
+
+The analysis of the agent era is also more complete.
+The agent era matters not because decisions suddenly exist, but because their density, speed, and visibility have changed.
+Many decisions are now created through human-agent interaction, some are made by agents without direct human review of every step, and future execution is increasingly performed by agents that will default toward generic answers unless prior judgment is surfaced in time.
+That is why precedent now matters not only for explanation after the fact, but for later execution while it is still happening.
+
+The highest-value decision classes are also clearer.
+OpenPrecedent should prioritize exception-shaped decisions that are hard to reconstruct from final artifacts but highly consequential for later maintenance and future judgment.
+The leading examples identified in this round are:
+
+- customer-specific exceptions
+- historical compatibility constraints
+- defect-repair trade-offs
+- temporary or transitional fixes
+- version cuts under time pressure
+- architecture details that never fully made it into code or documentation
+
+The common pattern is more important than the examples themselves:
+the best initial precedents are decisions where a default path would normally have been taken, but a real constraint forced a different path.
+
+The product category itself is also clearer.
+OpenPrecedent should not be framed as a developer-only project precedent tool.
+Its long-term category is general decision-precedent infrastructure for agent-assisted execution.
+At the same time, the current wedge remains narrow: coding-agent and software-delivery work is still the first high-signal environment in which to validate the loop.
+
+### Direct answers to the core questions
+
+The customer should no longer be defined only as "developers."
+The more accurate customer model has three layers:
+
+- direct users who work with agents frequently and make decisions under local constraints
+- organizational customers whose systems accumulate exceptions, legacy baggage, and fragile hidden judgment
+- economic buyers who are accountable for maintenance burden, rework, delivery risk, or dependence on expert memory
+
+What these users hire OpenPrecedent to do is also clearer.
+They are not hiring it to own an archive.
+They are hiring it so that when a new consequential decision has to be made, they do not have to guess why a similar situation was judged a certain way before.
+
+The expected result is not abstractly "more knowledge."
+The expected result is operational:
+
+- fewer wrong default paths
+- less rework
+- less dependence on finding the right human expert at the right moment
+- less loss of exception-specific judgment when teams change
+- more agent behavior that reflects inherited experience rather than generic averaging
+
+The shortest defensible value statement from this discussion round is:
+
+OpenPrecedent reduces wrong default decisions.
+
+The discussion also has a clearer answer to why manual entry systems are insufficient as the primary mechanism.
+High-value decisions often happen under pressure, in exceptions, or in moments that still look temporary.
+That is exactly when structured manual recording is least reliable.
+Manual logging can still help as a supplement, but it is a weak default for the main capture path.
+
+The analysis of precedent misuse is also more mature.
+Precedent may be wrong when first recorded, only locally valid, or later invalidated.
+So precedent must be treated as a contextual historical judgment sample rather than timeless truth.
+That is why the current thesis now emphasizes:
+
+- applicability
+- invalidation and supersession
+- candidate precedent rather than silent enforcement
+
+The product also now has a cleaner answer to the generality question.
+The ambition must be general, but the validation path must be specific.
+So OpenPrecedent should be described as general agent precedent infrastructure, while the current wedge remains coding-agent and software-delivery validation.
+
+### What remains unresolved
+
+This phase can be considered directionally converged, but a few questions are still open at the product-definition level.
+
+The minimum target customer is still not finally locked.
+The discussion no longer treats "developers" as a sufficient answer, but it still has not defined the narrowest initial team profile that should adopt and buy first.
+
+The semantic core is also clearer, but the split between core fields and enrichment fields is still not final.
+The note now records a stronger candidate field set for case, decision, precedent, applicability, and related semantics, but it still does not fully distinguish:
+
+- which fields are required for the MVP semantic core
+- which fields can remain optional or arrive later as enrichment
+
+Runtime use is also not fully defined yet.
+The discussion is now clear that precedent should not be obeyed blindly, but it still has not fully specified when the product should:
+
+- suggest a precedent
+- require clarification
+- block a default action
+- escalate to a human
+- only annotate a decision after the fact
+
+Commercial packaging remains directional rather than final.
+The open-source foundation versus enterprise private-cloud boundary is clearer, but the actual packaging model is not yet complete.
+
+These are no longer questions of directional confusion.
+They are questions for later product definition.
+
+### Alignment with the current MVP
+
+The current MVP is directionally aligned with this conclusion in several important ways.
+It already follows the chain of case, event, decision, and precedent.
+It does not define itself as a generic graph, generic memory platform, or generic trace viewer.
+It already treats replay, explanation, and precedent retrieval as core capabilities.
+It is already validating the idea that relevant precedent can be retrieved from prior history.
+It already emphasizes local-first, single-agent validation over abstract platform claims.
+And it already follows the right proof order: validate one concrete loop before expanding.
+
+So the MVP should not be judged as having chosen the wrong direction.
+It already contains the structural skeleton of the broader product thesis.
+
+The main gap is one of level rather than direction.
+The current MVP still behaves more like a foundation for capture, replay, extraction, and retrieval over existing history.
+The stronger target described by this phase conclusion is decision-time judgment inheritance before the next meaningful action.
+
+The most important remaining differences are:
+
+- the MVP is still more focused on explaining past runs, while the conclusion emphasizes helping the next decision before it happens
+- the MVP is mostly validating a local single-agent coding environment, while the conclusion defines a broader product category for agent-assisted execution across domains
+- the MVP is still weak on off-path human context such as meetings, chat systems, email, and explicit expert supplementation
+- the MVP does not yet center applicability, invalidation, supersession, and temporality strongly enough, even though the current conclusion treats them as crucial for preventing precedent misuse
+- the MVP is still more oriented toward semantic retrieval plus replay, while the stronger thesis requires constraint-matching, exception-awareness, and historical validity checks
+- the MVP does not yet explicitly present the architecture as a core precedent layer, a domain adaptation layer, and a runtime usage layer
+
+So the best compact summary is:
+
+The MVP has already shown that a precedent loop can run.
+It has not yet fully become the general decision-precedent infrastructure described by this phase conclusion.
