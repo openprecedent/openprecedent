@@ -72,6 +72,167 @@ If OpenPrecedent is framed only as a developer tool, the ambition becomes artifi
 If it is framed only as a universal agent platform without a narrow wedge, the validation path becomes vague and the product thesis becomes hard to test.
 The product needs both: a general infrastructure ambition and a concrete first environment.
 
+## What Must Stay General Versus Domain-Specific
+
+If OpenPrecedent is meant to become infrastructure for many agent domains, the hardest design question is not whether many domains exist.
+The harder question is which parts of the system should remain stable across domains and which parts must remain adaptable.
+
+The wrong abstraction would be to generalize surface workflows.
+Software delivery, sales, operations, personal assistance, and industrial control do not share one workflow.
+What they can share is a common decision-precedent core.
+
+### Cross-domain stable object model
+
+The most plausible cross-domain stable objects are:
+
+- `case`
+  A bounded unit of work or situation where action is being taken.
+  Examples vary by domain, but the role is stable: this is the container for one meaningful piece of work.
+
+- `event`
+  A timestamped unit of runtime or interaction history.
+  Events are the raw material layer rather than the judgment layer.
+
+- `decision`
+  A derived record that captures where one path was chosen over another under real constraints.
+  This is the core unit that distinguishes OpenPrecedent from a generic event store.
+
+- `artifact`
+  Any external evidence, record, or output linked to the decision, such as a code diff, PR thread, chat message, meeting note, contract clause, ticket, dashboard snapshot, or report.
+
+- `precedent`
+  A preserved historical decision sample that is worth reusing later.
+  A precedent is not just "a decision that happened."
+  It is a decision record retained with enough context to be relevant to later judgment.
+
+- `applicability`
+  The explicit or inferred boundary describing when a precedent is relevant, when it is not, and which constraints must still match.
+
+- `invalidation` or `supersession`
+  Signals that a precedent was later replaced, overruled, expired, or limited by newer information.
+
+These objects should be more stable than any one domain taxonomy.
+If the core model depends too heavily on repository, PR, ticket, or coding-specific language, it will not generalize cleanly.
+
+### Cross-domain stable decision fields
+
+For the core `decision` and `precedent` layer, the following fields are the most likely to remain useful across domains:
+
+- `context`
+  The local situation in which the decision happened.
+  This should capture enough surrounding state to understand the pressure and scope of the choice.
+
+- `candidate_options`
+  The meaningful options that were available or considered at the time.
+
+- `chosen_option`
+  The path that was actually selected.
+
+- `default_path`
+  The standard, mainstream, or expected path that would usually have been taken if no special constraint had intervened.
+
+- `deviation_reason`
+  A concise explanation of why the chosen path differed from the default path.
+
+- `constraints`
+  The conditions that materially shaped the decision.
+  These may include customer-specific requirements, approval boundaries, compatibility constraints, safety rules, cost ceilings, personal preferences, policy restrictions, or time pressure.
+
+- `rejected_reasons`
+  Why other meaningful options were not selected.
+  This matters because future agent behavior often needs to avoid rediscovering the same rejected path.
+
+- `decision_actor`
+  Who primarily produced the judgment:
+  human, agent, or a human-agent combination.
+
+- `authority_boundary`
+  Whether the decision touched approval, ownership, delegation, or responsibility boundaries.
+
+- `evidence_refs`
+  Which artifacts, records, or runtime observations were used as evidence at the time.
+
+- `outcome`
+  What later happened after the decision.
+  This may remain unknown at first, but the model should allow it.
+
+- `temporality`
+  Whether the decision was intended as long-term, temporary, transitional, emergency-only, or explicitly local.
+
+- `applicability`
+  The circumstances under which this precedent should still be considered relevant in future situations.
+
+- `superseded_by` or `invalidated_by`
+  Later links that show the precedent should no longer be followed as originally recorded.
+
+Not every field must be fully populated in early capture.
+But these fields describe the semantic shape of a reusable precedent much better than domain-specific labels.
+
+### What should remain domain-specific
+
+Several important parts of the system should not be forced into one universal schema too early:
+
+- decision taxonomy
+  Software teams may talk about architecture choice, compatibility trade-offs, defect repair, and release cuts.
+  Sales teams may talk about discounting, concession boundaries, and approval exceptions.
+  Industrial teams may talk about safety overrides, degradation modes, and manual control transitions.
+
+- trigger moments
+  The right capture moment differs by domain.
+  In coding it may be before writing, during planning, or after failure.
+  In sales it may be before a quote or commitment.
+  In operations it may be before escalation, rerouting, or manual intervention.
+
+- evidence sources and connectors
+  Repositories, chat systems, ticketing, CRM, ERP, sensor streams, dashboards, calendars, and email all differ materially.
+
+- usefulness metrics
+  A coding workflow may care about rework and wrong default implementations.
+  A sales workflow may care about margin erosion, approval breaches, or bad commitments.
+  An industrial workflow may care about downtime, safety incidents, or unstable overrides.
+
+Trying to flatten these into one generic workflow model too early would make the system look universal while actually weakening it.
+
+### Recommended product layering
+
+The most defensible long-term shape is a three-layer system:
+
+- `core precedent layer`
+  The stable object model for case, event, decision, artifact, precedent, applicability, and invalidation.
+
+- `domain adaptation layer`
+  Domain-specific taxonomies, trigger points, connectors, and evaluation logic.
+
+- `runtime usage layer`
+  The place where precedent is surfaced during planning, approval, exception handling, recovery, or other decision moments.
+
+Without the core layer, OpenPrecedent becomes a collection of unrelated vertical workflows.
+Without the domain layer, it becomes an abstract shell that is too generic to be operationally useful.
+Without the runtime layer, it degrades into a passive archive.
+
+### Two failure modes to avoid
+
+There are two opposite abstraction failures:
+
+- over-generalization
+  The model becomes elegantly abstract but operationally empty.
+  It can describe many domains, but it does not tell any domain where to capture, what matters, or how to prove usefulness.
+
+- over-specialization
+  The model bakes in the language of one initial wedge so deeply that later domains cannot reuse the same core without schema distortion.
+
+The design goal is not to prove that all agent domains are identical.
+The goal is to identify the smallest stable semantic core of precedent and keep everything else adaptable.
+
+### Working heuristic
+
+The safest working heuristic is:
+
+OpenPrecedent should not model domain workflows as its primary abstraction.
+It should model historically grounded judgment under constraints.
+
+That framing is more likely to survive expansion beyond coding agents while still supporting a narrow first wedge.
+
 ## The Product Problem
 
 Users do not want a decision database for its own sake.

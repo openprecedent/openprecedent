@@ -14,6 +14,7 @@ The current draft now also captures a four-part design analysis around precedent
 The latest revision consolidates the living note into a clearer structure so the thesis, boundaries, capture model, substitute analysis, and usefulness criteria are easier to review without repeating the same argument in multiple sections.
 The current revision also sharpens the JTBD analysis around target customers, expected outcomes, simplified value, and the open-source versus commercial boundary for a future enterprise offering.
 The current revision also separates the general product category from the initial validation wedge so the note no longer implies that OpenPrecedent is only for developer workflows.
+The current revision also adds a more detailed abstraction boundary for a cross-domain precedent layer, including stable core objects, stable decision fields, domain-specific adaptation points, and the main over-generalization versus over-specialization risks.
 
 ## Validated Facts
 
@@ -42,6 +43,11 @@ The current revision also separates the general product category from the initia
 - The note now explicitly distinguishes OpenPrecedent's product category from its first validation environment: the long-term category is general agent decision-precedent infrastructure, while the current wedge remains software delivery and coding-agent work.
 - The note now explains why a universal agent ambition and a narrow initial wedge must both be true at the same time rather than treated as competing descriptions.
 - The note now states that the cross-domain commonality lies in decision paths, judgment loss, and later precedent reuse, while domain-specific differences still matter for capture surfaces, taxonomies, and evaluation.
+- The note now adds a more explicit candidate cross-domain object model built around case, event, decision, artifact, precedent, applicability, and invalidation or supersession.
+- The note now records a detailed candidate set of cross-domain decision fields including context, candidate options, chosen option, default path, deviation reason, constraints, rejected reasons, decision actor, authority boundary, evidence references, outcome, temporality, applicability, and later supersession or invalidation links.
+- The note now distinguishes which parts of the system should stay domain-specific: decision taxonomy, trigger moments, connectors, and usefulness metrics.
+- The note now proposes a three-layer product shape: core precedent layer, domain adaptation layer, and runtime usage layer.
+- The note now names the two main abstraction risks directly: over-generalization and over-specialization.
 
 ## Open Questions
 
