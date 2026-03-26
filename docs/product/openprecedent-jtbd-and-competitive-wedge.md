@@ -1,8 +1,9 @@
 # OpenPrecedent JTBD And Competitive Wedge
 
 Date: 2026-03-25
-Status: draft living note
+Status: completed working note for this round
 Chinese companion: [docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md)
+Phase conclusion: [docs/product/openprecedent-jtbd-phase-conclusion.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/product/openprecedent-jtbd-phase-conclusion.md)
 
 ## Why This Note Exists
 

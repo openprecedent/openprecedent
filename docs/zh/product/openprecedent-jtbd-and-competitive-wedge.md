@@ -1,8 +1,9 @@
 # OpenPrecedent 待完成任务与竞争切入点
 
 日期：2026-03-25
-状态：草稿中的持续维护文档
+状态：本轮已完成的工作文档
 英文对应稿：[docs/product/openprecedent-jtbd-and-competitive-wedge.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/product/openprecedent-jtbd-and-competitive-wedge.md)
+阶段性结论稿：[docs/zh/product/openprecedent-jtbd-phase-conclusion.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/zh/product/openprecedent-jtbd-phase-conclusion.md)
 
 ## 为什么写这份文档
 

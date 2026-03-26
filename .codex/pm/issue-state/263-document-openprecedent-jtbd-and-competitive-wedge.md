@@ -15,6 +15,7 @@ The latest revision consolidates the living note into a clearer structure so the
 The current revision also sharpens the JTBD analysis around target customers, expected outcomes, simplified value, and the open-source versus commercial boundary for a future enterprise offering.
 The current revision also separates the general product category from the initial validation wedge so the note no longer implies that OpenPrecedent is only for developer workflows.
 The current revision also adds a more detailed abstraction boundary for a cross-domain precedent layer, including stable core objects, stable decision fields, domain-specific adaptation points, and the main over-generalization versus over-specialization risks.
+The current revision also adds a separate bilingual phase-conclusion note that standardizes the main answers from this discussion round and marks the earlier wedge note as the completed working note for this phase.
 
 ## Validated Facts
 
@@ -48,6 +49,8 @@ The current revision also adds a more detailed abstraction boundary for a cross-
 - The note now distinguishes which parts of the system should stay domain-specific: decision taxonomy, trigger moments, connectors, and usefulness metrics.
 - The note now proposes a three-layer product shape: core precedent layer, domain adaptation layer, and runtime usage layer.
 - The note now names the two main abstraction risks directly: over-generalization and over-specialization.
+- The issue now has a separate bilingual phase-conclusion note that summarizes answered questions, unresolved questions, and current MVP alignment versus gaps in a more standardized form.
+- The earlier bilingual wedge note is now marked as the completed working note for this discussion round and points readers to the new phase-conclusion document.
 
 ## Open Questions
 
@@ -68,5 +71,7 @@ The current revision also adds a more detailed abstraction boundary for a cross-
 
 - `docs/product/openprecedent-jtbd-and-competitive-wedge.md`
 - `docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md`
+- `docs/product/openprecedent-jtbd-phase-conclusion.md`
+- `docs/zh/product/openprecedent-jtbd-phase-conclusion.md`
 - `.codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md`
 - `https://github.com/openprecedent/openprecedent/issues/263`
