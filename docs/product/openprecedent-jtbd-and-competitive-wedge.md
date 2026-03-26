@@ -250,6 +250,19 @@ That is especially true for meeting notes, chat transcripts, design decks, and l
 OpenPrecedent should not think of itself as selling replay, storage, or retrieval in isolation.
 The user is hiring it to reduce decision risk before the next meaningful action, avoid repeating already rejected reasoning, surface repository-specific and customer-specific exceptions, and shorten the path from "we solved something like this before" to "here is the part that still matters now."
 
+Before narrowing the job itself, it helps to name the customer correctly.
+The customer should not be framed too loosely as "developers" in general.
+That would be as weak as describing the milkshake buyer only by age or commute demographics.
+
+The more useful working customer model is layered:
+
+- direct users are engineers, tech leads, delivery leads, and agent operators who repeatedly make project decisions under repository-specific or customer-specific constraints
+- organizational customers are software teams and product organizations whose systems evolve over time while accumulating special cases, legacy baggage, and non-obvious exceptions
+- economic buyers are usually engineering leaders, platform owners, AI workflow owners, delivery leaders, or product-line owners who are accountable for maintenance cost, rework, and operational dependence on expert memory
+
+What these customers share is not a job title.
+What they share is a recurring need to make new decisions in environments where the right answer depends on lost or fragmented prior judgment.
+
 ### Candidate Primary Job: Decision-time judgment inheritance
 
 When a user or agent needs to make a meaningful new decision in a real project, they need a compact view of what prior similar situations already taught them about the right framing, constraints, trade-offs, authority boundaries, and success criteria.
@@ -276,6 +289,18 @@ The important point is that this does not require instant replacement of expert 
 The product can begin by supporting professionals during real work, then gradually accumulate the decision precedents that later reduce dependence on fragile human recall.
 
 This matters, but it is more of a long-term compounding benefit than the narrowest initial wedge.
+
+### Expected Outcome For The Customer
+
+The customer is not hiring OpenPrecedent to own a decision archive.
+The expected outcome is more operational:
+
+- recover the constraints, exceptions, and rejected paths that still matter before making a new decision
+- reduce confident-but-wrong default solutions
+- reduce dependence on asking the same expert to reconstruct history again
+- keep project-specific and customer-specific judgment from disappearing as teams, roles, and agent usage change
+
+In short, the customer is hiring OpenPrecedent to reduce decision error under historical constraints, not merely to improve documentation quality.
 
 ## Substitute Solutions And Adoption Bar
 
@@ -323,6 +348,17 @@ Users may still choose substitutes when:
 This means that better replay alone is unlikely to be enough.
 If OpenPrecedent cannot beat the combined workflow of search plus human recall, it will not become a durable habit.
 
+This also clarifies the product's core value in a simpler way.
+The product is not primarily valuable because it records more history.
+It is valuable because it can reduce wrong default decisions in situations where generic best practice no longer applies.
+
+That value usually shows up through:
+
+- less rework after following an apparently reasonable but actually invalid mainstream path
+- less repeated rediscovery of already rejected reasoning
+- less operational dependence on the memory of a few experts
+- more stable handling of repository-specific and customer-specific exceptions
+
 ## How To Tell Whether OpenPrecedent Is Actually Useful
 
 It is not enough to say that the system recorded decisions.
@@ -363,6 +399,45 @@ Examples include:
 
 So the success bar for OpenPrecedent is not how much history was captured.
 The stronger bar is whether future execution requires less guesswork, less rediscovery, and less fragile dependence on asking the right human.
+
+## Open Source And Commercial Boundary
+
+OpenPrecedent should not assume that open source alone or proprietary packaging alone answers the market question.
+The more important question is which parts of the problem are best solved as an open precedent layer and which parts become enterprise buying reasons.
+
+An open source foundation is especially strong for:
+
+- the local-first precedent model
+- transparent capture, replay, explanation, and retrieval primitives
+- developer trust, auditability, and ecosystem adoption
+- a self-hosted base for teams that want to experiment or extend the system
+
+A proprietary or private-cloud offering only becomes defensible if it solves problems that customers struggle to assemble and maintain themselves, such as:
+
+- enterprise deployment, tenancy, security, and compliance requirements
+- connectors across repository systems, chat systems, meeting artifacts, support systems, and agent runtimes
+- cross-team governance of precedent quality, invalidation, and access boundaries
+- implementation support, domain-specific rollout, and operational accountability
+
+That means the business cannot rely on "closed source" as the advantage.
+It has to win on integration depth, enterprise fit, and responsibility for outcome.
+
+This also explains why some customers will still choose a commercial offering over the open source base:
+
+- they want faster deployment than self-assembly
+- they need a vendor to own support and integration risk
+- they operate under private-cloud, compliance, or data-boundary constraints
+- they need precedent capture to work across more enterprise surfaces than an internal platform team can reasonably maintain
+
+The business model should therefore be closer to organization-level capability sales than to a narrow developer-tool seat sale.
+Reasonable revenue levers include:
+
+- subscription for enterprise or private-cloud deployment
+- pricing by managed projects, agent workflows, or organization scope rather than only individual seats
+- professional services or implementation packages for enterprise rollout and system integration
+
+The strategic caution is that the product should start from developer and agent workflows without getting trapped as "just another developer tool."
+The deeper opportunity is an organizational decision-inheritance layer that begins in software delivery and later extends to adjacent product, delivery, and customer-exception decisions.
 
 ## Current MVP Versus Future Target
 

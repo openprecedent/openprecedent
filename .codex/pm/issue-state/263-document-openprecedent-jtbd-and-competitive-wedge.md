@@ -12,6 +12,7 @@ First-pass English and Chinese JTBD discussion notes are in place and the GitHub
 This issue should remain the anchor for later discussion rounds that refine OpenPrecedent's primary job, substitute solutions, and future product wedge.
 The current draft now also captures a four-part design analysis around precedent contamination, hybrid capture boundaries, initial capture scope, and usefulness criteria.
 The latest revision consolidates the living note into a clearer structure so the thesis, boundaries, capture model, substitute analysis, and usefulness criteria are easier to review without repeating the same argument in multiple sections.
+The current revision also sharpens the JTBD analysis around target customers, expected outcomes, simplified value, and the open-source versus commercial boundary for a future enterprise offering.
 
 ## Validated Facts
 
@@ -33,6 +34,10 @@ The latest revision consolidates the living note into a clearer structure so the
 - The note now narrows the first real capture slice toward implementation decisions where customer-specific constraints or compatibility constraints forced a deviation from the default solution.
 - The note now states usefulness as a ladder: capture success, retrieval success, decision-change success, and outcome-change success.
 - The note now has a clearer top-level structure that reduces repetition by grouping thesis, problem, precedent boundaries, capture approach, adoption logic, and validation criteria into separate sections.
+- The note now adds a layered customer model that distinguishes direct users, organizational customers, and economic buyers instead of treating "developers" as a sufficient customer definition.
+- The note now makes the expected customer outcome more explicit: reduce decision error under historical constraints rather than merely produce a decision archive.
+- The note now simplifies the core value proposition around reducing wrong default decisions in exception-heavy project contexts.
+- The note now describes a clearer commercial boundary: open source should win on the precedent-layer foundation, while a commercial or private-cloud offering would only be defensible through enterprise integration, governance, deployment, and accountability.
 
 ## Open Questions
 
