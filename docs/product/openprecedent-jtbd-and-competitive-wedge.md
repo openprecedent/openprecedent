@@ -33,6 +33,45 @@ That matters most when critical context is fragmented across runtime history, hu
 The strategic path is not instant expert replacement.
 The strategic path is to capture precedent during real expert-agent work, so reusable judgment compounds over time and dependence on fragile human recall gradually decreases.
 
+## General Infrastructure Versus Initial Wedge
+
+One recurring source of confusion is to collapse OpenPrecedent's long-term product category into its first validation environment.
+That would be too narrow.
+
+OpenPrecedent should not be understood as infrastructure only for software teams or only for developer project precedent management.
+The broader product thesis is a general precedent layer for agents.
+Wherever an agent participates in execution, there is usually some form of decision path, judgment loss, and later need for decision reuse.
+
+That broader thesis plausibly applies across many domains, including:
+
+- software delivery and coding agents
+- sales and customer-facing agents
+- operations and organizational workflow agents
+- personal assistant agents
+- industrial or operational control agents
+
+The cross-domain commonality is not the surface workflow.
+The commonality is the underlying job:
+
+- an agent or human-agent pair makes decisions under local constraints
+- some of the important judgment is temporary, fragmented, or weakly represented in final artifacts
+- later execution benefits if that prior judgment can be retrieved as precedent rather than rediscovered from scratch
+
+At the same time, the first wedge should still be much narrower than the eventual product category.
+Different domains have very different decision taxonomies, capture surfaces, evidence models, risk profiles, and usefulness metrics.
+So the product should not pretend that a single initial workflow proves all domains equally well.
+
+The right framing is therefore layered:
+
+- the product category is a general decision-precedent infrastructure for agents
+- the current validation wedge is software delivery and coding-agent work because that is where the team can most concretely observe decision paths, capture artifacts, and downstream effects
+- future expansion can target other agent-heavy domains once the core precedent model and retrieval logic are proven in one high-signal environment
+
+This distinction matters strategically.
+If OpenPrecedent is framed only as a developer tool, the ambition becomes artificially small.
+If it is framed only as a universal agent platform without a narrow wedge, the validation path becomes vague and the product thesis becomes hard to test.
+The product needs both: a general infrastructure ambition and a concrete first environment.
+
 ## The Product Problem
 
 Users do not want a decision database for its own sake.
@@ -449,6 +488,7 @@ The current OpenPrecedent MVP is strongest at:
 - retrieving semantically related precedent from prior history
 
 That is an important base, but it is still best understood as infrastructure that proves the loop is viable.
+It is also proving that loop first inside a narrow, high-signal environment rather than across every possible agent domain at once.
 
 The stronger future product target is narrower and more opinionated:
 
@@ -460,6 +500,11 @@ The stronger future product target is narrower and more opinionated:
 
 The future product should not become a generic graph, generic memory platform, or generic trace viewer.
 Its distinctive value is decision inheritance under real project constraints.
+
+Over time, that value should extend beyond coding agents.
+The generalizable layer is not "software project history" as such.
+The generalizable layer is contextual decision precedent for agent-assisted execution.
+If the model is right, the same core object model should later support additional domains with domain-specific connectors, decision taxonomies, and evaluation logic layered on top.
 
 These design questions are tightly linked rather than independent:
 

@@ -13,6 +13,7 @@ This issue should remain the anchor for later discussion rounds that refine Open
 The current draft now also captures a four-part design analysis around precedent contamination, hybrid capture boundaries, initial capture scope, and usefulness criteria.
 The latest revision consolidates the living note into a clearer structure so the thesis, boundaries, capture model, substitute analysis, and usefulness criteria are easier to review without repeating the same argument in multiple sections.
 The current revision also sharpens the JTBD analysis around target customers, expected outcomes, simplified value, and the open-source versus commercial boundary for a future enterprise offering.
+The current revision also separates the general product category from the initial validation wedge so the note no longer implies that OpenPrecedent is only for developer workflows.
 
 ## Validated Facts
 
@@ -38,6 +39,9 @@ The current revision also sharpens the JTBD analysis around target customers, ex
 - The note now makes the expected customer outcome more explicit: reduce decision error under historical constraints rather than merely produce a decision archive.
 - The note now simplifies the core value proposition around reducing wrong default decisions in exception-heavy project contexts.
 - The note now describes a clearer commercial boundary: open source should win on the precedent-layer foundation, while a commercial or private-cloud offering would only be defensible through enterprise integration, governance, deployment, and accountability.
+- The note now explicitly distinguishes OpenPrecedent's product category from its first validation environment: the long-term category is general agent decision-precedent infrastructure, while the current wedge remains software delivery and coding-agent work.
+- The note now explains why a universal agent ambition and a narrow initial wedge must both be true at the same time rather than treated as competing descriptions.
+- The note now states that the cross-domain commonality lies in decision paths, judgment loss, and later precedent reuse, while domain-specific differences still matter for capture surfaces, taxonomies, and evaluation.
 
 ## Open Questions
 
