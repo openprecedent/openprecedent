@@ -1,0 +1,75 @@
+---
+type: issue_state
+issue: 263
+task: .codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md
+title: Document OpenPrecedent jobs-to-be-done, substitute solutions, and competitive wedge
+status: done
+---
+
+## Summary
+
+First-pass English and Chinese JTBD discussion notes are in place and the GitHub issue is open for iterative review.
+This issue should remain the anchor for later discussion rounds that refine OpenPrecedent's primary job, substitute solutions, and future product wedge.
+The current draft now also captures a four-part design analysis around precedent contamination, hybrid capture boundaries, initial capture scope, and usefulness criteria.
+The latest revision consolidates the living note into a clearer structure so the thesis, boundaries, capture model, substitute analysis, and usefulness criteria are easier to review without repeating the same argument in multiple sections.
+The current revision also sharpens the JTBD analysis around target customers, expected outcomes, simplified value, and the open-source versus commercial boundary for a future enterprise offering.
+The current revision also separates the general product category from the initial validation wedge so the note no longer implies that OpenPrecedent is only for developer workflows.
+The current revision also adds a more detailed abstraction boundary for a cross-domain precedent layer, including stable core objects, stable decision fields, domain-specific adaptation points, and the main over-generalization versus over-specialization risks.
+The current revision now folds the phase conclusion back into the main bilingual wedge note so the issue resolves to a single conclusion-bearing document set rather than separate exploratory and conclusion notes.
+
+## Validated Facts
+
+- GitHub issue `#263` exists and is labeled `documentation` and `research`.
+- The local task twin is `.codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md`.
+- The draft living note is `docs/product/openprecedent-jtbd-and-competitive-wedge.md`.
+- The aligned Chinese companion note is `docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md`.
+- The current note now frames OpenPrecedent primarily around new-decision judgment inheritance rather than only execution-time support.
+- The note now treats human recall and expert consultation as the most important long-term substitute for OpenPrecedent to displace gradually.
+- The note explicitly calls out off-transcript decision context such as meetings, Slack, IM, expert recall, and customer-specific exceptions.
+- The note now makes the compounding path explicit: OpenPrecedent should accumulate reusable precedent through repeated expert-agent interaction rather than claim instant expert replacement.
+- The note now identifies the highest-value precedent classes as hard-to-recover exception decisions: route changes, defect-repair trade-offs, customer-specific exceptions, time-cut version decisions, undocumented architecture details, and temporary fix choices.
+- The note now makes the first-phase prioritization explicit: exception-driven decisions under real constraints should land before generic architecture commentary or broad strategy notes.
+- The note now explains why existing infrastructure and manual recording systems are insufficient, and why agent-era precedent capture must sit on the execution path rather than only in after-the-fact documentation.
+- The note now explains that precedent is contextual historical judgment rather than timeless truth, and that early rollout must rely on hybrid capture because many high-value decisions still happen outside direct agent visibility.
+- The note now separates wrong precedents, locally valid precedents, and later-invalid precedents, and makes the product boundary more explicit: OpenPrecedent should surface candidate precedent rather than silently enforce historical imitation.
+- The note now explains that contamination control should be layered: capture nearby constraints first, allow later enrichment, and treat retrieved precedent as something to re-evaluate rather than obey.
+- The note now makes the hybrid-capture boundary more concrete by distinguishing execution-path auto capture, human supplementation for off-path decisions, and artifact linkage without over-structuring every discussion thread.
+- The note now narrows the first real capture slice toward implementation decisions where customer-specific constraints or compatibility constraints forced a deviation from the default solution.
+- The note now states usefulness as a ladder: capture success, retrieval success, decision-change success, and outcome-change success.
+- The note now has a clearer top-level structure that reduces repetition by grouping thesis, problem, precedent boundaries, capture approach, adoption logic, and validation criteria into separate sections.
+- The note now adds a layered customer model that distinguishes direct users, organizational customers, and economic buyers instead of treating "developers" as a sufficient customer definition.
+- The note now makes the expected customer outcome more explicit: reduce decision error under historical constraints rather than merely produce a decision archive.
+- The note now simplifies the core value proposition around reducing wrong default decisions in exception-heavy project contexts.
+- The note now describes a clearer commercial boundary: open source should win on the precedent-layer foundation, while a commercial or private-cloud offering would only be defensible through enterprise integration, governance, deployment, and accountability.
+- The note now explicitly distinguishes OpenPrecedent's product category from its first validation environment: the long-term category is general agent decision-precedent infrastructure, while the current wedge remains software delivery and coding-agent work.
+- The note now explains why a universal agent ambition and a narrow initial wedge must both be true at the same time rather than treated as competing descriptions.
+- The note now states that the cross-domain commonality lies in decision paths, judgment loss, and later precedent reuse, while domain-specific differences still matter for capture surfaces, taxonomies, and evaluation.
+- The note now adds a more explicit candidate cross-domain object model built around case, event, decision, artifact, precedent, applicability, and invalidation or supersession.
+- The note now records a detailed candidate set of cross-domain decision fields including context, candidate options, chosen option, default path, deviation reason, constraints, rejected reasons, decision actor, authority boundary, evidence references, outcome, temporality, applicability, and later supersession or invalidation links.
+- The note now distinguishes which parts of the system should stay domain-specific: decision taxonomy, trigger moments, connectors, and usefulness metrics.
+- The note now proposes a three-layer product shape: core precedent layer, domain adaptation layer, and runtime usage layer.
+- The note now names the two main abstraction risks directly: over-generalization and over-specialization.
+- The main bilingual wedge note now carries the phase conclusion directly, including answered questions, unresolved questions, and current MVP alignment versus gaps.
+- The issue no longer depends on a separate conclusion document; instead, the wedge note now serves as the single phase-conclusion artifact for this JTBD round.
+
+## Open Questions
+
+- How much off-transcript context should future OpenPrecedent ingest directly versus reference indirectly?
+- What should count as the narrowest initial product wedge: planning, before-write, failure-recovery, or approval-boundary support?
+- How should customer-specific exceptions be modeled without broadening into a generic memory platform?
+- What future evidence would show that lineage changes downstream decisions rather than only helping later explanation?
+- Which contamination signals are realistic to capture early, and which ones require later enrichment or explicit human review?
+- Among customer-specific exceptions, compatibility constraints, temporary fixes, and version cuts, which first real capture slice should be prioritized for initial runtime validation?
+
+## Next Steps
+
+- Use the PR for issue `#263` as the review surface for ongoing thesis corrections.
+- Continue discussion and revise the living notes rather than opening duplicate strategy notes.
+- Keep the English and Chinese notes aligned as later discussion rounds modify the thesis.
+
+## Artifacts
+
+- `docs/product/openprecedent-jtbd-and-competitive-wedge.md`
+- `docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md`
+- `.codex/pm/tasks/codex-runtime-research/document-openprecedent-jtbd-and-competitive-wedge.md`
+- `https://github.com/openprecedent/openprecedent/issues/263`
