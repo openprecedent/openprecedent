@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: establish-repository-wide-doc-chronology-and-entrypoints
 title: Establish repository-wide documentation chronology and canonical entrypoint conventions
-status: in_progress
+status: done
 task_type: docs
 labels: documentation
 issue: 265
