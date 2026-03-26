@@ -47,6 +47,29 @@ OpenPrecedent 应该成为一层面向 Agent 与操作者的判断继承层。
 
 因此，OpenPrecedent 最合理的角色不是外围分析工具，而是位于事件系统之上、Agent runtime 之旁、人工治理界面之前的 precedent layer。
 
+## 把 Foundation Capital 的 Context Graph 论点作为外部参照
+
+这轮产品讨论还有一个值得显式纳入的外部参照，是 Foundation Capital 于 `2025-12-22` 发布的文章
+[`AI's trillion-dollar opportunity: Context graphs`](https://foundationcapital.com/ideas/context-graphs-ais-trillion-dollar-opportunity)。
+
+这篇文章里使用的 `context graph`，和很多偏长期记忆、图检索增强生成（graph-RAG）或通用 memory infra 的讨论并不一样。
+它真正关心的，不是泛化的长期记忆，而是企业通常只能保留最终状态和最终动作，却保不住例外处理、override、审批和后续可复用先例背后的决策轨迹。
+
+这使它和 OpenPrecedent 当前方向之间存在很强的重合：
+
+- 两者都在指向一层围绕决策历史的缺失基础设施，而不是通用可观测性或通用图存储
+- 两者都认为最关键的位置在 Agent 执行路径上或其旁边，也就是判断即将转成动作的地方
+- 两者都认为现有 system of record 很难以原始形态保住可复用的决策上下文
+
+但差异也同样重要：
+
+- Foundation 仍然把 `context graph` 当作上位类别名
+- OpenPrecedent 现在更直接地把核心对象命名为 `decision` 和 `precedent`
+- Foundation 的表达更像类别与市场论点，而 OpenPrecedent 当前的切入点更窄，聚焦在真实 Agent 工作中的决策回放、解释和先例检索
+
+因此，这篇文章更适合作为一个外部确认性参照，而不是命名指令。
+它帮助说明，最初的 `Context Graph` 方向确实指向了一个真实的产品空白；同时也说明，产品后来继续收敛到更明确的“决策与先例层”，并不是偏离，而是在把对象和切入点讲得更锋利。
+
 ## 产品在客户生态中的嵌入角色
 
 如果 OpenPrecedent 的目标是辅助 Agent 跑得更稳，它在客户生态中的嵌入位置就不能只是“多一个后台”。
