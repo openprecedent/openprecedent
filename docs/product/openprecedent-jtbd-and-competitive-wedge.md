@@ -1,6 +1,6 @@
 # OpenPrecedent JTBD And Competitive Wedge
 
-Date: 2026-03-25
+Date: 2026-03-26
 Status: phase conclusion for the current JTBD round
 Chinese companion: [docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md](/root/.config/superpowers/worktrees/openprecedent/codex-jtbd-product-wedge/docs/zh/product/openprecedent-jtbd-and-competitive-wedge.md)
 
@@ -32,6 +32,100 @@ Its job is to preserve and retrieve the prior judgment that still matters when a
 That matters most when critical context is fragmented across runtime history, human discussion, customer-specific exceptions, and expert memory.
 The strategic path is not instant expert replacement.
 The strategic path is to capture precedent during real expert-agent work, so reusable judgment compounds over time and dependence on fragile human recall gradually decreases.
+
+OpenPrecedent also should not be positioned as another standalone backend someone has to open, nor as a purely post-hoc analysis console.
+The better product role is:
+
+- a decision inheritance layer inside the customer's existing agent stack
+- a runtime precedent service
+- decision middleware inside the customer's working flow
+
+It should not replace the customer's existing agent runtime, orchestration layer, or workflow engine.
+It should supply a missing layer those systems usually do not have:
+
+- surface similar precedent before the next action
+- recover the constraints and boundaries that mattered before
+- explain why the default path broke down
+- remind the agent which options were seriously rejected
+- indicate when the situation should escalate to approval or human takeover
+
+So the right mental model is not an external analysis tool.
+It is a precedent layer that sits above event systems, beside agent runtimes, and before human governance surfaces.
+
+## Product Role Inside The Customer Ecosystem
+
+If OpenPrecedent is meant to help agents run more reliably, it cannot live only as "another dashboard."
+It should occupy three places in the customer's ecosystem, with a clear order of importance.
+
+### First position: runtime sidecar decision service
+
+This is the primary role.
+When an agent is planning, selecting tools, handling exceptions, or preparing a high-risk action, OpenPrecedent should not execute for the agent.
+It should deliver the historical judgment the current decision actually needs.
+
+The most important outputs here are not raw logs, but:
+
+- similar precedent
+- the constraints that held at the time
+- why the default path failed
+- which options had already been rejected
+- which situations require escalation or human takeover
+
+In system terms, this is the missing layer between policy, context, and retrieval.
+But the core is not static rules or generic knowledge search.
+It is reusable historical judgment.
+Inside the customer stack, it should exist as a service called by the orchestration layer, agent runtime, and workflow engine.
+
+### Second position: decision capture along the path
+
+OpenPrecedent also has to be embedded close to where decisions are made, not just after outcomes are already finalized.
+The most valuable structured judgments usually appear at moments like:
+
+- when a plan is formed
+- when the flow deviates from the default path
+- when a customer-specific exception is triggered
+- when a human approval or takeover happens
+- when failure recovery or rollback occurs
+
+That means it should also act as a decision capture adapter:
+connecting issue systems, code repositories, chat systems, CRM, approval systems, and runtime history, then turning raw events into decision and precedent.
+
+### Third position: human review and governance surface
+
+This role is also necessary, but it should not define the primary product identity.
+People still need a place to inspect:
+
+- why a decision happened
+- what evidence it relied on
+- whether a precedent is still valid
+- which precedents should be retired, replaced, or promoted into more stable rules
+
+So the product can have a workbench, but that workbench is better understood as a governance and correction surface than as the main embed point.
+
+### The correct boundary for this layer
+
+If the customer environment is split into broad layers, the more accurate picture is:
+
+- lower layer: logs, traces, chat, code, tickets, CRM, and other raw systems
+- middle layer: OpenPrecedent, which turns raw material into decision and precedent
+- upper layer: agents, copilots, approval flows, and human operators that consume precedent at key moments
+
+So OpenPrecedent should not become:
+
+- a standalone knowledge base
+- a pure observability product
+- a general workflow engine
+- a replacement for the customer's agent runtime
+
+It should instead be understood as:
+
+- decision memory
+- a precedent retrieval layer
+- an exception-aware decision context service
+
+The shortest accurate definition is:
+
+OpenPrecedent should be embedded as decision middleware inside the customer's operating flow, not as a peripheral analysis tool.
 
 ## General Infrastructure Versus Initial Wedge
 
@@ -249,7 +343,20 @@ The deeper risk is that an agent or later human operator forgets:
 
 If those signals are absent, later iterations may still look competent while moving in the wrong direction.
 
-## Why Existing Approaches Break Down
+## Pre-agent Pain Already Existed, And Existing Approaches Still Break Down
+
+OpenPrecedent is not solving a problem that suddenly appeared only after agents arrived.
+Before the agent era, enterprises already had recurring pain around decision capture and precedent reuse:
+
+- critical judgment scattered across meetings, email, chat, tickets, code review, and release notes
+- final artifacts preserved, but the reasoning behind them lost
+- team changes making "don't do it this way" knowledge hard to inherit
+- the same class of exception handled repeatedly as if for the first time
+- high-risk judgment depending on a few experts' tacit memory
+- audits able to reconstruct actions, but not the judgment process itself
+
+So decision capture and precedent reuse are not new agent-era inventions.
+They are older organizational problems that lacked a clean product category.
 
 OpenPrecedent should not be justified by claiming that existing systems record nothing.
 They do record many adjacent things, but they usually do not preserve reusable judgment structure in the right place or form.
@@ -288,6 +395,22 @@ They are much weaker as the main way to preserve high-value exception decisions.
 
 OpenPrecedent becomes more necessary in the agent era because decision-making moves from a relatively low-frequency organizational activity into a high-frequency execution activity.
 
+The deeper reason is that agents naturally sit on the decision-execution path.
+Before agents, many enterprise systems were primarily result-recording or action-recording systems:
+
+- databases recorded resulting state
+- ERP, ticketing, CRM, and approval systems recorded actions, routing, and outcomes
+- docs, ADRs, and retrospectives recorded explanation after the fact
+
+Those systems still matter, but they usually do not sit directly at the moment where judgment becomes execution.
+Agents do.
+They naturally sit inside planning, tool choice, exception handling, execution deviation, failure recovery, and human escalation.
+That changes the product opportunity:
+
+- decisions can be captured with lower friction when they happen
+- captured judgment can be consumed directly by the next runtime decision
+- governance no longer has to stay purely post-hoc and archival
+
 Compared with mostly human-driven work, agent-assisted work changes several fundamentals:
 
 - decision density increases sharply during one task
@@ -304,6 +427,37 @@ In an agent era, the number and speed of decisions make that human-only recovery
 That is why execution-path capture matters.
 The point is not just to preserve history for later explanation.
 The point is to make prior judgment available to the next comparable decision while execution is still happening.
+
+Seen this way, agents did not invent the precedent problem.
+They amplified the need for precedent infrastructure and made it more productizable as a distinct layer.
+
+## Why An Enterprise Buys Third-party Decision Infrastructure
+
+Enterprises usually do not buy something like OpenPrecedent because they want a new conceptual layer.
+They buy it after they are already building, using, and governing agents and can feel that current tool combinations still fail to preserve reusable judgment.
+
+The most common purchase triggers look like this:
+
+- agents are already in real operational workflows, not just demos or isolated copilots
+- the cost of bad decisions is rising, especially in high-value, high-authority, high-compliance, or customer-commitment-sensitive situations
+- the organization already has traces, logs, evals, and knowledge bases, but still cannot answer "why did we do this?" or "should we do it this way again?"
+- the same class of issue is re-decided across teams, agents, and customer environments because no reusable precedent forms
+- human experts still serve as critical fallbacks, but their judgment mostly lives in chat, meetings, PR comments, ticket notes, and personal memory
+- multiple agent runtimes and orchestration stacks are already in play, and the company no longer wants each runtime to carry its own fragmented memory and governance logic
+- audit, risk, legal, and platform teams begin asking not just for execution records, but for exception rationale, authority boundaries, rejected options, applicability, and invalidation
+
+So enterprises do not buy third-party decision infrastructure because they lack data.
+They buy it because they lack reusable judgment structure.
+
+And why buy instead of build?
+
+- because multiple agent systems make internal one-off builds turn into repeated reinvention
+- because the relevant decision object crosses Git, IM, CRM, ticketing, approvals, and runtime traces, and no internal team naturally owns the whole boundary
+- because they need an evolving product capability, not a one-time internal project
+- because they recognize this is horizontal infrastructure rather than a feature for one business line
+
+The real buying window is therefore not at first contact with agents.
+It appears when agents are already in real work, error costs are becoming material, and the current observability, memory, and policy stack still cannot reliably carry judgment forward.
 
 ## What A Precedent Is And Is Not
 
@@ -345,6 +499,22 @@ They should also inherit:
 - any indication that the decision was temporary, exceptional, or later superseded
 
 The product is most useful when it helps future execution ask "is this prior judgment still relevant here?" rather than silently assuming "do this because it happened before."
+
+That means the product should not treat a non-default historical choice as presumptively better than the default path.
+The point of precedent is not "the exception won before, so repeat it."
+The point is "the default path may fail again unless the current agent re-checks the constraints that overrode it before."
+
+So the system has to preserve and surface more than the chosen option alone.
+At minimum, it should preserve:
+
+- what the default path would have been
+- why that default path stopped being acceptable in the original situation
+- which constraints still have to match before the old deviation should influence the current decision
+- whether the old deviation was intended as durable policy, local exception, temporary workaround, or emergency response
+
+In other words, precedent is not an answer source.
+It is a bounded historical judgment input.
+The product should reduce wrong returns to generic defaults without turning historical exceptions into automatic commands.
 
 This implies a clear product boundary:
 
@@ -685,166 +855,49 @@ These design questions are tightly linked rather than independent:
 
 ## Phase Conclusion
 
-This JTBD round can now be treated as directionally converged.
-Using the frame from *Competing Against Luck*, the key questions are no longer just "who is the user" in the abstract, but:
+This JTBD round is now directionally converged enough to serve as a working baseline for later product definition.
+The shortest summary is eight points.
 
-- in what situation the user hires the product
-- what progress the user is trying to make
-- what substitute set the user already uses instead
+### Current core judgments
 
-On those questions, this note now gives a coherent answer.
+1. OpenPrecedent is not about storing more history. It is about retrieving still-relevant prior judgment before a new decision happens.
+2. It should not be embedded as another dashboard or post-hoc console. It should exist as precedent layer and decision middleware inside the customer's agent stack.
+3. Its primary role is a runtime sidecar decision service. Its secondary role is capture along the decision path. Its tertiary role is a human governance and review surface.
+4. Decision capture and precedent reuse were painful before agents. Agents did not create the problem.
+5. Agents make the problem more urgent because they sit directly on the decision-execution path, which makes decision capture and decision-time reuse more feasible and more necessary.
+6. Decision infrastructure can have a cross-agent semantic core, but it cannot skip domain adaptation and honestly claim one workflow model for every agent domain.
+7. Enterprises buy this layer when agents are already in real workflows, error costs are rising, and the existing observability, memory, and policy stack still cannot carry judgment forward.
+8. The current MVP is directionally correct, but it is still more like a precedent-loop foundation than a full decision-time judgment-inheritance product.
 
-### What now appears answered
+### Direct product compression
 
-Users are not hiring OpenPrecedent to own a decision archive or to inspect agent logs for their own sake.
-They are hiring it before a new meaningful decision so they can recover the historically relevant judgment from similar prior situations.
-What they want back is the part of prior history that still matters now:
-
-- decisive constraints
-- real exceptions
-- rejected options
-- boundary conditions
-- still-relevant trade-offs
-
-The real substitute set is also clearer now.
-It is not only tracing, observability, or memory tools.
-The practical substitute set is the combined workflow of non-consumption, expert recall, code search, repository history, docs, notes, chat threads, email, memory systems, and checklists.
-The strongest substitute is usually human recall and expert consultation rather than a single software product.
-
-The discussion now explains more clearly why existing approaches are insufficient.
-The problem is not that current systems store nothing.
-The problem is that they do not reliably preserve reusable judgment structure.
-What is especially easy to lose includes:
-
-- why the default path stopped being valid
-- which constraints forced the deviation
-- which options were seriously rejected and why
-- which exceptions were only locally valid
-- which decisions later expired or were superseded
-
-The analysis of the agent era is also more complete.
-The agent era matters not because decisions suddenly exist, but because their density, speed, and visibility have changed.
-Many decisions are now created through human-agent interaction, some are made by agents without direct human review of every step, and future execution is increasingly performed by agents that will default toward generic answers unless prior judgment is surfaced in time.
-That is why precedent now matters not only for explanation after the fact, but for later execution while it is still happening.
-
-The highest-value decision classes are also clearer.
-OpenPrecedent should prioritize exception-shaped decisions that are hard to reconstruct from final artifacts but highly consequential for later maintenance and future judgment.
-The leading examples identified in this round are:
-
-- customer-specific exceptions
-- historical compatibility constraints
-- defect-repair trade-offs
-- temporary or transitional fixes
-- version cuts under time pressure
-- architecture details that never fully made it into code or documentation
-
-The common pattern is more important than the examples themselves:
-the best initial precedents are decisions where a default path would normally have been taken, but a real constraint forced a different path.
-
-The product category itself is also clearer.
-OpenPrecedent should not be framed as a developer-only project precedent tool.
-Its long-term category is general decision-precedent infrastructure for agent-assisted execution.
-At the same time, the current wedge remains narrow: coding-agent and software-delivery work is still the first high-signal environment in which to validate the loop.
-
-### Direct answers to the core questions
-
-The customer should no longer be defined only as "developers."
-The more accurate customer model has three layers:
-
-- direct users who work with agents frequently and make decisions under local constraints
-- organizational customers whose systems accumulate exceptions, legacy baggage, and fragile hidden judgment
-- economic buyers who are accountable for maintenance burden, rework, delivery risk, or dependence on expert memory
-
-What these users hire OpenPrecedent to do is also clearer.
-They are not hiring it to own an archive.
-They are hiring it so that when a new consequential decision has to be made, they do not have to guess why a similar situation was judged a certain way before.
-
-The expected result is not abstractly "more knowledge."
-The expected result is operational:
-
-- fewer wrong default paths
-- less rework
-- less dependence on finding the right human expert at the right moment
-- less loss of exception-specific judgment when teams change
-- more agent behavior that reflects inherited experience rather than generic averaging
-
-The shortest defensible value statement from this discussion round is:
+The shortest defensible value statement from this round is:
 
 OpenPrecedent reduces wrong default decisions.
 
-The discussion also has a clearer answer to why manual entry systems are insufficient as the primary mechanism.
-High-value decisions often happen under pressure, in exceptions, or in moments that still look temporary.
-That is exactly when structured manual recording is least reliable.
-Manual logging can still help as a supplement, but it is a weak default for the main capture path.
+A fuller product definition is:
 
-The analysis of precedent misuse is also more mature.
-Precedent may be wrong when first recorded, only locally valid, or later invalidated.
-So precedent must be treated as a contextual historical judgment sample rather than timeless truth.
-That is why the current thesis now emphasizes:
-
-- applicability
-- invalidation and supersession
-- candidate precedent rather than silent enforcement
-
-The product also now has a cleaner answer to the generality question.
-The ambition must be general, but the validation path must be specific.
-So OpenPrecedent should be described as general agent precedent infrastructure, while the current wedge remains coding-agent and software-delivery validation.
+OpenPrecedent is decision-precedent infrastructure for agents and operators.
+It captures judgment along the execution path and returns relevant precedent, constraints, exceptions, and boundaries before the next critical action, so the system is less likely to fall back to a generic default that is wrong for the real context.
 
 ### What remains unresolved
 
-This phase can be considered directionally converged, but a few questions are still open at the product-definition level.
+The direction is clearer than before, but several product-definition questions remain:
 
-The minimum target customer is still not finally locked.
-The discussion no longer treats "developers" as a sufficient answer, but it still has not defined the narrowest initial team profile that should adopt and buy first.
-
-The semantic core is also clearer, but the split between core fields and enrichment fields is still not final.
-The note now records a stronger candidate field set for case, decision, precedent, applicability, and related semantics, but it still does not fully distinguish:
-
-- which fields are required for the MVP semantic core
-- which fields can remain optional or arrive later as enrichment
-
-Runtime use is also not fully defined yet.
-The discussion is now clear that precedent should not be obeyed blindly, but it still has not fully specified when the product should:
-
-- suggest a precedent
-- require clarification
-- block a default action
-- escalate to a human
-- only annotate a decision after the fact
-
-Commercial packaging remains directional rather than final.
-The open-source foundation versus enterprise private-cloud boundary is clearer, but the actual packaging model is not yet complete.
-
-These are no longer questions of directional confusion.
-They are questions for later product definition.
+- the narrowest initial target customer is still not finally locked
+- the split between MVP semantic core fields and later enrichment fields is not final
+- runtime behavior is not yet fully specified for when the product should suggest, clarify, block, escalate, or only annotate
+- the final packaging across open source, enterprise, private cloud, and services is still incomplete
 
 ### Alignment with the current MVP
 
-The current MVP is directionally aligned with this conclusion in several important ways.
-It already follows the chain of case, event, decision, and precedent.
-It does not define itself as a generic graph, generic memory platform, or generic trace viewer.
-It already treats replay, explanation, and precedent retrieval as core capabilities.
-It is already validating the idea that relevant precedent can be retrieved from prior history.
-It already emphasizes local-first, single-agent validation over abstract platform claims.
-And it already follows the right proof order: validate one concrete loop before expanding.
+The current MVP is not off-course.
+It already follows the chain of case, event, decision, precedent, replay, explanation, and retrieval.
+It is already proving that a precedent loop can run in a narrow local-first environment.
 
-So the MVP should not be judged as having chosen the wrong direction.
-It already contains the structural skeleton of the broader product thesis.
+The stronger target defined in this note is simply one level above that:
 
-The main gap is one of level rather than direction.
-The current MVP still behaves more like a foundation for capture, replay, extraction, and retrieval over existing history.
-The stronger target described by this phase conclusion is decision-time judgment inheritance before the next meaningful action.
+- the MVP is proving that the loop can run
+- the broader product thesis is that the loop can change the next meaningful decision
 
-The most important remaining differences are:
-
-- the MVP is still more focused on explaining past runs, while the conclusion emphasizes helping the next decision before it happens
-- the MVP is mostly validating a local single-agent coding environment, while the conclusion defines a broader product category for agent-assisted execution across domains
-- the MVP is still weak on off-path human context such as meetings, chat systems, email, and explicit expert supplementation
-- the MVP does not yet center applicability, invalidation, supersession, and temporality strongly enough, even though the current conclusion treats them as crucial for preventing precedent misuse
-- the MVP is still more oriented toward semantic retrieval plus replay, while the stronger thesis requires constraint-matching, exception-awareness, and historical validity checks
-- the MVP does not yet explicitly present the architecture as a core precedent layer, a domain adaptation layer, and a runtime usage layer
-
-So the best compact summary is:
-
-The MVP has already shown that a precedent loop can run.
-It has not yet fully become the general decision-precedent infrastructure described by this phase conclusion.
+So the MVP already validates the direction, but it has not yet fully become the general decision-precedent infrastructure described in this document.
