@@ -52,6 +52,30 @@ It should supply a missing layer those systems usually do not have:
 So the right mental model is not an external analysis tool.
 It is a precedent layer that sits above event systems, beside agent runtimes, and before human governance surfaces.
 
+## Foundation Capital's Context Graph Thesis As An External Reference
+
+One useful external reference for this product discussion is Foundation Capital's article
+[`AI's trillion-dollar opportunity: Context graphs`](https://foundationcapital.com/ideas/context-graphs-ais-trillion-dollar-opportunity), published on `2025-12-22`.
+
+That article uses `context graph` in a way that is much closer to OpenPrecedent's current thesis than many memory-first or graph-RAG discussions.
+Its central concern is not generic long-term memory.
+Its central concern is that enterprises usually preserve final state and final actions, but fail to preserve the decision traces behind exceptions, overrides, approvals, and later precedent.
+
+This makes the overlap with OpenPrecedent important:
+
+- both point to a missing layer around decision history rather than generic observability or generic graph storage
+- both argue that the strategic position sits on or beside the agent execution path, where judgment is about to become action
+- both treat existing systems of record as weak places to preserve reusable decision context in its original shape
+
+The difference is just as important:
+
+- Foundation still uses `context graph` as the umbrella category
+- OpenPrecedent now names the core object more directly as `decision` and `precedent`
+- Foundation's framing is a broad category and market thesis, while OpenPrecedent's current wedge is narrower: decision replay, explanation, and precedent retrieval in real agent work
+
+So this article is best treated as a confirming external reference, not as a naming instruction.
+It helps explain why the original `Context Graph` direction was pointing at a real product gap, while also clarifying why the product has since been sharpened into a more explicit decision-and-precedent layer.
+
 ## Product Role Inside The Customer Ecosystem
 
 If OpenPrecedent is meant to help agents run more reliably, it cannot live only as "another dashboard."
