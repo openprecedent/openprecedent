@@ -3,7 +3,7 @@ type: task
 epic: real-history-quality
 slug: add-foundation-context-graph-comparison-to-jtbd-analysis
 title: Add Foundation context graph comparison to JTBD analysis
-status: in_progress
+status: done
 task_type: docs
 labels: documentation,research
 issue: 267

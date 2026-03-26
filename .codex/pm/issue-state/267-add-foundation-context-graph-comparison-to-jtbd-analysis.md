@@ -3,7 +3,7 @@ type: issue_state
 issue: 267
 task: .codex/pm/tasks/real-history-quality/add-foundation-context-graph-comparison-to-jtbd-analysis.md
 title: Add Foundation context graph comparison to JTBD analysis
-status: in_progress
+status: done
 ---
 
 ## Summary
@@ -23,11 +23,11 @@ Add a concise Foundation Capital `context graph` comparison to the latest OpenPr
 
 - Whether the same Foundation comparison should later be mirrored into older `context-graph` historical notes, or remain only in the current canonical JTBD analysis.
 
-## Next Steps
+## Completed Work
 
-- Add a short integrated comparison section to the English JTBD note.
-- Add the aligned Chinese companion section.
-- Run lightweight validation and prepare the docs-only commit.
+- Added a short integrated comparison section to the English JTBD note.
+- Added the aligned Chinese companion section.
+- Ran lightweight validation and prepared the docs-only commit.
 
 ## Artifacts
 
